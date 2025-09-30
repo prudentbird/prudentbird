@@ -14,6 +14,7 @@ export type SpotifyTrack = {
     large: string;
   };
   blurDataURL?: string;
+  playedAt?: string;
   duration: number;
   progress: number;
   isPlaying: boolean;
@@ -60,14 +61,40 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
       },
     );
 
-    if (!response.ok) {
+    let data;
+    let item;
+    let fromRecent = false;
+
+    if (response.status === 200) {
+      data = await response.json();
+      item = data?.item;
+    } else {
+      const recentlyPlayedResponse = await fetch(
+        "https://api.spotify.com/v1/me/player/recently-played?limit=1",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          next: { tags: ["spotify-recently-played"] },
+        },
+      );
+
+      if (recentlyPlayedResponse.status !== 200) {
+        return null;
+      }
+
+      const recentJson = await recentlyPlayedResponse.json();
+      data = recentJson.items?.[0];
+      item = data?.track;
+      fromRecent = true;
+    }
+
+    if (!item) {
       return null;
     }
 
-    const data = await response.json();
-
     const albumImages: Array<{ url: string; width?: number; height?: number }> =
-      Array.isArray(data?.item?.album?.images) ? data.item.album.images : [];
+      Array.isArray(item?.album?.images) ? item.album.images : [];
 
     const sorted = [...albumImages].sort(
       (a, b) => (b.width ?? 0) - (a.width ?? 0),
@@ -90,22 +117,26 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
       } catch {}
     }
 
+    const artistsArray: Array<{ name: string }> = Array.isArray(item?.artists)
+      ? item.artists
+      : [];
+
     const track: SpotifyTrack = {
-      name: data.item.name,
-      artist: (Array.isArray(data.item.artists) ? data.item.artists : [])
-        .map((artist: { name: string }) => artist.name)
-        .join(", "),
+      name: item.name,
+      artist: artistsArray.map((artist) => artist.name).join(", "),
       imageUrl: large,
       images: { small, medium, large },
       blurDataURL,
-      url: data.item.external_urls.spotify,
-      isPlaying: data.is_playing,
-      duration: data.item.duration_ms,
-      progress: data.progress_ms,
+      url: item?.external_urls?.spotify ?? "",
+      isPlaying: fromRecent ? false : Boolean(data?.is_playing),
+      playedAt: fromRecent ? data?.played_at : undefined,
+      duration: item?.duration_ms ?? 0,
+      progress: fromRecent ? 0 : (data?.progress_ms ?? 0),
     };
 
     return track;
-  } catch {
+  } catch (error) {
+    console.error(error);
     return null;
   }
 }
