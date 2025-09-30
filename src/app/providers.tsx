@@ -1,21 +1,39 @@
 "use client";
 
-import { ReactNode } from "react";
 import { ThemeProvider } from "~/components/theme";
 import { Analytics } from "@vercel/analytics/next";
+import { ReactNode, useEffect, useState } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const Providers = ({ children }: { children: ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = requestIdleCallback
+      ? requestIdleCallback(() => setMounted(true))
+      : setTimeout(() => setMounted(true), 0);
+    return () => {
+      if (typeof cancelIdleCallback !== "undefined" && typeof id === "number") {
+        cancelIdleCallback(id);
+      } else if (typeof id === "number") {
+        clearTimeout(id);
+      }
+    };
+  }, []);
+
   return (
     <ThemeProvider
       enableSystem
       attribute="class"
-      defaultTheme="dark"
+      defaultTheme="system"
       disableTransitionOnChange
     >
       {children}
-      <Analytics />
-      <SpeedInsights />
+      {mounted ? (
+        <>
+          <Analytics />
+          <SpeedInsights />
+        </>
+      ) : null}
     </ThemeProvider>
   );
 };

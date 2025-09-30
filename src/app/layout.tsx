@@ -1,14 +1,10 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
+import type { Metadata } from "next";
+import { Outfit } from "next/font/google";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -23,11 +19,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${outfit.variable} antialiased`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
