@@ -70,10 +70,7 @@ export function SpotifyWidget({
             </div>
           </div>
 
-          <div
-            className="flex flex-col gap-2 justify-between h-full w-full min-w-0"
-            style={{ height: "-webkit-fill-available" }}
-          >
+          <div className="flex flex-col gap-2 justify-between w-full min-w-0 self-stretch">
             <div className="flex items-center justify-start sm:justify-end gap-2">
               <Music2 className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Now Playing</span>
