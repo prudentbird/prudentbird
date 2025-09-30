@@ -11,8 +11,7 @@
     "lint": "eslint . && echo Lint Checks successfully completed!",
     "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
     "typecheck": "tsc --pretty --noEmit && echo Type Checks successfuly completed!",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache && echo Prettier Format successfully completed!",
-    "spotify:refresh": "node scripts/spotify-refresh.mjs"
+    "format": "prettier --write . --cache && echo Prettier Format successfully completed!"
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.7",
