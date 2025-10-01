@@ -1,7 +1,6 @@
 "use server";
 
 import { env } from "~/env";
-import { connection } from "next/server";
 import { revalidateTag } from "next/cache";
 
 export type SpotifyTrack = {
@@ -49,7 +48,6 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
-  await connection();
   try {
     const accessToken = await getAccessToken();
 

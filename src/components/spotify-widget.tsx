@@ -92,10 +92,11 @@ export function SpotifyWidget({
           <div className="flex flex-col gap-2 justify-between w-full min-w-0 self-stretch">
             <div className="flex items-center justify-start sm:justify-end gap-2">
               <Music2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {track.playedAt
-                  ? `${formatTimeAgo(track.playedAt)}`
-                  : "Now Playing"}
+              <span
+                className="text-sm text-muted-foreground"
+                suppressHydrationWarning
+              >
+                {track.playedAt ? formatTimeAgo(track.playedAt) : "Now Playing"}
               </span>
             </div>
 
