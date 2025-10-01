@@ -6,7 +6,11 @@ import "./src/env.ts";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  typedRoutes: true,
   experimental: {
+    ppr: true,
+    typedEnv: true,
+    cacheComponents: true,
     browserDebugInfoInTerminal: true,
     turbopackPersistentCachingForDev: true,
     turbopackPersistentCachingForBuild: true,
