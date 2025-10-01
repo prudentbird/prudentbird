@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { Music2 } from "lucide-react";
-import { useCallback, startTransition } from "react";
 import { Player } from "~/components/player";
 import {
   getSpotifyTrack,
@@ -14,6 +13,7 @@ import { SpotifySkeleton } from "./spotify-skeleton";
 import { formatTimeAgo } from "~/lib/utils";
 import { Button } from "./ui/button";
 import { Spotify } from "./ui/svgs/spotify";
+import { useCallback, useEffect, startTransition } from "react";
 
 export function SpotifyWidget({
   initialTrack,
@@ -30,11 +30,6 @@ export function SpotifyWidget({
     revalidateOnMount: false,
     revalidateOnReconnect: false,
     fallbackData: initialTrack,
-    refreshInterval: (data) => {
-      if (!data?.isPlaying) return 0;
-      const timeRemaining = data.duration - data.progress;
-      return timeRemaining > 0 ? timeRemaining + 200 : 0;
-    },
   });
 
   const handleRefresh = useCallback(() => {
@@ -43,6 +38,20 @@ export function SpotifyWidget({
       mutate();
     });
   }, [mutate]);
+
+  useEffect(() => {
+    if (!track?.isPlaying) return;
+
+    const timeRemaining = track.duration - track.progress;
+
+    if (timeRemaining <= 2000) {
+      const timeout = setTimeout(handleRefresh, 3000);
+      return () => clearTimeout(timeout);
+    }
+
+    const timeout = setTimeout(handleRefresh, timeRemaining + 500);
+    return () => clearTimeout(timeout);
+  }, [track, handleRefresh]);
 
   if (isLoading) {
     return <SpotifySkeleton />;

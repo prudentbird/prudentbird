@@ -1,9 +1,9 @@
 "use client";
 
 import { Progress } from "~/components/ui/progress";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 
-function PlayerComponent({
+export function Player({
   progressMs,
   durationMs,
   isPlaying,
@@ -18,30 +18,32 @@ function PlayerComponent({
 
   useEffect(() => {
     setCurrentMs(progressMs);
+    lastTsRef.current = null;
   }, [progressMs]);
 
   useEffect(() => {
-    function step(ts: number) {
-      if (!isPlaying) return;
+    if (!isPlaying) {
+      lastTsRef.current = null;
+      return;
+    }
 
-      if (lastTsRef.current == null) {
+    const step = (ts: number) => {
+      if (lastTsRef.current === null) {
         lastTsRef.current = ts;
       } else {
         const delta = ts - lastTsRef.current;
         lastTsRef.current = ts;
         setCurrentMs((prev) => Math.min(durationMs, prev + delta));
       }
-
       rafRef.current = requestAnimationFrame(step);
-    }
+    };
 
-    if (isPlaying) {
-      rafRef.current = requestAnimationFrame(step);
-    } else {
-      lastTsRef.current = null;
-    }
+    rafRef.current = requestAnimationFrame(step);
+
     return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
   }, [isPlaying, durationMs]);
 
@@ -50,12 +52,15 @@ function PlayerComponent({
     return Math.max(0, Math.min(100, (currentMs / durationMs) * 100));
   }, [currentMs, durationMs]);
 
-  const formatMillisecondsToMinutesSeconds = (milliseconds: number): string => {
-    const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${String(seconds).padStart(2, "0")}`;
-  };
+  const formatTime = useMemo(
+    () => (ms: number) => {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    },
+    [],
+  );
 
   return (
     <div className="flex flex-col gap-1.5 sm:gap-2">
@@ -64,20 +69,12 @@ function PlayerComponent({
         className="h-1.5 bg-border/30"
         indicatorClassName="bg-[#1DB954]"
         aria-label="Playback progress"
-        aria-valuetext={`${formatMillisecondsToMinutesSeconds(currentMs)} of ${formatMillisecondsToMinutesSeconds(durationMs)}`}
+        aria-valuetext={`${formatTime(currentMs)} of ${formatTime(durationMs)}`}
       />
       <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
-        <span>{formatMillisecondsToMinutesSeconds(currentMs)}</span>
-        <span>{formatMillisecondsToMinutesSeconds(durationMs)}</span>
+        <span>{formatTime(currentMs)}</span>
+        <span>{formatTime(durationMs)}</span>
       </div>
     </div>
   );
 }
-
-export const Player = memo(PlayerComponent, (prev, next) => {
-  return (
-    prev.progressMs === next.progressMs &&
-    prev.durationMs === next.durationMs &&
-    prev.isPlaying === next.isPlaying
-  );
-});
