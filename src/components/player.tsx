@@ -1,27 +1,23 @@
 "use client";
 
 import { Progress } from "~/components/ui/progress";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 
-export function Player({
+function PlayerComponent({
   progressMs,
   durationMs,
   isPlaying,
-  onEnded,
 }: {
   progressMs: number;
   durationMs: number;
   isPlaying: boolean;
-  onEnded?: () => void;
 }) {
   const [currentMs, setCurrentMs] = useState(progressMs);
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
-  const hasRefreshedRef = useRef<boolean>(false);
 
   useEffect(() => {
     setCurrentMs(progressMs);
-    hasRefreshedRef.current = false;
   }, [progressMs]);
 
   useEffect(() => {
@@ -54,15 +50,6 @@ export function Player({
     return Math.max(0, Math.min(100, (currentMs / durationMs) * 100));
   }, [currentMs, durationMs]);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    if (!durationMs || durationMs <= 0) return;
-    if (currentMs >= durationMs && !hasRefreshedRef.current) {
-      hasRefreshedRef.current = true;
-      onEnded?.();
-    }
-  }, [currentMs, durationMs, isPlaying, onEnded]);
-
   const formatMillisecondsToMinutesSeconds = (milliseconds: number): string => {
     const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
     const minutes = Math.floor(totalSeconds / 60);
@@ -86,3 +73,11 @@ export function Player({
     </div>
   );
 }
+
+export const Player = memo(PlayerComponent, (prev, next) => {
+  return (
+    prev.progressMs === next.progressMs &&
+    prev.durationMs === next.durationMs &&
+    prev.isPlaying === next.isPlaying
+  );
+});
