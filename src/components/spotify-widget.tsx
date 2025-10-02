@@ -13,7 +13,7 @@ import { SpotifySkeleton } from "./spotify-skeleton";
 import { formatTimeAgo } from "~/lib/utils";
 import { Button } from "./ui/button";
 import { Spotify } from "./ui/svgs/spotify";
-import { useCallback, useEffect, startTransition } from "react";
+import { useEffect, useEffectEvent, startTransition } from "react";
 
 export function SpotifyWidget({
   initialTrack,
@@ -32,12 +32,12 @@ export function SpotifyWidget({
     fallbackData: initialTrack,
   });
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useEffectEvent(() => {
     startTransition(async () => {
       await revalidateSpotifyCurrent();
       mutate();
     });
-  }, [mutate]);
+  });
 
   useEffect(() => {
     if (!track?.isPlaying) return;
@@ -51,7 +51,7 @@ export function SpotifyWidget({
 
     const timeout = setTimeout(handleRefresh, timeRemaining + 500);
     return () => clearTimeout(timeout);
-  }, [track, handleRefresh]);
+  }, [track]);
 
   if (isLoading) {
     return <SpotifySkeleton />;
