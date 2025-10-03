@@ -19,7 +19,7 @@ const projects: Project[] = [
   {
     name: "FuseIon",
     icon: MessageCircle,
-    link: "https://fuseion.reav.ly",
+    link: "https://fuseion.app",
     description: "The AI chat app for nerds.",
     github: "https://github.com/prudentbird/fuseion",
   },
