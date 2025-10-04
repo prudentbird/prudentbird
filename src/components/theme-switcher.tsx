@@ -23,9 +23,9 @@ export function ThemeSwitcher() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="sm:hidden">
-            {theme === "light" ? (
+            {currentTheme === "light" ? (
               <Sun className="h-4 w-4" />
-            ) : theme === "system" ? (
+            ) : currentTheme === "system" ? (
               <Monitor className="h-4 w-4" />
             ) : (
               <MoonStar className="h-4 w-4" />

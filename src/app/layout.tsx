@@ -10,7 +10,7 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: "Prudent Bird",
-  description: "Prudent Bird's Portfolio",
+  description: "Prudent Bird - AI | Software Engineer",
 };
 
 export default function RootLayout({
