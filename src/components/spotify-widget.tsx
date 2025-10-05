@@ -51,6 +51,7 @@ export function SpotifyWidget({
 
     const timeout = setTimeout(handleRefresh, timeRemaining + 500);
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track]);
 
   if (isLoading) {
