@@ -26,7 +26,7 @@ export function SpotifyWidget({
     mutate,
   } = useSWR("spotify-current", getSpotifyTrack, {
     keepPreviousData: true,
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
     revalidateOnMount: false,
     revalidateOnReconnect: false,
     fallbackData: initialTrack,
@@ -59,7 +59,7 @@ export function SpotifyWidget({
   }
 
   if (!track) {
-    return null;
+    return <SpotifySkeleton />;
   }
 
   return (
