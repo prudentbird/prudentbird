@@ -1,5 +1,6 @@
 import "./globals.css";
 import { env } from "~/env";
+import Script from "next/script";
 import Providers from "./providers";
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
@@ -95,6 +96,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-1ZZNBJY609"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-1ZZNBJY609');
+        `}
+      </Script>
       <body className={`${outfit.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
