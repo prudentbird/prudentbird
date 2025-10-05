@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Sun, Monitor, MoonStar } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,16 +17,23 @@ export function ThemeSwitcher() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const currentTheme = mounted ? theme : "system";
+  if (!mounted) {
+    return (
+      <>
+        <Skeleton className="h-10 w-10 sm:hidden" />
+        <Skeleton className="hidden sm:inline-flex h-9 w-28 rounded-full" />
+      </>
+    );
+  }
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="sm:hidden">
-            {currentTheme === "light" ? (
+            {theme === "light" ? (
               <Sun className="h-4 w-4" />
-            ) : currentTheme === "system" ? (
+            ) : theme === "system" ? (
               <Monitor className="h-4 w-4" />
             ) : (
               <MoonStar className="h-4 w-4" />
@@ -55,12 +63,12 @@ export function ThemeSwitcher() {
           variant="ghost"
           size="icon"
           className={`rounded-full h-8 w-8 transition-colors ${
-            currentTheme === "light"
+            theme === "light"
               ? "bg-accent-foreground/60 text-background/80 hover:text-background/80 hover:bg-accent-foreground/60 dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
           }`}
           aria-label="Light mode"
-          aria-pressed={currentTheme === "light"}
+          aria-pressed={theme === "light"}
         >
           <Sun className="h-4 w-4" />
         </Button>
@@ -69,12 +77,12 @@ export function ThemeSwitcher() {
           variant="ghost"
           size="icon"
           className={`rounded-full h-8 w-8 transition-colors ${
-            currentTheme === "system"
+            theme === "system"
               ? "bg-background text-foreground hover:bg-background dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
           }`}
           aria-label="System mode"
-          aria-pressed={currentTheme === "system"}
+          aria-pressed={theme === "system"}
         >
           <Monitor className="h-4 w-4" />
         </Button>
@@ -83,12 +91,12 @@ export function ThemeSwitcher() {
           variant="ghost"
           size="icon"
           className={`rounded-full h-8 w-8 transition-colors ${
-            currentTheme === "dark"
+            theme === "dark"
               ? "bg-background text-foreground hover:bg-background dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
           }`}
           aria-label="Dark mode"
-          aria-pressed={currentTheme === "dark"}
+          aria-pressed={theme === "dark"}
         >
           <MoonStar className="h-4 w-4" />
         </Button>

@@ -8,21 +8,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: [
-          "/",
-          "/favicon.ico",
-          "/manifest.json",
-          "/*.jpg$",
-          "/*.jpeg$",
-          "/*.png$",
-          "/*.gif$",
-          "/*.webp$",
-          "/*.svg$",
-          "/*.ico$",
-          "/*.pdf$",
-        ],
+        allow: "/",
         disallow: ["/_next/", "/api/", "/_error", "/_middleware", "/_api/"],
-        crawlDelay: 10,
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

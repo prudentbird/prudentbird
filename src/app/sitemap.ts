@@ -9,13 +9,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: baseUrl,
       priority: 1.0,
       lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "weekly",
     },
     {
       url: `${baseUrl}/cv.pdf`,
       priority: 0.9,
       lastModified: new Date(),
-      changeFrequency: "never",
+      changeFrequency: "monthly",
     },
   ];
 }
