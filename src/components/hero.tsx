@@ -23,8 +23,12 @@ export function Hero() {
             functional products that users find genuinely useful in their day to
             day lives.
           </p>
-          <p className="text-lg italic text-muted-foreground/80 leading-relaxed">
-            &quot;When Life Sucks, Enjoy the Head!&quot;
+          <p className="text-lg italic text-muted-foreground leading-relaxed">
+            &quot;
+            <span className="underline hover:text-primary underline-offset-2">
+              When Life Sucks, Enjoy the Head!
+            </span>
+            &quot;
           </p>
         </div>
 
