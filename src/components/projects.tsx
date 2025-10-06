@@ -3,7 +3,7 @@ import { Github } from "./ui/svgs/github";
 import {
   Store,
   MessageCircle,
-  ArrowUpRight,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 
@@ -80,7 +80,7 @@ export function Projects() {
                     rel="noopener noreferrer"
                     aria-label={`Visit ${project.name}`}
                   >
-                    <ArrowUpRight className="h-4 w-4" />
+                    <ExternalLink className="h-4 w-4" />
                     <span className="hidden sm:block">Visit</span>
                   </a>
                 </Button>
