@@ -144,5 +144,5 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
 }
 
 export async function revalidateSpotifyCurrent() {
-  revalidateTag("spotify-current");
+  revalidateTag("spotify-current", {});
 }

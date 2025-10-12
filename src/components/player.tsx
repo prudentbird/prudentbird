@@ -12,12 +12,17 @@ export function Player({
   durationMs: number;
   isPlaying: boolean;
 }) {
-  const [currentMs, setCurrentMs] = useState(progressMs);
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
+  const [currentMs, setCurrentMs] = useState(progressMs);
+
+  const [prevProgressMs, setPrevProgressMs] = useState(progressMs);
+  if (progressMs !== prevProgressMs) {
+    setPrevProgressMs(progressMs);
+    setCurrentMs(progressMs);
+  }
 
   useEffect(() => {
-    setCurrentMs(progressMs);
     lastTsRef.current = null;
   }, [progressMs]);
 
