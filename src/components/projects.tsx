@@ -26,7 +26,7 @@ const projects: Project[] = [
   {
     name: "Retailytics",
     icon: Store,
-    link: "https://retailintelligence.ajared.ng",
+    link: "https://retailytics.ajared.ng",
     github: "https://github.com/ajared/retailintelligence",
     description: "Retail store data for business analytics.",
   },
