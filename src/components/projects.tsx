@@ -3,6 +3,7 @@ import { Github } from "./ui/svgs/github";
 import {
   Store,
   MessageCircle,
+  Shield,
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +17,14 @@ type Project = {
 };
 
 const projects: Project[] = [
+  {
+    name: "Beakcrypt",
+    icon: Shield,
+    link: "https://beakcrypt.com",
+    github: "https://github.com/prudentbird/beakcrypt",
+    description:
+      "Open-source encrypted environment variable management for teams and development workflows.",
+  },
   {
     name: "FuseIon",
     icon: MessageCircle,
