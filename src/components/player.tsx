@@ -16,16 +16,6 @@ export function Player({
   const lastTsRef = useRef<number | null>(null);
   const [currentMs, setCurrentMs] = useState(progressMs);
 
-  const [prevProgressMs, setPrevProgressMs] = useState(progressMs);
-  if (progressMs !== prevProgressMs) {
-    setPrevProgressMs(progressMs);
-    setCurrentMs(progressMs);
-  }
-
-  useEffect(() => {
-    lastTsRef.current = null;
-  }, [progressMs]);
-
   useEffect(() => {
     if (!isPlaying) {
       lastTsRef.current = null;
