@@ -7,13 +7,16 @@
   "scripts": {
     "dev": "next dev",
     "start": "next start",
-    "build": "next build",
-    "build:turbo": "turbo run build",
-    "preview": "next build && next start",
-    "lint": "eslint . && echo Lint Checks successfully completed!",
+    "build:app": "next build",
+    "lint": "turbo run lint:app",
+    "build": "turbo run build:app",
+    "build:turbo": "turbo run build:app",
+    "typecheck": "turbo run typecheck:app",
+    "preview": "pnpm run build && next start",
+    "lint:app": "eslint . && echo Lint Checks successfully completed!",
     "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
     "format": "prettier --write . --cache && echo Prettier Format successfully completed!",
-    "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
+    "typecheck:app": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.16",
