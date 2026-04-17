@@ -5,7 +5,7 @@ import { SpotifySkeleton } from "./spotify-skeleton";
 export function Stats() {
   return (
     <section>
-      <h2 className="mb-8 text-2xl font-semibold">Activity</h2>
+      <h2 className="mb-6 text-2xl md:text-3xl font-semibold">Activity</h2>
       <Suspense fallback={<SpotifySkeleton />}>
         <Spotify />
       </Suspense>

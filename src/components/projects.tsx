@@ -1,16 +1,10 @@
-import { Button } from "./ui/button";
-import { Github } from "./ui/svgs/github";
-import {
-  Store,
-  MessageCircle,
-  Shield,
-  ExternalLink,
-  type LucideIcon,
-} from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 
 type Project = {
   name: string;
-  icon: LucideIcon;
   link: string;
   github: string;
   description: string;
@@ -19,101 +13,127 @@ type Project = {
 const projects: Project[] = [
   {
     name: "Beakcrypt",
-    icon: Shield,
     link: "https://beakcrypt.com",
     github: "https://github.com/prudentbird/beakcrypt",
-    description:
-      "Open-source encrypted environment variable management for teams and development workflows.",
+    description: "Encrypted environment variable management for teams.",
   },
   {
     name: "FuseIon",
-    icon: MessageCircle,
     link: "https://fuseion.app",
-    description: "The AI chat app for nerds.",
     github: "https://github.com/prudentbird/fuseion",
+    description: "The AI chat app for nerds.",
   },
   {
     name: "Retailytics",
-    icon: Store,
     link: "https://retailytics.ajared.ng",
     github: "https://github.com/ajared/retailintelligence",
     description: "Retail store data for business analytics.",
   },
 ];
 
+type Mode = "preview" | "source";
+
+function formatHost(url: string) {
+  try {
+    const u = new URL(url);
+    return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
 export function Projects() {
+  const [mode, setMode] = useState<Mode>("preview");
+
   return (
     <section>
-      <h2 className="mb-8 text-2xl font-semibold">Projects</h2>
-      <div className="flex flex-col gap-4">
-        {projects.map((project) => (
-          <article
-            key={project.name}
-            className="group relative cursor-pointer flex items-start gap-2 sm:gap-4 rounded-lg border border-border p-4 sm:p-6 transition-colors hover:border-muted-foreground/30"
-          >
-            <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg bg-secondary">
-              <project.icon className="h-5 w-5 sm:h-6 sm:w-6 text-foreground" />
-            </div>
-            <a
-              href={project.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Visit ${project.name}`}
-              className="absolute inset-0 z-10"
-            />
-            <div className="flex flex-1 min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex flex-col justify-between h-full">
-                <h3 className="font-semibold text-foreground">
-                  <a
-                    href={project.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {project.name}
-                  </a>
-                </h3>
-                <p className="text-sm text-muted-foreground">
+      <div className="mb-6 sm:mb-8 flex items-baseline justify-between gap-3 sm:gap-4">
+        <h2 className="text-2xl md:text-3xl font-semibold">Projects</h2>
+        <div
+          role="radiogroup"
+          aria-label="Project link target"
+          className="flex items-center gap-1 text-sm text-muted-foreground"
+        >
+          <ToggleOption
+            label="preview"
+            active={mode === "preview"}
+            onClick={() => setMode("preview")}
+          />
+          <span aria-hidden="true" className="text-muted-foreground/40">
+            /
+          </span>
+          <ToggleOption
+            label="source"
+            active={mode === "source"}
+            onClick={() => setMode("source")}
+          />
+        </div>
+      </div>
+
+      <ul className="flex flex-col divide-y divide-border/50">
+        {projects.map((project) => {
+          const href = mode === "preview" ? project.link : project.github;
+          return (
+            <li key={project.name}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col gap-1 py-4 sm:py-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium text-lg text-foreground">
+                      {project.name}
+                    </span>
+                    <span className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors truncate">
+                      {formatHost(href)}
+                    </span>
+                  </div>
+                  <ArrowUpRight
+                    className="size-3.5 sm:size-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:opacity-100"
+                    aria-hidden="true"
+                  />
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   {project.description}
                 </p>
-              </div>
-              <div className="relative z-20 flex w-full gap-2 sm:w-auto sm:gap-3 sm:justify-end">
-                <Button
-                  asChild
-                  size="sm"
-                  variant="outline"
-                  className="w-full flex-1 sm:w-auto sm:flex-none"
-                >
-                  <a
-                    href={project.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Visit ${project.name}`}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    <span className="hidden sm:block">Visit</span>
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  variant="outline"
-                  className="w-full flex-1 sm:w-auto sm:flex-none"
-                >
-                  <a
-                    href={project.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Open ${project.name} on GitHub`}
-                  >
-                    <Github className="h-4 w-4" />
-                    <span className="hidden sm:block">GitHub</span>
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+                <span className="sr-only">
+                  {mode === "preview"
+                    ? " (opens site in new tab)"
+                    : " (opens source on GitHub in new tab)"}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
     </section>
+  );
+}
+
+function ToggleOption({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={`rounded-sm px-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        active
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

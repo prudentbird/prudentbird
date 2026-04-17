@@ -2,11 +2,12 @@ import { ThemeSwitcher } from "./theme-switcher";
 
 export function Footer() {
   return (
-    <footer className="py-6 border-t flex justify-between items-center">
-      <div className="text-sm text-muted-foreground">
-        <p>BN 8524538</p>
-        <p>© {new Intl.DateTimeFormat('en-UK', { year: 'numeric' }).format()} PrudentBird</p>
-      </div>
+    <footer className="mb-6 sm:mb-10 flex justify-between items-center">
+      <p className="text-sm text-muted-foreground">
+        BN 8524538 · ©{" "}
+        {new Intl.DateTimeFormat("en-UK", { year: "numeric" }).format()}{" "}
+        PrudentBird
+      </p>
       <ThemeSwitcher />
     </footer>
   );

@@ -1,72 +1,84 @@
-import { X } from "./ui/svgs/x";
-import { Github } from "./ui/svgs/github";
-import { FileInput, Mail } from "lucide-react";
+import Image from "next/image";
 
 export function Hero() {
   return (
     <section>
-      <div className="flex flex-col gap-12">
-        <div className="flex flex-col gap-6">
-          <h1
-            className="text-4xl md:text-5xl font-medium tracking-tight"
-            style={{
-              background: "var(--text-gradient)",
-              WebkitTextFillColor: "transparent",
-              WebkitBackgroundClip: "text",
-            }}
+      <div className="flex flex-col gap-8">
+        <div className="flex items-center gap-5 sm:gap-6">
+          <div
+            aria-hidden="true"
+            className="shrink-0 -rotate-3 drop-shadow-md"
+            style={{ width: 96, height: 96 }}
           >
-            Hello, I am Prudent Bird.
-          </h1>
+            <div
+              className="p-1.5 w-full h-full rounded-sm"
+              style={{ background: "var(--text-gradient)" }}
+            >
+              <Image
+                src="/pfp.png"
+                alt=""
+                width={84}
+                height={84}
+                priority
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
 
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Over the years, I&apos;ve taken ideas from simple concepts to
-            functional products that users find genuinely useful in their day to
-            day lives.
-          </p>
-          <p className="text-lg italic text-muted-foreground leading-relaxed">
-            &quot;
-            <span className="underline hover:text-primary underline-offset-2">
-              When Life Sucks, Enjoy the Head!
-            </span>
-            &quot;
-          </p>
+          <div className="flex flex-col gap-3 min-w-0 -mb-6">
+            <h1
+              className="text-4xl md:text-5xl font-medium tracking-tight"
+              style={{
+                background: "var(--text-gradient)",
+                WebkitTextFillColor: "transparent",
+                WebkitBackgroundClip: "text",
+              }}
+            >
+              Prudent Bird.
+            </h1>
+
+            <nav
+              aria-label="Links"
+              className="flex items-center gap-4 flex-wrap"
+            >
+              {[
+                { label: "Mail", href: "mailto:me@prudentbird.com" },
+                {
+                  label: "GitHub",
+                  href: "https://github.com/prudentbird",
+                  external: true,
+                },
+                {
+                  label: "Twitter",
+                  href: "https://x.com/prudentbird",
+                  external: true,
+                },
+                { label: "Resume", href: "/cv.pdf", download: true },
+              ].map(({ label, href, external, download }) => (
+                <a
+                  key={label}
+                  href={href}
+                  {...(external
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                  {...(download ? { download: true } : {})}
+                  className="text-sm text-muted-foreground/80 hover:text-foreground transition-colors duration-150 underline underline-offset-2"
+                >
+                  {label}
+                  {external && (
+                    <span className="sr-only"> (opens in new tab)</span>
+                  )}
+                </a>
+              ))}
+            </nav>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-4">
-          <a
-            href="mailto:prudentbird@gmail.com"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-background hover:bg-muted/50 border border-border rounded-lg transition-colors text-sm"
-          >
-            <Mail className="size-4" />
-            Mail
-          </a>
-          <a
-            href="https://github.com/prudentbird"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-background hover:bg-muted/50 border border-border rounded-lg transition-colors text-sm"
-          >
-            <Github className="size-4 text-black dark:text-white" />
-            GitHub
-          </a>
-          <a
-            href="https://x.com/prudentbird"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-background hover:bg-muted/50 border border-border rounded-lg transition-colors text-sm"
-          >
-            <X className="size-4 text-black dark:text-white scale-[0.9]" />
-            Twitter
-          </a>
-          <a
-            href="/cv.pdf"
-            download
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-background hover:bg-muted/50 border border-border rounded-lg transition-colors text-sm"
-          >
-            <FileInput className="size-4" />
-            Resume
-          </a>
-        </div>
+        <p className="text-lg text-muted-foreground leading-relaxed">
+          Over the years, I&apos;ve taken ideas from simple concepts to
+          functional products that users find genuinely useful in their day to
+          day lives.
+        </p>
       </div>
     </section>
   );

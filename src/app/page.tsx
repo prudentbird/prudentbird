@@ -75,7 +75,7 @@ export default function Home() {
           }).replace(/</g, "\\u003c"),
         }}
       />
-      <main className="flex flex-col gap-10 sm:gap-16 min-h-screen w-full max-w-3xl mx-auto px-6 mt-20 md:mt-32">
+      <main className="flex flex-col gap-10 sm:gap-12 min-h-screen w-full max-w-3xl mx-auto px-6 mt-20 md:mt-32">
         <Hero />
         <Stats />
         <Projects />

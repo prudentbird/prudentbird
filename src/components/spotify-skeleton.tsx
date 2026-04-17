@@ -5,7 +5,7 @@ export function SpotifySkeleton() {
     <div className="w-full rounded-lg">
       <div className="border border-border rounded-lg p-4 sm:p-6 dark:bg-black/40">
         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-          <div className="relative flex-shrink-0 self-center sm:self-auto">
+          <div className="relative shrink-0 self-center sm:self-auto">
             <Skeleton className="w-32 h-32 rounded-lg border border-border/50" />
           </div>
 
