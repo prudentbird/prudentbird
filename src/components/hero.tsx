@@ -53,7 +53,7 @@ export function Hero() {
                   href: "https://x.com/prudentbird",
                   external: true,
                 },
-                { label: "Resume", href: "/cv.pdf", download: true },
+                { label: "Resume", href: "/cv.pdf", external: true },
               ].map(({ label, href, external, download }) => (
                 <a
                   key={label}
