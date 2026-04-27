@@ -1,8 +1,8 @@
 import { env } from "~/env";
 import { Hero } from "~/components/hero";
-import { Stats } from "~/components/stats";
 import { Footer } from "~/components/footer";
 import { Projects } from "~/components/projects";
+import { Activity } from "~/components/activity";
 
 export default function Home() {
   return (
@@ -77,8 +77,8 @@ export default function Home() {
       />
       <main className="flex flex-col gap-10 sm:gap-12 min-h-screen w-full max-w-3xl mx-auto px-6 mt-20 md:mt-32">
         <Hero />
-        <Stats />
         <Projects />
+        <Activity />
         <Footer />
       </main>
     </>
