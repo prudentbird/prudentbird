@@ -127,7 +127,7 @@ function ToggleOption({
       role="radio"
       aria-checked={active}
       onClick={onClick}
-      className={`rounded-sm px-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+      className={`rounded-sm px-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
         active
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground"
