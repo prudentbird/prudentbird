@@ -54,14 +54,13 @@ export function Hero() {
                   external: true,
                 },
                 { label: "Resume", href: "/cv.pdf", external: true },
-              ].map(({ label, href, external, download }) => (
+              ].map(({ label, href, external }) => (
                 <a
                   key={label}
                   href={href}
                   {...(external
                     ? { target: "_blank", rel: "noopener noreferrer" }
                     : {})}
-                  {...(download ? { download: true } : {})}
                   className="text-sm text-muted-foreground/80 hover:text-foreground transition-colors duration-150 underline underline-offset-2"
                 >
                   {label}
