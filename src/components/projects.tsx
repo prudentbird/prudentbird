@@ -12,6 +12,12 @@ type Project = {
 
 const projects: Project[] = [
   {
+    name: "Voxx",
+    link: "https://voxx.prudentbird.com",
+    github: "https://github.com/prudentbird/voxx",
+    description: "Write markdown and ship content fast.",
+  },
+  {
     name: "Beakcrypt",
     link: "https://beakcrypt.com",
     github: "https://github.com/prudentbird/beakcrypt",
@@ -28,12 +34,6 @@ const projects: Project[] = [
     link: "https://retailytics.ajared.ng",
     github: "https://github.com/ajared/retailintelligence",
     description: "Retail store data for business analytics.",
-  },
-  {
-    name: "Voxx",
-    link: "https://voxx.prudentbird.com",
-    github: "https://github.com/prudentbird/voxx",
-    description: "Write markdown and ship content fast.",
   },
 ];
 
