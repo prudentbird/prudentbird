@@ -29,6 +29,12 @@ const projects: Project[] = [
     github: "https://github.com/ajared/retailintelligence",
     description: "Retail store data for business analytics.",
   },
+  {
+    name: "Voxx",
+    link: "https://voxx.prudentbird.com",
+    github: "https://github.com/prudentbird/voxx",
+    description: "Write markdown and ship content fast.",
+  },
 ];
 
 type Mode = "preview" | "source";
