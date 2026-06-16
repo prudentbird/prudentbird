@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 
 export function MarqueeText({
   text,
@@ -12,6 +13,7 @@ export function MarqueeText({
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const [overflow, setOverflow] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -29,7 +31,7 @@ export function MarqueeText({
     return () => observer.disconnect();
   }, [text, className]);
 
-  const isScrolling = overflow > 0;
+  const isScrolling = overflow > 0 && !prefersReducedMotion;
   const duration = Math.max(6, overflow / 10);
 
   return (
