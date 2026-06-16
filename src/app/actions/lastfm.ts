@@ -13,7 +13,6 @@ export type DailyActivity = {
   }>;
 };
 
-const PAGE_CAP = 50;
 const BATCH_SIZE = 5;
 
 async function fetchPages(urls: string[]): Promise<unknown[]> {
@@ -41,9 +40,9 @@ export async function getLastFmHistory(): Promise<DailyActivity[]> {
     if (!firstRes.ok) return [];
     const firstData = await firstRes.json();
 
-    const totalPages = Math.min(
-      parseInt(firstData?.recenttracks?.["@attr"]?.totalPages ?? "1", 10),
-      PAGE_CAP,
+    const totalPages = parseInt(
+      firstData?.recenttracks?.["@attr"]?.totalPages ?? "1",
+      10,
     );
 
     const remaining =
