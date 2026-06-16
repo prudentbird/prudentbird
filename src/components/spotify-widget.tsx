@@ -81,7 +81,10 @@ export function SpotifyWidget({
             <div className="flex flex-col flex-1 min-w-0 sm:h-20 justify-between">
               <div className="flex items-center justify-end">
                 <a
-                  href={track.url || `https://open.spotify.com/search/${encodeURIComponent(`${track.name} ${track.artist}`)}`}
+                  href={
+                    track.url ||
+                    `https://open.spotify.com/search/${encodeURIComponent(`${track.name} ${track.artist}`)}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-0.5 text-sm text-muted-foreground hover:underline hover:text-foreground"

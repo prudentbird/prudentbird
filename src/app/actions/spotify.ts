@@ -159,7 +159,12 @@ export async function searchSpotifyTracks(
     }
 
     const entries = Array.from(uniqueKeys.entries());
-    const results: { key: string; spotifyUrl: string | null; albumImage: string | null; artists: string | null }[] = [];
+    const results: {
+      key: string;
+      spotifyUrl: string | null;
+      albumImage: string | null;
+      artists: string | null;
+    }[] = [];
     for (let i = 0; i < entries.length; i += 5) {
       const batch = entries.slice(i, i + 5);
       const batchResults = await Promise.all(

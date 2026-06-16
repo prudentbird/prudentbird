@@ -48,7 +48,10 @@ export async function getLastFmHistory(): Promise<DailyActivity[]> {
     const remaining =
       totalPages > 1
         ? await fetchPages(
-            Array.from({ length: totalPages - 1 }, (_, i) => `${base}&page=${i + 2}`),
+            Array.from(
+              { length: totalPages - 1 },
+              (_, i) => `${base}&page=${i + 2}`,
+            ),
           )
         : [];
 
