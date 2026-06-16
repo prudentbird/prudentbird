@@ -7,10 +7,10 @@ import {
 } from "~/app/actions/spotify";
 import useSWR from "swr";
 import Image from "next/image";
-import { ArrowUpRight } from "lucide-react";
 import { formatTimeAgo } from "~/lib/utils";
 import { Player } from "~/components/player";
 import { MarqueeText } from "./marquee-text";
+import { ArrowUpRight, Music2 } from "lucide-react";
 import { SpotifySkeleton } from "./spotify-skeleton";
 import { useEffect, useEffectEvent, startTransition } from "react";
 
@@ -61,23 +61,27 @@ export function SpotifyWidget({
       <div className="border border-border rounded-lg p-4 sm:p-6 dark:bg-black/40">
         <div className="flex flex-col gap-4">
           <div className="flex flex-row items-stretch gap-3">
-            <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50">
-              <Image
-                width={128}
-                height={128}
-                loading="lazy"
-                alt={track.name}
-                src={track.images?.medium ?? track.imageUrl}
-                className="w-full h-full object-cover"
-                sizes="(max-width: 640px) 80px, 80px"
-                decoding="async"
-              />
+            <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-border/50 bg-muted flex items-center justify-center">
+              {track.images?.medium || track.imageUrl ? (
+                <Image
+                  width={128}
+                  height={128}
+                  loading="lazy"
+                  alt={track.name}
+                  src={track.images?.medium ?? track.imageUrl}
+                  className="w-full h-full object-cover"
+                  sizes="(max-width: 640px) 80px, 80px"
+                  decoding="async"
+                />
+              ) : (
+                <Music2 className="size-7 text-muted-foreground/40" />
+              )}
             </div>
 
             <div className="flex flex-col flex-1 min-w-0 sm:h-20 justify-between">
               <div className="flex items-center justify-end">
                 <a
-                  href={track.url}
+                  href={track.url || `https://open.spotify.com/search/${encodeURIComponent(`${track.name} ${track.artist}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-0.5 text-sm text-muted-foreground hover:underline hover:text-foreground"
