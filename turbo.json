@@ -13,7 +13,9 @@
         "SPOTIFY_CLIENT_ID",
         "SCREENTIME_API_KEY",
         "SPOTIFY_CLIENT_SECRET",
-        "SPOTIFY_REFRESH_TOKEN"
+        "SPOTIFY_REFRESH_TOKEN",
+        "LASTFM_API_KEY",
+        "LASTFM_USERNAME"
       ]
     },
     "dev": {
