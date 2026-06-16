@@ -19,6 +19,7 @@
     "hooks": "~/hooks"
   },
   "registries": {
-    "@svgl": "https://svgl.app/r/{name}.json"
+    "@svgl": "https://svgl.app/r/{name}.json",
+    "@smoothui": "https://smoothui.dev/r/{name}.json"
   }
 }
