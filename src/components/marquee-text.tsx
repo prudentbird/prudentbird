@@ -27,7 +27,7 @@ export function MarqueeText({
     const observer = new ResizeObserver(measure);
     observer.observe(container);
     return () => observer.disconnect();
-  }, [text]);
+  }, [text, className]);
 
   const isScrolling = overflow > 0;
   const duration = Math.max(6, overflow / 10);
