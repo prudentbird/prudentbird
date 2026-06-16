@@ -14,10 +14,6 @@ export type DailyActivity = {
 };
 
 export async function getLastFmHistory(): Promise<DailyActivity[]> {
-  if (!env.LASTFM_API_KEY || !env.LASTFM_USERNAME) {
-    return [];
-  }
-
   const limit = 200;
   const base = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${env.LASTFM_USERNAME}&api_key=${env.LASTFM_API_KEY}&format=json&limit=${limit}`;
 

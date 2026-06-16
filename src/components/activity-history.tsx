@@ -10,7 +10,7 @@ export async function ActivityHistory() {
   if (!activities || activities.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-lg border border-border/50 bg-muted/20 text-sm text-muted-foreground">
-        Configure LASTFM_API_KEY and LASTFM_USERNAME to see history.
+        No listening history found.
       </div>
     );
   }
