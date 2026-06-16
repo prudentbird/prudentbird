@@ -60,10 +60,13 @@ export function ActivityGraphClient({
     setSelectedDate(date);
     setSpotifyTracks(null);
     setIsLoading(true);
-    const results = await searchSpotifyTracks(activity.tracks);
-    if (id !== requestIdRef.current) return;
-    setSpotifyTracks(results);
-    setIsLoading(false);
+    try {
+      const results = await searchSpotifyTracks(activity.tracks);
+      if (id !== requestIdRef.current) return;
+      setSpotifyTracks(results);
+    } finally {
+      if (id === requestIdRef.current) setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
