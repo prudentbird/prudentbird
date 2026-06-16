@@ -7,6 +7,8 @@ export const env = createEnv({
       .enum(["local", "test", "development", "staging", "production"])
       .default("development"),
     BASE_URL: z.url(),
+    LASTFM_API_KEY: z.string(),
+    LASTFM_USERNAME: z.string(),
     WAKATIME_API_KEY: z.string(),
     SPOTIFY_CLIENT_ID: z.string(),
     SCREENTIME_API_KEY: z.string(),
