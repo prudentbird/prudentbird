@@ -158,42 +158,48 @@ export async function searchSpotifyTracks(
         uniqueKeys.set(key, { name: t.name, artist: t.artist });
     }
 
-    const results = await Promise.all(
-      Array.from(uniqueKeys.entries()).map(async ([key, { name, artist }]) => {
-        try {
-          const q = encodeURIComponent(`${name} ${artist}`);
-          const res = await fetch(
-            `https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-              next: { revalidate: 86400 },
-            },
-          );
-          if (!res.ok)
-            return { key, spotifyUrl: null, albumImage: null, artists: null };
-          const data = await res.json();
-          const item = data.tracks?.items?.[0];
-          if (!item)
-            return { key, spotifyUrl: null, albumImage: null, artists: null };
+    const entries = Array.from(uniqueKeys.entries());
+    const results: { key: string; spotifyUrl: string | null; albumImage: string | null; artists: string | null }[] = [];
+    for (let i = 0; i < entries.length; i += 5) {
+      const batch = entries.slice(i, i + 5);
+      const batchResults = await Promise.all(
+        batch.map(async ([key, { name, artist }]) => {
+          try {
+            const q = encodeURIComponent(`${name} ${artist}`);
+            const res = await fetch(
+              `https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+                next: { revalidate: 86400 },
+              },
+            );
+            if (!res.ok)
+              return { key, spotifyUrl: null, albumImage: null, artists: null };
+            const data = await res.json();
+            const item = data.tracks?.items?.[0];
+            if (!item)
+              return { key, spotifyUrl: null, albumImage: null, artists: null };
 
-          const images: Array<{ url: string }> = item.album?.images ?? [];
-          const albumImage =
-            images[images.length - 1]?.url ?? images[0]?.url ?? null;
-          const artists = (item.artists as Array<{ name: string }>)
-            .map((a) => a.name)
-            .join(", ");
+            const images: Array<{ url: string }> = item.album?.images ?? [];
+            const albumImage =
+              images[images.length - 1]?.url ?? images[0]?.url ?? null;
+            const artists = (item.artists as Array<{ name: string }>)
+              .map((a) => a.name)
+              .join(", ");
 
-          return {
-            key,
-            spotifyUrl: item.external_urls?.spotify ?? null,
-            albumImage,
-            artists,
-          };
-        } catch {
-          return { key, spotifyUrl: null, albumImage: null, artists: null };
-        }
-      }),
-    );
+            return {
+              key,
+              spotifyUrl: item.external_urls?.spotify ?? null,
+              albumImage,
+              artists,
+            };
+          } catch {
+            return { key, spotifyUrl: null, albumImage: null, artists: null };
+          }
+        }),
+      );
+      results.push(...batchResults);
+    }
 
     const resultMap = new Map(results.map((r) => [r.key, r]));
 

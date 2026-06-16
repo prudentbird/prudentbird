@@ -26,6 +26,7 @@ export function ActivityGraphClient({
   >(null);
   const [isLoading, setIsLoading] = useState(false);
   const graphWrapRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
 
   const activityMap = useMemo(
     () => new Map(activities.map((a) => [a.date, a])),
@@ -55,10 +56,12 @@ export function ActivityGraphClient({
   const handleDayClick = async (date: string) => {
     const activity = activityMap.get(date);
     if (!activity) return;
+    const id = ++requestIdRef.current;
     setSelectedDate(date);
     setSpotifyTracks(null);
     setIsLoading(true);
     const results = await searchSpotifyTracks(activity.tracks);
+    if (id !== requestIdRef.current) return;
     setSpotifyTracks(results);
     setIsLoading(false);
   };

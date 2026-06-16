@@ -13,6 +13,25 @@ export type DailyActivity = {
   }>;
 };
 
+const PAGE_CAP = 50;
+const BATCH_SIZE = 5;
+
+async function fetchPages(urls: string[]): Promise<unknown[]> {
+  const results: unknown[] = [];
+  for (let i = 0; i < urls.length; i += BATCH_SIZE) {
+    const batch = urls.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map((url) =>
+        fetch(url, { next: { revalidate: 3600 } }).then((r) =>
+          r.ok ? r.json() : null,
+        ),
+      ),
+    );
+    results.push(...batchResults);
+  }
+  return results;
+}
+
 export async function getLastFmHistory(): Promise<DailyActivity[]> {
   const limit = 200;
   const base = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${env.LASTFM_USERNAME}&api_key=${env.LASTFM_API_KEY}&format=json&limit=${limit}`;
@@ -22,19 +41,15 @@ export async function getLastFmHistory(): Promise<DailyActivity[]> {
     if (!firstRes.ok) return [];
     const firstData = await firstRes.json();
 
-    const totalPages = parseInt(
-      firstData?.recenttracks?.["@attr"]?.totalPages ?? "1",
-      10,
+    const totalPages = Math.min(
+      parseInt(firstData?.recenttracks?.["@attr"]?.totalPages ?? "1", 10),
+      PAGE_CAP,
     );
 
     const remaining =
       totalPages > 1
-        ? await Promise.all(
-            Array.from({ length: totalPages - 1 }, (_, i) =>
-              fetch(`${base}&page=${i + 2}`, {
-                next: { revalidate: 3600 },
-              }).then((r) => (r.ok ? r.json() : null)),
-            ),
+        ? await fetchPages(
+            Array.from({ length: totalPages - 1 }, (_, i) => `${base}&page=${i + 2}`),
           )
         : [];
 
@@ -49,9 +64,8 @@ export async function getLastFmHistory(): Promise<DailyActivity[]> {
         : [data.recenttracks.track];
 
       for (const track of tracks) {
-        const dateObj = track.date?.uts
-          ? new Date(parseInt(track.date.uts, 10) * 1000)
-          : new Date();
+        if (!track.date?.uts) continue;
+        const dateObj = new Date(parseInt(track.date.uts, 10) * 1000);
         const y = dateObj.getFullYear();
         const m = String(dateObj.getMonth() + 1).padStart(2, "0");
         const d = String(dateObj.getDate()).padStart(2, "0");
