@@ -26,6 +26,27 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Link",
+            value:
+              '</sitemap.xml>; rel="sitemap", </index.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"',
+          },
+        ],
+      },
+      {
+        source: "/:path(index.md|llms.txt|llms-full.txt)",
+        headers: [
+          { key: "Content-Type", value: "text/markdown; charset=utf-8" },
+          { key: "Vary", value: "Accept, Accept-Encoding" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

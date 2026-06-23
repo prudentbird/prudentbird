@@ -15,7 +15,7 @@ export default function Home() {
             "@type": "Person",
             name: "Prudent Bird",
             url: env.BASE_URL,
-            email: "prudentbird@gmail.com",
+            email: "me@prudentbird.com",
             jobTitle: "AI & Software Engineer",
             description:
               "AI & Software Engineer building innovative products from concept to reality.",
@@ -23,6 +23,12 @@ export default function Home() {
               "https://x.com/prudentbird",
               "https://github.com/prudentbird",
             ],
+            contactPoint: {
+              "@type": "ContactPoint",
+              contactType: "professional",
+              email: "me@prudentbird.com",
+              url: env.BASE_URL,
+            },
             knowsAbout: [
               "Software Engineering",
               "Artificial Intelligence",
