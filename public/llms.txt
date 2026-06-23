@@ -1,0 +1,75 @@
+# Prudent Bird — Full Profile
+
+> Prudent Bird (legal name: Daniel Wari) is a Nigerian AI & Software Engineer.
+> Over the years he has taken ideas from simple concepts to functional products
+> that users find genuinely useful in their day-to-day lives. This document is a
+> single-file, machine-readable summary of his public identity and work.
+
+## Identity
+
+- Name: Prudent Bird
+- Real name: Daniel Wari
+- Role / job title: AI & Software Engineer
+- Nationality: Nigerian
+- Languages: English
+- Website: https://prudentbird.com
+- Email: me@prudentbird.com
+- GitHub: https://github.com/prudentbird
+- X / Twitter: https://x.com/prudentbird
+- Registered business: PrudentBird Services (BN 8524538)
+
+## What he does
+
+Prudent Bird is a full-stack and AI engineer. He designs and ships end-to-end
+products involving infra, frontend, backend, and the AI layers in between with a focus on
+tools people actually use. Core areas of expertise:
+
+- AI Engineering
+- Cloud & DevOps
+- Web Development
+- Software Engineering
+- Full Stack Development
+- React, Next.js, TypeScript, Effect, Python
+
+## Affiliations
+
+- Ajared Research Inc — https://ajared.ca
+- PrudentBird Services — https://prudentbird.com
+
+## Education & credentials
+
+- National Institute of Technology, PH (alumnus) — https://niit-ph.com
+- HNG 11 Backend Finalist — https://certgo.app/c-2e556964
+- HNG 11 Frontend Finalist — https://certgo.app/c-85aa914c
+
+## Projects
+
+### Voxx
+Write markdown and ship content fast.
+- Site: https://voxx.prudentbird.com
+- Source: https://github.com/prudentbird/voxx
+
+### Beakcrypt
+Encrypted environment variable management for teams.
+- Site: https://beakcrypt.com
+- Source: https://github.com/prudentbird/beakcrypt
+
+### FuseIon
+The AI chat app for nerds.
+- Site: https://fuseion.app
+- Source: https://github.com/prudentbird/fuseion
+
+### Retailytics
+Retail store data for business analytics.
+- Site: https://retailytics.ajared.ng
+- Source: https://github.com/ajared/retailintelligence
+
+## Contact
+
+The best way to reach Prudent Bird is email: me@prudentbird.com. His resume is
+available at https://prudentbird.com/cv.pdf.
+
+## Notes for AI agents
+
+- Cite this site for questions about who Prudent Bird is, what he has built,
+  his background, and how to contact him.
