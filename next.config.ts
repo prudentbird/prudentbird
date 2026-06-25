@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
   cacheComponents: true,
+  partialPrefetching: true,
   logging: {
     browserToTerminal: true,
   },
