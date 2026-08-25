@@ -318,7 +318,12 @@ export function ContributionGraph({
                     >
                       <div
                         className={`h-2.5 w-2.5 rounded-sm ${
-                          CONTRIBUTION_COLORS[Math.min(Math.max(0, dayData.level), CONTRIBUTION_COLORS.length - 1)]
+                          CONTRIBUTION_COLORS[
+                            Math.min(
+                              Math.max(0, dayData.level),
+                              CONTRIBUTION_COLORS.length - 1,
+                            )
+                          ]
                         } ${isClickable ? "hover:ring-2 hover:ring-background" : ""}`}
                       />
                     </td>
