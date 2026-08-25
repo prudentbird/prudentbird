@@ -8,6 +8,7 @@ import {
   searchSpotifyTracks,
   type SpotifySearchResult,
 } from "~/app/actions/spotify";
+import { cn } from "~/lib/utils";
 import {
   ContributionGraph,
   type ContributionData,
@@ -21,10 +22,9 @@ export function ActivityGraphClient({
   activities: DailyActivity[];
 }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [spotifyTracks, setSpotifyTracks] = useState<
+  const [enrichedTracks, setEnrichedTracks] = useState<
     SpotifySearchResult[] | null
   >(null);
-  const [isLoading, setIsLoading] = useState(false);
   const graphWrapRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
@@ -58,20 +58,20 @@ export function ActivityGraphClient({
     if (!activity) return;
     const id = ++requestIdRef.current;
     setSelectedDate(date);
-    setSpotifyTracks(null);
-    setIsLoading(true);
+    setEnrichedTracks(null);
     try {
       const results = await searchSpotifyTracks(activity.tracks);
       if (id !== requestIdRef.current) return;
-      setSpotifyTracks(results);
-    } finally {
-      if (id === requestIdRef.current) setIsLoading(false);
+      setEnrichedTracks(results);
+    } catch {
+      if (id !== requestIdRef.current) return;
+      setEnrichedTracks([]);
     }
   };
 
   const handleBack = () => {
     setSelectedDate(null);
-    setSpotifyTracks(null);
+    setEnrichedTracks(null);
   };
 
   const selectedActivity = selectedDate ? activityMap.get(selectedDate) : null;
@@ -80,8 +80,7 @@ export function ActivityGraphClient({
     return (
       <DayDetail
         activity={selectedActivity}
-        tracks={spotifyTracks}
-        isLoading={isLoading}
+        enrichedTracks={enrichedTracks}
         onBack={handleBack}
       />
     );
@@ -97,15 +96,47 @@ export function ActivityGraphClient({
   );
 }
 
+function AlbumArt({ src, alt }: { src: string; alt: string }) {
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">(
+    "loading",
+  );
+
+  return (
+    <div className="relative h-9 w-9 shrink-0 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+      <Music
+        size={14}
+        className={cn(
+          "absolute text-muted-foreground/40",
+          status === "loaded" && "opacity-0",
+        )}
+      />
+      {status !== "error" && (
+        <Image
+          src={src}
+          alt={alt}
+          width={36}
+          height={36}
+          decoding="async"
+          sizes="36px"
+          onLoad={() => setStatus("loaded")}
+          onError={() => setStatus("error")}
+          className={cn(
+            "h-9 w-9 object-cover transition-opacity duration-300",
+            status === "loaded" ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+    </div>
+  );
+}
+
 function DayDetail({
   activity,
-  tracks,
-  isLoading,
+  enrichedTracks,
   onBack,
 }: {
   activity: DailyActivity;
-  tracks: SpotifySearchResult[] | null;
-  isLoading: boolean;
+  enrichedTracks: SpotifySearchResult[] | null;
   onBack: () => void;
 }) {
   const [y, mo, d] = activity.date.split("-").map(Number);
@@ -116,8 +147,6 @@ function DayDetail({
     day: "numeric",
     year: "numeric",
   });
-
-  const showSkeletons = isLoading || tracks === null;
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -141,68 +170,51 @@ function DayDetail({
 
       <div className="flex-1 min-h-0 overflow-hidden rounded-lg border border-border/50 bg-border/30">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-px h-full overflow-y-auto [scrollbar-width:thin]">
-          {showSkeletons
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 bg-background px-3 py-2.5 animate-pulse"
-                >
-                  <div className="h-2 w-5 shrink-0 rounded bg-muted self-center" />
-                  <div className="h-9 w-9 shrink-0 rounded-md bg-muted self-center" />
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <div className="flex items-center gap-1">
-                      <div className="h-2.5 w-3/4 rounded bg-muted" />
-                      <div className="h-3 w-3 shrink-0 rounded bg-muted" />
-                    </div>
-                    <div className="h-2 w-1/2 rounded bg-muted" />
+          {activity.tracks.map((track, i) => {
+            const enriched = enrichedTracks?.[i];
+
+            return (
+              <a
+                key={`${track.name}|||${track.artist}-${i}`}
+                href={
+                  enriched?.spotifyUrl ??
+                  (track.url ||
+                    `https://open.spotify.com/search/${encodeURIComponent(`${track.name} ${track.artist}`)}`)
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 bg-background px-3 py-2.5 transition-colors hover:bg-muted/50"
+              >
+                <span className="shrink-0 w-5 text-right text-xs text-muted-foreground/50 tabular-nums">
+                  {activity.tracks.length - i}
+                </span>
+                {enriched?.albumImage ? (
+                  <AlbumArt
+                    src={enriched.albumImage}
+                    alt={`Album art for ${track.name}`}
+                  />
+                ) : (
+                  <div className="h-9 w-9 shrink-0 rounded-md bg-muted flex items-center justify-center">
+                    <Music size={14} className="text-muted-foreground/40" />
                   </div>
-                  <div className="h-2 w-10 shrink-0 rounded bg-muted self-center" />
-                </div>
-              ))
-            : tracks.map((track, i) => (
-                <a
-                  key={i}
-                  href={
-                    track.spotifyUrl ??
-                    `https://open.spotify.com/search/${encodeURIComponent(`${track.name} ${track.artist}`)}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 bg-background px-3 py-2.5 transition-colors hover:bg-muted/50"
-                >
-                  <span className="shrink-0 w-5 text-right text-xs text-muted-foreground/50 tabular-nums">
-                    {tracks.length - i}
-                  </span>
-                  {track.albumImage ? (
-                    <Image
-                      src={track.albumImage}
-                      alt="Album Cover Image"
-                      width={36}
-                      height={36}
-                      decoding="async"
-                      className="h-9 w-9 shrink-0 rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="h-9 w-9 shrink-0 rounded-md bg-muted flex items-center justify-center">
-                      <Music size={14} className="text-muted-foreground/40" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1 flex flex-col">
-                    <div className="flex items-center gap-1 min-w-0">
-                      <p className="truncate text-sm font-medium leading-none [text-box-trim:trim-both] [text-box-edge:cap_descender]">
-                        {track.name}
-                      </p>
-                      <ArrowUpRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                    <p className="truncate text-xs text-muted-foreground leading-none [text-box-trim:trim-both] [text-box-edge:cap_descender]">
-                      {track.artist}
+                )}
+                <div className="min-w-0 flex-1 flex flex-col">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <p className="truncate text-sm font-medium leading-none [text-box-trim:trim-both] [text-box-edge:cap_descender]">
+                      {track.name}
                     </p>
+                    <ArrowUpRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <span className="shrink-0 text-xs text-muted-foreground/50 tabular-nums self-center ml-auto">
-                    {track.playedAt}
-                  </span>
-                </a>
-              ))}
+                  <p className="truncate text-xs text-muted-foreground leading-none [text-box-trim:trim-both] [text-box-edge:cap_descender]">
+                    {track.artist}
+                  </p>
+                </div>
+                <span className="shrink-0 text-xs text-muted-foreground/50 tabular-nums self-center ml-auto">
+                  {track.playedAt}
+                </span>
+              </a>
+            );
+          })}
         </div>
       </div>
     </div>
