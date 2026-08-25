@@ -1,4 +1,5 @@
 import { Skeleton } from "./ui/skeleton";
+import { TextSkeleton } from "./ui/text-skeleton";
 
 export function SpotifySkeleton() {
   return (
@@ -10,13 +11,13 @@ export function SpotifySkeleton() {
 
             <div className="flex flex-col flex-1 min-w-0 sm:h-20 justify-between">
               <div className="flex items-center justify-end">
-                <Skeleton className="w-24 h-4" />
+                <TextSkeleton className="text-sm w-24" />
               </div>
 
               <div className="flex items-end gap-2 min-w-0">
-                <div className="flex flex-col gap-2 flex-1 min-w-0">
-                  <Skeleton className="h-6 sm:h-7 w-3/4" />
-                  <Skeleton className="h-4 sm:h-5 w-1/2" />
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <TextSkeleton className="text-lg sm:text-xl font-semibold w-3/4" />
+                  <TextSkeleton className="text-sm sm:text-base w-1/2" />
                 </div>
               </div>
             </div>
@@ -24,9 +25,9 @@ export function SpotifySkeleton() {
 
           <div className="flex flex-col gap-1.5 sm:gap-2">
             <Skeleton className="h-1.5 w-full rounded-full" />
-            <div className="flex justify-between">
-              <Skeleton className="w-8 h-3" />
-              <Skeleton className="w-8 h-3" />
+            <div className="flex justify-between text-[10px] sm:text-xs">
+              <TextSkeleton className="w-8" />
+              <TextSkeleton className="w-8" />
             </div>
           </div>
         </div>
