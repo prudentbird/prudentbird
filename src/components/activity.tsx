@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { ActivityTabs } from "./activity-tabs";
 import { SpotifySkeleton } from "./spotify-skeleton";
 import { ActivityHistory } from "./activity-history";
-import { ScrobblerSkeleton } from "./scrobbler-skeleton";
 
 export function Activity() {
   return (
@@ -14,7 +13,13 @@ export function Activity() {
         </Suspense>
       }
       history={
-        <Suspense fallback={<ScrobblerSkeleton />}>
+        <Suspense
+          fallback={
+            <div className="flex h-32 items-center justify-center rounded-lg border border-border/50 bg-muted/20 text-sm text-muted-foreground animate-pulse">
+              Loading history...
+            </div>
+          }
+        >
           <ActivityHistory />
         </Suspense>
       }
