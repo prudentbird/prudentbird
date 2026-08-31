@@ -89,14 +89,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          rel="preconnect"
-          href="https://www.googletagmanager.com"
-          crossOrigin="anonymous"
-        />
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        <link rel="preconnect" href="https://i.scdn.co" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://i.scdn.co" />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-1ZZNBJY609"
           strategy="afterInteractive"
