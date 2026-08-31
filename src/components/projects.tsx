@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Lock } from "lucide-react";
 
 type Project = {
   name: string;
   link: string;
-  github: string;
+  github?: string;
   description: string;
+  private?: boolean;
 };
 
 const projects: Project[] = [
@@ -32,8 +33,14 @@ const projects: Project[] = [
   {
     name: "Retailytics",
     link: "https://retailytics.ajared.ng",
-    github: "https://github.com/ajared/retailintelligence",
     description: "Retail store data for business analytics.",
+    private: true,
+  },
+  {
+    name: "Family Tree",
+    link: "https://familytree.ajared.ng",
+    description: "Explore and preserve family history.",
+    private: true,
   },
 ];
 
@@ -78,7 +85,37 @@ export function Projects() {
 
       <ul className="flex flex-col divide-y divide-border/50">
         {projects.map((project) => {
-          const href = mode === "preview" ? project.link : project.github;
+          const isPrivateSource = mode === "source" && project.private;
+          const href =
+            mode === "preview" ? project.link : (project.github ?? project.link);
+
+          if (isPrivateSource) {
+            return (
+              <li key={project.name}>
+                <div className="group flex flex-col gap-1 py-4 sm:py-6 rounded-sm opacity-60 cursor-not-allowed">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-medium text-lg text-foreground">
+                        {project.name}
+                      </span>
+                      <span className="text-xs sm:text-sm text-muted-foreground truncate">
+                        Source is unavailable
+                      </span>
+                    </div>
+                    <Lock
+                      className="size-3.5 sm:size-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-focus-within:opacity-100"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    {project.description}
+                  </p>
+                  <span className="sr-only">(private)</span>
+                </div>
+              </li>
+            );
+          }
+
           return (
             <li key={project.name}>
               <a
