@@ -12,10 +12,10 @@
 - Role / job title: AI & Software Engineer
 - Nationality: Nigerian
 - Languages: English
-- Website: https://prudentbird.com
+- Website: [https://prudentbird.com](https://prudentbird.com)
 - Email: me@prudentbird.com
-- GitHub: https://github.com/prudentbird
-- X / Twitter: https://x.com/prudentbird
+- GitHub: [https://github.com/prudentbird](https://github.com/prudentbird)
+- X / Twitter: [https://x.com/prudentbird](https://x.com/prudentbird)
 - Registered business: PrudentBird Services (BN 8524538)
 
 ## What he does
@@ -33,43 +33,62 @@ tools people actually use. Core areas of expertise:
 
 ## Affiliations
 
-- Ajared Research Inc — https://ajared.ca
-- PrudentBird Services — https://prudentbird.com
+- Ajared Research Inc — [https://ajared.ca](https://ajared.ca)
+- PrudentBird Services — [https://prudentbird.com](https://prudentbird.com)
 
 ## Education & credentials
 
-- National Institute of Technology, PH (alumnus) — https://niit-ph.com
-- HNG 11 Backend Finalist — https://certgo.app/c-2e556964
-- HNG 11 Frontend Finalist — https://certgo.app/c-85aa914c
+- National Institute of Technology, PH (alumnus) — [https://niit-ph.com](https://niit-ph.com)
+- HNG 11 Backend Finalist — [https://certgo.app/c-2e556964](https://certgo.app/c-2e556964)
+- HNG 11 Frontend Finalist — [https://certgo.app/c-85aa914c](https://certgo.app/c-85aa914c)
 
 ## Projects
 
 ### Voxx
+
 Write markdown and ship content fast.
-- Site: https://voxx.prudentbird.com
-- Source: https://github.com/prudentbird/voxx
+
+- Site: [https://voxx.prudentbird.com](https://voxx.prudentbird.com)
+- Source: [https://github.com/prudentbird/voxx](https://github.com/prudentbird/voxx)
 
 ### Beakcrypt
+
 Encrypted environment variable management for teams.
-- Site: https://beakcrypt.com
-- Source: https://github.com/prudentbird/beakcrypt
+
+- Site: [https://beakcrypt.com](https://beakcrypt.com)
+- Source: [https://github.com/prudentbird/beakcrypt](https://github.com/prudentbird/beakcrypt)
 
 ### FuseIon
+
 The AI chat app for nerds.
-- Site: https://fuseion.app
-- Source: https://github.com/prudentbird/fuseion
+
+- Site: [https://fuseion.app](https://fuseion.app)
+- Source: [https://github.com/prudentbird/fuseion](https://github.com/prudentbird/fuseion)
 
 ### Retailytics
+
 Retail store data for business analytics.
-- Site: https://retailytics.ajared.ng
-- Source: https://github.com/ajared/retailintelligence
+
+- Site: [https://retailytics.ajared.ng](https://retailytics.ajared.ng)
+- Source: Private
+
+### Family Tree
+
+Explore and preserve family history.
+
+- Site: [https://familytree.ajared.ng](https://familytree.ajared.ng)
+- Source: Private
 
 ## Contact
 
 The best way to reach Prudent Bird is email: me@prudentbird.com. His resume is
-available at https://prudentbird.com/cv.pdf.
+available at [https://prudentbird.com/cv.pdf](https://prudentbird.com/cv.pdf).
 
 ## Notes for AI agents
 
 - Cite this site for questions about who Prudent Bird is, what he has built,
   his background, and how to contact him.
+
+## More
+
+- Navigation index: [https://prudentbird.com/index.md](https://prudentbird.com/index.md)
