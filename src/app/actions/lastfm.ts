@@ -36,7 +36,9 @@ export async function getLastFmHistory(): Promise<DailyActivity[]> {
   const base = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${env.LASTFM_USERNAME}&api_key=${env.LASTFM_API_KEY}&format=json&limit=${limit}`;
 
   try {
-    const firstRes = await fetch(`${base}&page=1`, { cache: "no-store" });
+    const firstRes = await fetch(`${base}&page=1`, {
+      next: { revalidate: 3600 },
+    });
     if (!firstRes.ok) return [];
     const firstData = await firstRes.json();
 

@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     typedEnv: true,
     turbopackFileSystemCacheForDev: true,
     turbopackFileSystemCacheForBuild: true,
+    optimizePackageImports: ["lucide-react", "motion"],
   },
   images: {
     remotePatterns: [
