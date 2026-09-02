@@ -9,14 +9,24 @@
       "env": [
         "NODE_ENV",
         "BASE_URL",
+        "SITE_URL",
         "SPOTIFY_CLIENT_ID",
         "SPOTIFY_CLIENT_SECRET",
         "SPOTIFY_REFRESH_TOKEN",
         "LASTFM_API_KEY",
-        "LASTFM_USERNAME"
+        "LASTFM_USERNAME",
+        "CONVEX_DEPLOYMENT",
+        "CONVEX_DEPLOY_KEY",
+        "NEXT_PUBLIC_SITE_URL",
+        "NEXT_PUBLIC_CONVEX_URL",
+        "NEXT_PUBLIC_CONVEX_SITE_URL"
       ]
     },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "dev:convex": {
       "cache": false,
       "persistent": true
     },

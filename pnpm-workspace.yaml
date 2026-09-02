@@ -1,5 +1,9 @@
+packages:
+  - "apps/*"
+
 onlyBuiltDependencies:
   - "@tailwindcss/oxide"
   - "@vercel/speed-insights"
+  - esbuild
   - sharp
   - unrs-resolver
