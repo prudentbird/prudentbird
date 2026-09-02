@@ -7,12 +7,12 @@
     "dev": "next dev",
     "dev:convex": "convex dev",
     "start": "next start",
-    "build:app": "next build",
+    "build": "next build",
     "deploy:convex": "convex deploy",
     "preview": "next build && next start",
-    "lint:app": "eslint . && echo Lint Checks successfully completed!",
+    "lint": "eslint . && echo Lint Checks successfully completed!",
     "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
-    "typecheck:app": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
+    "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.12.4",

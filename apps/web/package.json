@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "next dev",
     "start": "next start",
-    "build:app": "next build",
+    "build": "next build",
     "preview": "next build && next start",
-    "lint:app": "eslint . && echo Lint Checks successfully completed!",
+    "lint": "eslint . && echo Lint Checks successfully completed!",
     "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
-    "typecheck:app": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
+    "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.24",

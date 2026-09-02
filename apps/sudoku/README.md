@@ -44,7 +44,7 @@ Google OAuth authorised redirect URI: `<SITE_URL>/api/auth/callback/google` (the
 ## Deploy (Vercel)
 
 - Root directory: `apps/sudoku`
-- Build command: `npx convex deploy --cmd 'pnpm build:app'`
+- Build command: `npx convex deploy --cmd 'pnpm build'`
 - Env: `CONVEX_DEPLOY_KEY` (production deploy key), `SITE_URL`,
   `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`
 - Set the same Convex-side env on the production deployment with

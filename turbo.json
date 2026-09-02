@@ -2,8 +2,8 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "tasks": {
-    "build:app": {
-      "dependsOn": ["^build:app"],
+    "build": {
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**", "dist/**"],
       "env": [
@@ -33,11 +33,11 @@
     "lint:fix": {
       "cache": false
     },
-    "lint:app": {
-      "dependsOn": ["^lint:app"]
+    "lint": {
+      "dependsOn": ["^lint"]
     },
-    "typecheck:app": {
-      "dependsOn": ["^typecheck:app"],
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
       "env": ["SKIP_ENV_VALIDATION"]
     }
   }

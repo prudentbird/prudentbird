@@ -8,12 +8,12 @@
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=web",
     "dev:sudoku": "turbo run dev dev:convex --filter=sudoku",
-    "build": "turbo run build:app",
-    "build:web": "turbo run build:app --filter=web",
-    "build:sudoku": "turbo run build:app --filter=sudoku",
-    "lint": "turbo run lint:app",
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=web",
+    "build:sudoku": "turbo run build --filter=sudoku",
+    "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "typecheck": "turbo run typecheck:app",
+    "typecheck": "turbo run typecheck",
     "format": "prettier --write . --cache && echo Prettier Format successfully completed!"
   },
   "devDependencies": {
