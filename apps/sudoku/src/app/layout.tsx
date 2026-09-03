@@ -1,6 +1,7 @@
 import "./globals.css";
 import { env } from "~/env";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Providers from "./providers";
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
@@ -62,6 +63,7 @@ export default function RootLayout({
           </Providers>
         </PostHogProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
