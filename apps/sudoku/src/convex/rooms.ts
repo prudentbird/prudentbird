@@ -17,6 +17,12 @@ import {
   wrongCells,
 } from "./lib/sudoku";
 import { awardRoom } from "./ratings";
+import {
+  roomAbandonedEvents,
+  roomProps,
+  roomStartedEvents,
+  track,
+} from "./analytics";
 
 export const MAX_PLAYERS = 8;
 /** Lobby/in-play rooms with no player seen for this long are closed. */
@@ -110,6 +116,24 @@ export const create = mutation({
       hints: 0,
     });
 
+    const room = (await ctx.db.get(roomId))!;
+    await track(ctx, [
+      {
+        distinctId: user._id,
+        event: "room_created",
+        properties: roomProps(room),
+      },
+      ...(solo
+        ? [
+            {
+              distinctId: user._id,
+              event: "game_started",
+              properties: { ...roomProps(room), player_count: 1 },
+            },
+          ]
+        : []),
+    ]);
+
     return code;
   },
 });
@@ -156,6 +180,16 @@ export const join = mutation({
       hints: 0,
     });
 
+    await track(ctx, {
+      distinctId: user._id,
+      event: "room_joined",
+      properties: {
+        ...roomProps(room),
+        player_count: players.length + 1,
+        room_status: room.status,
+      },
+    });
+
     return room.code;
   },
 });
@@ -169,6 +203,13 @@ export const start = mutation({
     }
     if (room.status !== "lobby") return;
     await ctx.db.patch(room._id, { status: "playing", startedAt: Date.now() });
+    await track(
+      ctx,
+      roomStartedEvents(
+        (await ctx.db.get(room._id))!,
+        await listPlayers(ctx, room._id),
+      ),
+    );
   },
 });
 
@@ -181,11 +222,26 @@ export const close = mutation({
       throw new Error("Only the host can end the room");
     }
     if (room.status === "closed") return;
+    const now = Date.now();
     await ctx.db.patch(room._id, {
       status: "closed",
-      closedAt: Date.now(),
+      closedAt: now,
       closedReason: "host",
     });
+    const players = await listPlayers(ctx, room._id);
+    await track(ctx, [
+      {
+        distinctId: player.userId,
+        event: "room_closed",
+        properties: {
+          ...roomProps(room),
+          reason: "host",
+          status_before: room.status,
+          player_count: players.length,
+        },
+      },
+      ...roomAbandonedEvents(room, players, now),
+    ]);
   },
 });
 
@@ -204,11 +260,25 @@ export const closeInactive = internalMutation({
         const players = await listPlayers(ctx, room._id);
         const lastSeen = Math.max(0, ...players.map((p) => p.lastSeen));
         if (lastSeen > cutoff) continue;
+        const now = Date.now();
         await ctx.db.patch(room._id, {
           status: "closed",
-          closedAt: Date.now(),
+          closedAt: now,
           closedReason: "inactivity",
         });
+        await track(ctx, [
+          {
+            distinctId: room.hostUserId,
+            event: "room_closed",
+            properties: {
+              ...roomProps(room),
+              reason: "inactivity",
+              status_before: room.status,
+              player_count: players.length,
+            },
+          },
+          ...roomAbandonedEvents(room, players, now),
+        ]);
       }
     }
   },
@@ -226,6 +296,7 @@ export const rematch = mutation({
     const nextDifficulty = args.difficulty ?? room.difficulty;
     const { puzzle, solution } = generatePuzzle(nextDifficulty);
     const now = Date.now();
+    const previousPlayers = await listPlayers(ctx, room._id);
     await ctx.db.patch(room._id, {
       difficulty: nextDifficulty,
       puzzle,
@@ -238,8 +309,7 @@ export const rematch = mutation({
       winnerPlayerId: undefined,
       round: room.round + 1,
     });
-    const players = await listPlayers(ctx, room._id);
-    for (const p of players) {
+    for (const p of previousPlayers) {
       await ctx.db.patch(p._id, {
         board: puzzle,
         mistakes: 0,
@@ -248,6 +318,17 @@ export const rematch = mutation({
         cursor: undefined,
       });
     }
+    const next = (await ctx.db.get(room._id))!;
+    const players = await listPlayers(ctx, room._id);
+    await track(ctx, [
+      ...roomAbandonedEvents(room, previousPlayers, now),
+      {
+        distinctId: player.userId,
+        event: "room_rematched",
+        properties: { ...roomProps(next), player_count: players.length },
+      },
+      ...roomStartedEvents(next, players),
+    ]);
   },
 });
 
@@ -440,6 +521,14 @@ export const importGuestGames = mutation({
       const player = (await ctx.db.get(playerId))!;
       await awardRoom(ctx, room, [player]);
       imported.push(g.id);
+    }
+
+    if (imported.length > 0) {
+      await track(ctx, {
+        distinctId: user._id,
+        event: "guest_games_synced",
+        properties: { count: imported.length },
+      });
     }
 
     return imported;
