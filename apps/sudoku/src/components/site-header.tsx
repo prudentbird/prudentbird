@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { authClient } from "~/lib/auth-client";
+import { resetIdentity, track } from "~/lib/analytics";
 import { PlayerAvatar } from "~/components/player-avatar";
 import {
   DropdownMenu,
@@ -17,6 +18,8 @@ export function SiteHeader() {
   const user = session?.user;
 
   const signOut = async () => {
+    track("signed_out", {});
+    resetIdentity();
     await authClient.signOut();
     // Hard navigation so every Convex subscription is torn down with the session.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination

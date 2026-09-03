@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { authClient } from "~/lib/auth-client";
 import { Button } from "~/components/ui/button";
+import { track } from "~/lib/analytics";
 
 function GoogleIcon() {
   return (
@@ -42,6 +43,7 @@ export function GoogleButton({
   const signIn = async () => {
     setLoading(true);
     setError(null);
+    track("sign_in_clicked", { callback_url: callbackURL });
     try {
       await authClient.signIn.social({ provider: "google", callbackURL });
     } catch (err) {
