@@ -1,8 +1,14 @@
 import { v } from "convex/values";
 import { authComponent, requireUser } from "./auth";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
 import { awardDaily } from "./ratings";
+import { dailyCompletedEvent, dailyProps, track } from "./analytics";
 import {
   blankCount,
   correctCount,
@@ -87,6 +93,16 @@ export async function dailyStatsFor(
   };
 }
 
+async function finishDaily(
+  ctx: MutationCtx,
+  daily: Doc<"dailies">,
+  attemptId: Doc<"dailyAttempts">["_id"],
+) {
+  const attempt = (await ctx.db.get(attemptId))!;
+  await awardDaily(ctx, daily, attempt);
+  await track(ctx, dailyCompletedEvent(daily, attempt));
+}
+
 function assertPlayableDate(date: string) {
   if (!isValidDate(date)) throw new Error("Invalid date");
   // Allow one day of slack for clients whose clock is slightly ahead.
@@ -147,6 +163,11 @@ export const start = mutation({
       mistakes: 0,
       hints: 0,
       startedAt: Date.now(),
+    });
+    await track(ctx, {
+      distinctId: user._id,
+      event: "game_started",
+      properties: dailyProps(daily),
     });
   },
 });
@@ -251,9 +272,7 @@ export const place = mutation({
         ? { finishedAt: now, elapsedMs: now - attempt.startedAt }
         : {}),
     });
-    if (solved) {
-      await awardDaily(ctx, daily, (await ctx.db.get(attempt._id))!);
-    }
+    if (solved) await finishDaily(ctx, daily, attempt._id);
   },
 });
 
@@ -288,9 +307,12 @@ export const hint = mutation({
         ? { finishedAt: now, elapsedMs: now - attempt.startedAt }
         : {}),
     });
-    if (solved) {
-      await awardDaily(ctx, daily, (await ctx.db.get(attempt._id))!);
-    }
+    await track(ctx, {
+      distinctId: user._id,
+      event: "hint_used",
+      properties: dailyProps(daily),
+    });
+    if (solved) await finishDaily(ctx, daily, attempt._id);
     return cell;
   },
 });
