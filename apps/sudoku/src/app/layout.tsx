@@ -1,5 +1,6 @@
 import "./globals.css";
 import { env } from "~/env";
+import { Analytics } from "@vercel/analytics/next";
 import Providers from "./providers";
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
@@ -60,6 +61,7 @@ export default function RootLayout({
             </div>
           </Providers>
         </PostHogProvider>
+        <Analytics />
       </body>
     </html>
   );
