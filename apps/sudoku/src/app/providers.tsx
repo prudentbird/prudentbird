@@ -6,6 +6,7 @@ import { authClient } from "~/lib/auth-client";
 import { ConvexReactClient } from "convex/react";
 import { ThemeProvider } from "~/components/theme";
 import { GuestSync } from "~/components/guest-sync";
+import { AnalyticsIdentity } from "~/components/analytics";
 import {
   ConvexBetterAuthProvider,
   type AuthClient,
@@ -25,6 +26,7 @@ export default function Providers({ children }: { children: ReactNode }) {
         client={convex}
         authClient={authClient as unknown as AuthClient}
       >
+        <AnalyticsIdentity />
         <GuestSync />
         {children}
       </ConvexBetterAuthProvider>
