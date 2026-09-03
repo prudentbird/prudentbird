@@ -3,13 +3,25 @@ import { mutation, type MutationCtx } from "./_generated/server";
 import { requireMember } from "./rooms";
 import { setCell } from "./lib/sudoku";
 import { awardRoom } from "./ratings";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
+import {
+  roomFinishedEvents,
+  roomProps,
+  track,
+  versusLateFinishEvent,
+} from "./analytics";
 
 async function roomPlayers(ctx: MutationCtx, roomId: Id<"rooms">) {
   return ctx.db
     .query("players")
     .withIndex("by_roomId", (q) => q.eq("roomId", roomId))
     .collect();
+}
+
+async function finishRoom(ctx: MutationCtx, room: Doc<"rooms">) {
+  const players = await roomPlayers(ctx, room._id);
+  await awardRoom(ctx, room, players);
+  await track(ctx, roomFinishedEvents(room, players));
 }
 
 /**
@@ -53,10 +65,7 @@ export const place = mutation({
       if (isWrong) {
         await ctx.db.patch(player._id, { mistakes: player.mistakes + 1 });
       }
-      if (solved) {
-        const updated = (await ctx.db.get(room._id))!;
-        await awardRoom(ctx, updated, await roomPlayers(ctx, room._id));
-      }
+      if (solved) await finishRoom(ctx, (await ctx.db.get(room._id))!);
       return;
     }
 
@@ -70,14 +79,25 @@ export const place = mutation({
       mistakes: isWrong ? player.mistakes + 1 : player.mistakes,
       ...(solved ? { finishedAt: now } : {}),
     });
-    if (solved && !room.winnerPlayerId) {
+    if (!solved) return;
+    if (!room.winnerPlayerId) {
       await ctx.db.patch(room._id, {
         winnerPlayerId: player._id,
         status: "finished",
         finishedAt: now,
       });
-      const updated = (await ctx.db.get(room._id))!;
-      await awardRoom(ctx, updated, await roomPlayers(ctx, room._id));
+      await finishRoom(ctx, (await ctx.db.get(room._id))!);
+    } else {
+      const players = await roomPlayers(ctx, room._id);
+      await track(
+        ctx,
+        versusLateFinishEvent(
+          room,
+          (await ctx.db.get(player._id))!,
+          players.length,
+          now,
+        ),
+      );
     }
   },
 });
@@ -114,10 +134,12 @@ export const hint = mutation({
       ...(solved ? { status: "finished", finishedAt: now } : {}),
     });
     await ctx.db.patch(player._id, { hints: (player.hints ?? 0) + 1 });
-    if (solved) {
-      const updated = (await ctx.db.get(room._id))!;
-      await awardRoom(ctx, updated, await roomPlayers(ctx, room._id));
-    }
+    await track(ctx, {
+      distinctId: player.userId,
+      event: "hint_used",
+      properties: roomProps(room),
+    });
+    if (solved) await finishRoom(ctx, (await ctx.db.get(room._id))!);
     return cell;
   },
 });
