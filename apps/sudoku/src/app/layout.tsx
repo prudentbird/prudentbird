@@ -3,6 +3,7 @@ import { env } from "~/env";
 import Providers from "./providers";
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { PostHogProvider, PostHogPageView } from "@posthog/next";
 import { SiteHeader } from "~/components/site-header";
 import { SiteFooter } from "~/components/site-footer";
 
@@ -42,13 +43,23 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} antialiased`}>
-        <Providers>
-          <div className="flex min-h-dvh flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
-        </Providers>
+        <PostHogProvider
+          clientOptions={{
+            api_host: "/ingest",
+            person_profiles: "identified_only",
+            disable_session_recording: true,
+            autocapture: false,
+          }}
+        >
+          <PostHogPageView />
+          <Providers>
+            <div className="flex min-h-dvh flex-col">
+              <SiteHeader />
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
+            </div>
+          </Providers>
+        </PostHogProvider>
       </body>
     </html>
   );
