@@ -16,6 +16,42 @@ state) + Better Auth (Google sign-in via the Convex Better Auth component).
   pays the winner). Formula in `src/convex/lib/rating.ts`; rebuild all
   ratings after changing it with `npx convex run ratings:rebuild`.
 
+## Analytics (PostHog)
+
+Optional. Nothing is sent until `NEXT_PUBLIC_POSTHOG_KEY` (browser) and
+`POSTHOG_KEY` (Convex) are set.
+
+- **Browser** — [`@posthog/next`](https://posthog.com/docs/libraries/next-js)
+  provider in `src/app/layout.tsx`, `/ingest` proxy in `src/proxy.ts`, server
+  error capture in `src/instrumentation.ts`. `src/lib/analytics.ts` tracks
+  pageviews, guest solo play (`is_guest: true`), sign-in/out and UI actions.
+  Users are identified by their Convex user id after sign-in, which merges
+  their guest events.
+- **Convex** (`src/convex/analytics.ts`) — every signed-in game outcome, sent
+  from mutations via a scheduled action so counts can't be spoofed.
+
+| Event                 | Source  | Notes                                                   |
+| --------------------- | ------- | ------------------------------------------------------- |
+| `game_started`        | both    | `mode` solo/coop/versus/daily, `difficulty`, `is_guest` |
+| `game_completed`      | both    | + `duration_ms`, `mistakes`, `hints`, `points`, `won`   |
+| `game_abandoned`      | both    | new game / close / rematch while a board was in play    |
+| `hint_used`           | both    |                                                         |
+| `room_created`        | server  | `mode`, `difficulty`, `room_id`                         |
+| `room_joined`         | server  | new members only, `player_count`                        |
+| `room_finished`       | server  | once per round, on the host                             |
+| `room_rematched`      | server  |                                                         |
+| `room_closed`         | server  | `reason` host/inactivity                                |
+| `guest_games_synced`  | server  | `count`                                                 |
+| `sign_in_clicked`     | browser | `callback_url`                                          |
+| `signed_out`          | browser |                                                         |
+| `invite_link_copied`  | browser |                                                         |
+| `daily_result_shared` | browser | `method` share/clipboard                                |
+| `room_join_submitted` | browser |                                                         |
+| `theme_toggled`       | browser |                                                         |
+
+Games played = `game_completed` (or `game_started`) filtered by `mode`; for
+multiplayer rounds count unique `room_id` + `round`, or use `room_finished`.
+
 Puzzles are generated server-side with a unique-solution check. The solution
 never leaves Convex: clients receive the list of wrong cells instead. Hints
 (co-op and daily only) are also resolved server-side.
@@ -36,6 +72,7 @@ npx convex env set SITE_URL http://localhost:3000
 npx convex env set BETTER_AUTH_SECRET "$(openssl rand -base64 32)"
 npx convex env set GOOGLE_CLIENT_ID ...
 npx convex env set GOOGLE_CLIENT_SECRET ...
+npx convex env set POSTHOG_KEY phc_...   # optional
 ```
 
 Google OAuth authorised redirect URI: `<SITE_URL>/api/auth/callback/google` (the Next
@@ -46,6 +83,7 @@ Google OAuth authorised redirect URI: `<SITE_URL>/api/auth/callback/google` (the
 - Root directory: `apps/sudoku`
 - Build command: `npx convex deploy --cmd 'pnpm build'`
 - Env: `CONVEX_DEPLOY_KEY` (production deploy key), `SITE_URL`,
-  `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`
+  `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`,
+  and optionally `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST`
 - Set the same Convex-side env on the production deployment with
   `npx convex env set --prod ...`, using the production URLs.
