@@ -24,6 +24,7 @@ import {
   type LocalGame,
 } from "~/lib/local-solo";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
+import { track } from "~/lib/analytics";
 import { useBecame } from "~/hooks/use-became";
 import { useMounted } from "~/hooks/use-mounted";
 import { Play } from "~/components/sudoku/play";
@@ -39,6 +40,30 @@ function isDifficulty(value: string | null): value is Difficulty {
   return value !== null && (DIFFICULTIES as readonly string[]).includes(value);
 }
 
+function startGame(difficulty: Difficulty, isGuest: boolean) {
+  const current = soloStore.get();
+  if (current && current.finishedAt === undefined) {
+    let filled = 0;
+    let totalBlanks = 0;
+    for (let i = 0; i < 81; i++) {
+      if (current.puzzle[i] !== "0") continue;
+      totalBlanks++;
+      if (current.board[i] === current.solution[i]) filled++;
+    }
+    track("game_abandoned", {
+      mode: "solo",
+      difficulty: current.difficulty,
+      is_guest: isGuest,
+      duration_ms: Date.now() - current.startedAt,
+      filled,
+      total_blanks: totalBlanks,
+    });
+  }
+  const game = newLocalGame(difficulty);
+  track("game_started", { mode: "solo", difficulty, is_guest: isGuest });
+  soloStore.set(game);
+}
+
 export function GuestSolo() {
   return (
     <Suspense fallback={<Quiet />}>
@@ -50,6 +75,8 @@ export function GuestSolo() {
 function GuestSoloInner() {
   const router = useRouter();
   const params = useSearchParams();
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const isGuest = !isAuthenticated;
   const requested = params.get("new");
   const game = useSyncExternalStore(
     soloStore.subscribe,
@@ -60,13 +87,14 @@ function GuestSoloInner() {
 
   // `?new=<difficulty>` starts a fresh game; otherwise resume or start medium.
   useEffect(() => {
+    if (isLoading) return;
     if (isDifficulty(requested)) {
-      soloStore.set(newLocalGame(requested));
+      startGame(requested, isGuest);
       router.replace("/solo");
     } else if (!soloStore.get()) {
-      soloStore.set(newLocalGame("medium"));
+      startGame("medium", isGuest);
     }
-  }, [requested, router]);
+  }, [requested, router, isGuest, isLoading]);
 
   if (!mounted || !game) return <Quiet />;
   return (
@@ -74,10 +102,20 @@ function GuestSoloInner() {
       key={game.startedAt}
       game={game}
       onChange={(g) => {
-        if (g.finishedAt) pushHistory(g);
+        if (g.finishedAt) {
+          pushHistory(g);
+          track("game_completed", {
+            mode: "solo",
+            difficulty: g.difficulty,
+            is_guest: isGuest,
+            duration_ms: g.finishedAt - g.startedAt,
+            mistakes: g.mistakes,
+            hints: g.hints,
+          });
+        }
         soloStore.set(g);
       }}
-      onNew={(d) => soloStore.set(newLocalGame(d))}
+      onNew={(d) => startGame(d, isGuest)}
     />
   );
 }
@@ -150,6 +188,11 @@ function SoloGame({
         game.solution.charCodeAt(target) - 48,
       );
       const solved = board === game.solution;
+      track("hint_used", {
+        mode: "solo",
+        difficulty: game.difficulty,
+        is_guest: !isAuthenticated,
+      });
       onChange({
         ...game,
         board,
@@ -158,7 +201,7 @@ function SoloGame({
       });
       return target;
     },
-    [game, onChange],
+    [game, onChange, isAuthenticated],
   );
 
   const topBar = (
