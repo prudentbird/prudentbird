@@ -17,6 +17,7 @@ import {
   normalizeCode,
 } from "~/lib/utils";
 import { formatDailyDate, todayUtc } from "~/lib/daily";
+import { track } from "~/lib/analytics";
 import type { Difficulty } from "~/convex/lib/sudoku";
 
 type Mode = "solo" | "coop" | "versus";
@@ -238,6 +239,7 @@ function JoinSection() {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (code.length !== 6) return;
+    track("room_join_submitted", { code });
     router.push(`/room/${code}`);
   };
 

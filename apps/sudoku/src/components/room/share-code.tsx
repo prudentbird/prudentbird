@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "~/lib/utils";
+import { track } from "~/lib/analytics";
 
 export function CopyLink({
   code,
@@ -18,6 +19,7 @@ export function CopyLink({
       );
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      track("invite_link_copied", { code });
     } catch {
       // clipboard unavailable; the code is visible on screen anyway
     }

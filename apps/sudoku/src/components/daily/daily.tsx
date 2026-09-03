@@ -8,6 +8,7 @@ import type { DailyView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
 import { formatDailyDate, todayUtc } from "~/lib/daily";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
+import { track } from "~/lib/analytics";
 import { useBecame } from "~/hooks/use-became";
 import { Play } from "~/components/sudoku/play";
 import { Timer } from "~/components/sudoku/timer";
@@ -246,10 +247,12 @@ function DailyResults({
     try {
       if (navigator.share) {
         await navigator.share({ text });
+        track("daily_result_shared", { date, method: "share" });
       } else {
         await navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
+        track("daily_result_shared", { date, method: "clipboard" });
       }
     } catch {
       // user cancelled
