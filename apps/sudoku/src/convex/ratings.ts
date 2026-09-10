@@ -26,6 +26,10 @@ type SolveInfo = {
   difficulty: Difficulty;
   finishedAt: number;
   perfect: boolean;
+  /** Score inputs, stored on the ledger so rebuilds can recalculate. */
+  mistakes: number;
+  hints: number;
+  share?: number;
   /**
    * Stable id for the rated solve (`room:<roomId>:<round>:<userId>` or
    * `dailyAttempt:<attemptId>`). Skipped when already recorded, which makes
@@ -33,6 +37,23 @@ type SolveInfo = {
    */
   sourceKey?: string;
 };
+
+/** Recomputes points for a ledger event under the current formula. */
+function rescore(e: {
+  difficulty: Difficulty;
+  elapsedMs: number;
+  mistakes: number;
+  hints: number;
+  share?: number;
+}): number {
+  return scorePoints({
+    difficulty: e.difficulty,
+    elapsedMs: e.elapsedMs,
+    mistakes: e.mistakes,
+    hints: e.hints,
+    share: e.share,
+  });
+}
 
 /** Monday 00:00 UTC for the week containing `now`. */
 export function weekStartUtc(now: number): number {
@@ -98,6 +119,9 @@ async function addPoints(ctx: MutationCtx, who: Who, solve: SolveInfo) {
     difficulty: solve.difficulty,
     finishedAt: solve.finishedAt,
     perfect: solve.perfect,
+    mistakes: solve.mistakes,
+    hints: solve.hints,
+    share: solve.share,
     sourceKey: solve.sourceKey,
   });
 
@@ -197,6 +221,8 @@ export function roomAwards(
           difficulty: room.difficulty,
           finishedAt: room.finishedAt,
           perfect: winner.mistakes === 0,
+          mistakes: winner.mistakes,
+          hints: winner.hints ?? 0,
         },
       },
     ];
@@ -230,6 +256,9 @@ export function roomAwards(
         difficulty: room.difficulty,
         finishedAt: room.finishedAt,
         perfect: p.mistakes === 0,
+        mistakes: p.mistakes,
+        hints: p.hints ?? 0,
+        share,
       },
     });
   }
@@ -289,6 +318,8 @@ export async function awardDaily(
       difficulty: daily.difficulty,
       finishedAt: attempt.finishedAt,
       perfect: attempt.mistakes === 0,
+      mistakes: attempt.mistakes,
+      hints: attempt.hints,
       sourceKey: `dailyAttempt:${attempt._id}`,
     },
   );
@@ -497,8 +528,9 @@ export const leaderboard = query({
 });
 
 /**
- * Recomputes every rating from the solve ledger, backfilling any finished
- * rooms and dailies missing from it.
+ * Recomputes every rating from the solve ledger, recalculating each solve
+ * under the current formula and backfilling any finished rooms and dailies
+ * missing from it.
  * Run after changing the formula: `npx convex run ratings:rebuild`.
  *
  * The ledger is the canonical history: it is never deleted here, because
@@ -561,26 +593,40 @@ export const rebuild = internalMutation({
           difficulty: daily.difficulty,
           finishedAt: attempt.finishedAt,
           perfect: attempt.mistakes === 0,
+          mistakes: attempt.mistakes,
+          hints: attempt.hints,
           sourceKey,
         },
       );
     }
 
-    // Re-aggregate every rating from the full ledger (now including backfills).
+    // Re-aggregate every rating from the full ledger (now including backfills),
+    // recalculating each solve under the current formula.
     for (const r of await ctx.db.query("ratings").collect()) {
       await ctx.db.delete(r._id);
     }
     for (const e of await ctx.db.query("solveEvents").collect()) {
+      const points = rescore({
+        difficulty: e.difficulty as Difficulty,
+        elapsedMs: e.elapsedMs,
+        mistakes: e.mistakes,
+        hints: e.hints,
+        share: e.share,
+      });
+      if (points !== e.points) await ctx.db.patch(e._id, { points });
       await applySolve(
         ctx,
         { userId: e.userId, name: e.name, image: e.image },
         {
-          points: e.points,
+          points,
           elapsedMs: e.elapsedMs,
           mode: e.mode as SolveMode,
           difficulty: e.difficulty as Difficulty,
           finishedAt: e.finishedAt,
           perfect: e.perfect,
+          mistakes: e.mistakes,
+          hints: e.hints,
+          share: e.share,
         },
       );
     }

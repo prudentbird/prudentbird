@@ -61,9 +61,20 @@ export function Leaderboard() {
     return () => clearInterval(id);
   }, []);
   const anchorWeekStart = useMemo(() => weekStartUtc(now), [now]);
+  useEffect(() => {
+    if (period !== "week") return;
+    // Fire exactly at the boundary (intervals can lag, throttled tabs more so).
+    const ms = Math.max(0, anchorWeekStart + 7 * 86_400_000 - Date.now());
+    const id = setTimeout(() => setNow(Date.now()), ms);
+    return () => clearTimeout(id);
+  }, [period, anchorWeekStart]);
   const board = useQuery(
     api.ratings.leaderboard,
-    isLoading ? "skip" : { period, anchorWeekStart },
+    isLoading
+      ? "skip"
+      : period === "week"
+        ? { period, anchorWeekStart }
+        : { period },
   );
 
   const subtitle = useMemo(() => {
