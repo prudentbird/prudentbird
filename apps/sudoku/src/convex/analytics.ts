@@ -95,7 +95,7 @@ export function roomFinishedEvents(
   const durationMs = room.finishedAt - room.startedAt;
   const base = { ...roomProps(room), player_count: players.length };
   const points = new Map(
-    roomAwards(room, players).map((a) => [a.player._id, a.points]),
+    roomAwards(room, players).map((a) => [a.player._id, a.solve.points]),
   );
   const events: AnalyticsEvent[] = [];
   for (const p of players) {

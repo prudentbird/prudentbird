@@ -20,6 +20,7 @@ export const MODE_LABEL = {
   solo: "Solo",
   coop: "Co-op",
   versus: "Versus",
+  daily: "Daily",
 } as const;
 
 export const MODE_DESCRIPTION = {

@@ -1,3 +1,4 @@
+import { v } from "convex/values";
 import { authComponent } from "./auth";
 import type { Doc } from "./_generated/dataModel";
 import {
@@ -10,36 +11,118 @@ import { blankCount } from "./lib/sudoku";
 import { scorePoints } from "./lib/rating";
 
 const LEADERBOARD_SIZE = 50;
+const DAY_MS = 86_400_000;
+const WEEK_MS = 7 * DAY_MS;
+
+export type SolveMode = "solo" | "coop" | "versus" | "daily";
+type Difficulty = "easy" | "medium" | "hard" | "expert";
 
 type Who = { userId: string; name: string; image?: string };
 
-async function addPoints(
-  ctx: MutationCtx,
-  who: Who,
-  points: number,
-  perfect: boolean,
-) {
+type SolveInfo = {
+  points: number;
+  elapsedMs: number;
+  mode: SolveMode;
+  difficulty: Difficulty;
+  finishedAt: number;
+  perfect: boolean;
+};
+
+/** Monday 00:00 UTC for the week containing `now`. */
+export function weekStartUtc(now: number): number {
+  const d = new Date(now);
+  const day = (d.getUTCDay() + 6) % 7; // Monday = 0 … Sunday = 6
+  const midnight = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate(),
+  );
+  return midnight - day * DAY_MS;
+}
+
+const MODE_POINT_KEY: Record<
+  SolveMode,
+  "soloPoints" | "coopPoints" | "versusPoints" | "dailyPoints"
+> = {
+  solo: "soloPoints",
+  coop: "coopPoints",
+  versus: "versusPoints",
+  daily: "dailyPoints",
+};
+
+const MODE_BEST_KEY: Record<
+  SolveMode,
+  "soloBestMs" | "coopBestMs" | "versusBestMs" | "dailyBestMs"
+> = {
+  solo: "soloBestMs",
+  coop: "coopBestMs",
+  versus: "versusBestMs",
+  daily: "dailyBestMs",
+};
+
+async function addPoints(ctx: MutationCtx, who: Who, solve: SolveInfo) {
   const existing = await ctx.db
     .query("ratings")
     .withIndex("by_userId", (q) => q.eq("userId", who.userId))
     .unique();
   const now = Date.now();
+  const pointKey = MODE_POINT_KEY[solve.mode];
+  const bestKey = MODE_BEST_KEY[solve.mode];
+
+  // Persistent ledger so weekly boards + best times survive room cleanup.
+  await ctx.db.insert("solveEvents", {
+    userId: who.userId,
+    name: who.name,
+    image: who.image,
+    points: solve.points,
+    elapsedMs: solve.elapsedMs,
+    mode: solve.mode,
+    difficulty: solve.difficulty,
+    finishedAt: solve.finishedAt,
+    perfect: solve.perfect,
+  });
+
   if (existing) {
+    const prevBest = existing.bestTimeMs;
+    const isBest = prevBest === undefined || solve.elapsedMs < prevBest;
+    const prevModeBest = existing[bestKey];
     await ctx.db.patch(existing._id, {
       name: who.name,
       image: who.image,
-      points: existing.points + points,
+      points: existing.points + solve.points,
       solves: existing.solves + 1,
-      perfectSolves: existing.perfectSolves + (perfect ? 1 : 0),
+      perfectSolves: existing.perfectSolves + (solve.perfect ? 1 : 0),
       updatedAt: now,
+      ...(isBest
+        ? {
+            bestTimeMs: solve.elapsedMs,
+            bestMode: solve.mode,
+            bestDifficulty: solve.difficulty,
+          }
+        : {}),
+      [pointKey]: (existing[pointKey] ?? 0) + solve.points,
+      ...(prevModeBest === undefined || solve.elapsedMs < prevModeBest
+        ? { [bestKey]: solve.elapsedMs }
+        : {}),
     });
   } else {
     await ctx.db.insert("ratings", {
       ...who,
-      points,
+      points: solve.points,
       solves: 1,
-      perfectSolves: perfect ? 1 : 0,
+      perfectSolves: solve.perfect ? 1 : 0,
       updatedAt: now,
+      bestTimeMs: solve.elapsedMs,
+      bestMode: solve.mode,
+      bestDifficulty: solve.difficulty,
+      soloPoints: solve.mode === "solo" ? solve.points : 0,
+      coopPoints: solve.mode === "coop" ? solve.points : 0,
+      versusPoints: solve.mode === "versus" ? solve.points : 0,
+      dailyPoints: solve.mode === "daily" ? solve.points : 0,
+      ...(solve.mode === "solo" ? { soloBestMs: solve.elapsedMs } : {}),
+      ...(solve.mode === "coop" ? { coopBestMs: solve.elapsedMs } : {}),
+      ...(solve.mode === "versus" ? { versusBestMs: solve.elapsedMs } : {}),
+      ...(solve.mode === "daily" ? { dailyBestMs: solve.elapsedMs } : {}),
     });
   }
 }
@@ -48,24 +131,35 @@ async function addPoints(
 export function roomAwards(
   room: Doc<"rooms">,
   players: Doc<"players">[],
-): Array<{ player: Doc<"players">; points: number }> {
+): Array<{ player: Doc<"players">; solve: SolveInfo }> {
   if (room.status !== "finished" || !room.startedAt || !room.finishedAt) {
     return [];
   }
-  const elapsedMs = room.finishedAt - room.startedAt;
+  const roomElapsed = room.finishedAt - room.startedAt;
 
   if (room.mode === "versus") {
     const winner = players.find((p) => p._id === room.winnerPlayerId);
     if (!winner) return [];
+    const elapsed =
+      winner.finishedAt && room.startedAt
+        ? winner.finishedAt - room.startedAt
+        : roomElapsed;
     return [
       {
         player: winner,
-        points: scorePoints({
+        solve: {
+          points: scorePoints({
+            difficulty: room.difficulty,
+            elapsedMs: elapsed,
+            mistakes: winner.mistakes,
+            hints: winner.hints ?? 0,
+          }),
+          elapsedMs: elapsed,
+          mode: "versus",
           difficulty: room.difficulty,
-          elapsedMs,
-          mistakes: winner.mistakes,
-          hints: winner.hints ?? 0,
-        }),
+          finishedAt: room.finishedAt,
+          perfect: winner.mistakes === 0,
+        },
       },
     ];
   }
@@ -85,13 +179,20 @@ export function roomAwards(
     if (share <= 0) continue;
     awards.push({
       player: p,
-      points: scorePoints({
+      solve: {
+        points: scorePoints({
+          difficulty: room.difficulty,
+          elapsedMs: roomElapsed,
+          mistakes: p.mistakes,
+          hints: p.hints ?? 0,
+          share,
+        }),
+        elapsedMs: roomElapsed,
+        mode: room.mode,
         difficulty: room.difficulty,
-        elapsedMs,
-        mistakes: p.mistakes,
-        hints: p.hints ?? 0,
-        share,
-      }),
+        finishedAt: room.finishedAt,
+        perfect: p.mistakes === 0,
+      },
     });
   }
   return awards;
@@ -103,13 +204,12 @@ export async function awardRoom(
   room: Doc<"rooms">,
   players: Doc<"players">[],
 ) {
-  for (const { player, points } of roomAwards(room, players)) {
-    await ctx.db.patch(player._id, { points });
+  for (const { player, solve } of roomAwards(room, players)) {
+    await ctx.db.patch(player._id, { points: solve.points });
     await addPoints(
       ctx,
       { userId: player.userId, name: player.name, image: player.image },
-      points,
-      player.mistakes === 0,
+      solve,
     );
   }
 }
@@ -134,11 +234,21 @@ export async function awardDaily(
 ) {
   const points = dailyAward(daily, attempt);
   await ctx.db.patch(attempt._id, { points });
+  const elapsedMs =
+    attempt.elapsedMs ??
+    (attempt.finishedAt ? attempt.finishedAt - attempt.startedAt : undefined);
+  if (elapsedMs === undefined || !attempt.finishedAt) return;
   await addPoints(
     ctx,
     { userId: attempt.userId, name: attempt.name, image: attempt.image },
-    points,
-    attempt.mistakes === 0,
+    {
+      points,
+      elapsedMs,
+      mode: "daily",
+      difficulty: daily.difficulty,
+      finishedAt: attempt.finishedAt,
+      perfect: attempt.mistakes === 0,
+    },
   );
 }
 
@@ -156,29 +266,181 @@ export async function rankOf(
   return { rank: idx + 1, points: all[idx]!.points, total: all.length };
 }
 
+type Row = {
+  rank: number;
+  userId: string;
+  name: string;
+  image?: string;
+  points: number;
+  solves: number;
+  perfectSolves: number;
+  bestTimeMs: number | null;
+  bestMode: SolveMode | null;
+  bestDifficulty: Difficulty | null;
+  byMode: Record<
+    SolveMode,
+    { points: number; bestMs: number | null; solves: number }
+  >;
+  isMe: boolean;
+};
+
+function toRow(
+  r: Doc<"ratings">,
+  i: number,
+  userId: string | undefined,
+  modeSolves?: Record<SolveMode, number>,
+): Row {
+  return {
+    rank: i + 1,
+    userId: r.userId,
+    name: r.name,
+    image: r.image,
+    points: r.points,
+    solves: r.solves,
+    perfectSolves: r.perfectSolves,
+    bestTimeMs: r.bestTimeMs ?? null,
+    bestMode: (r.bestMode as SolveMode | undefined) ?? null,
+    bestDifficulty: (r.bestDifficulty as Difficulty | undefined) ?? null,
+    byMode: {
+      solo: {
+        points: r.soloPoints ?? 0,
+        bestMs: r.soloBestMs ?? null,
+        solves: modeSolves?.solo ?? 0,
+      },
+      coop: {
+        points: r.coopPoints ?? 0,
+        bestMs: r.coopBestMs ?? null,
+        solves: modeSolves?.coop ?? 0,
+      },
+      versus: {
+        points: r.versusPoints ?? 0,
+        bestMs: r.versusBestMs ?? null,
+        solves: modeSolves?.versus ?? 0,
+      },
+      daily: {
+        points: r.dailyPoints ?? 0,
+        bestMs: r.dailyBestMs ?? null,
+        solves: modeSolves?.daily ?? 0,
+      },
+    },
+    isMe: userId ? r.userId === userId : false,
+  };
+}
+
 export const leaderboard = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { period: v.optional(v.union(v.literal("all"), v.literal("week"))) },
+  handler: async (ctx, args) => {
+    const period = args.period ?? "all";
     const user = await authComponent.safeGetAuthUser(ctx);
-    const all = await ctx.db
-      .query("ratings")
-      .withIndex("by_points")
-      .order("desc")
+    const userId = user?._id;
+    const now = Date.now();
+    const start = weekStartUtc(now);
+
+    if (period === "all") {
+      const all = await ctx.db
+        .query("ratings")
+        .withIndex("by_points")
+        .order("desc")
+        .collect();
+      const meIdx = userId ? all.findIndex((r) => r.userId === userId) : -1;
+      return {
+        period: "all" as const,
+        total: all.length,
+        me:
+          meIdx === -1 ? null : { rank: meIdx + 1, points: all[meIdx]!.points },
+        weekStart: start,
+        weekEnd: start + WEEK_MS,
+        rows: all.slice(0, LEADERBOARD_SIZE).map((r, i) => toRow(r, i, userId)),
+      };
+    }
+
+    // Weekly: aggregate the persistent solve ledger since Monday 00:00 UTC.
+    const events = await ctx.db
+      .query("solveEvents")
+      .withIndex("by_finishedAt", (q) => q.gte("finishedAt", start))
       .collect();
-    const meIdx = user ? all.findIndex((r) => r.userId === user._id) : -1;
+    const byUser = new Map<
+      string,
+      {
+        name: string;
+        image?: string;
+        points: number;
+        solves: number;
+        perfect: number;
+        bestMs: number | null;
+        bestMode: SolveMode | null;
+        bestDifficulty: Difficulty | null;
+        modes: Record<
+          SolveMode,
+          { points: number; bestMs: number | null; solves: number }
+        >;
+      }
+    >();
+    for (const e of events) {
+      let agg = byUser.get(e.userId);
+      if (!agg) {
+        agg = {
+          name: e.name,
+          image: e.image,
+          points: 0,
+          solves: 0,
+          perfect: 0,
+          bestMs: null,
+          bestMode: null,
+          bestDifficulty: null,
+          modes: {
+            solo: { points: 0, bestMs: null, solves: 0 },
+            coop: { points: 0, bestMs: null, solves: 0 },
+            versus: { points: 0, bestMs: null, solves: 0 },
+            daily: { points: 0, bestMs: null, solves: 0 },
+          },
+        };
+        byUser.set(e.userId, agg);
+      }
+      agg.name = e.name;
+      agg.image = e.image;
+      agg.points += e.points;
+      agg.solves += 1;
+      if (e.perfect) agg.perfect += 1;
+      if (agg.bestMs === null || e.elapsedMs < agg.bestMs) {
+        agg.bestMs = e.elapsedMs;
+        agg.bestMode = e.mode as SolveMode;
+        agg.bestDifficulty = e.difficulty as Difficulty;
+      }
+      const m = agg.modes[e.mode as SolveMode];
+      m.points += e.points;
+      m.solves += 1;
+      if (m.bestMs === null || e.elapsedMs < m.bestMs) m.bestMs = e.elapsedMs;
+    }
+    const sorted = [...byUser.entries()].sort(
+      (a, b) =>
+        b[1].points - a[1].points ||
+        (a[1].bestMs ?? Infinity) - (b[1].bestMs ?? Infinity),
+    );
+    const meIdx = userId ? sorted.findIndex(([id]) => id === userId) : -1;
     return {
-      total: all.length,
-      me: meIdx === -1 ? null : { rank: meIdx + 1, points: all[meIdx]!.points },
-      rows: all.slice(0, LEADERBOARD_SIZE).map((r, i) => ({
+      period: "week" as const,
+      total: sorted.length,
+      me:
+        meIdx === -1
+          ? null
+          : { rank: meIdx + 1, points: sorted[meIdx]![1].points },
+      weekStart: start,
+      weekEnd: start + WEEK_MS,
+      rows: sorted.slice(0, LEADERBOARD_SIZE).map(([id, a], i) => ({
         rank: i + 1,
-        userId: r.userId,
-        name: r.name,
-        image: r.image,
-        points: r.points,
-        solves: r.solves,
-        perfectSolves: r.perfectSolves,
-        isMe: user ? r.userId === user._id : false,
-      })),
+        userId: id,
+        name: a.name,
+        image: a.image,
+        points: a.points,
+        solves: a.solves,
+        perfectSolves: a.perfect,
+        bestTimeMs: a.bestMs,
+        bestMode: a.bestMode,
+        bestDifficulty: a.bestDifficulty,
+        byMode: a.modes,
+        isMe: userId ? id === userId : false,
+      })) satisfies Row[],
     };
   },
 });
@@ -192,6 +454,9 @@ export const rebuild = internalMutation({
   handler: async (ctx) => {
     for (const r of await ctx.db.query("ratings").collect()) {
       await ctx.db.delete(r._id);
+    }
+    for (const e of await ctx.db.query("solveEvents").collect()) {
+      await ctx.db.delete(e._id);
     }
 
     const rooms = await ctx.db.query("rooms").collect();

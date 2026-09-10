@@ -12,6 +12,12 @@ export const difficulty = v.union(
   v.literal("hard"),
   v.literal("expert"),
 );
+export const solveMode = v.union(
+  v.literal("solo"),
+  v.literal("coop"),
+  v.literal("versus"),
+  v.literal("daily"),
+);
 export const roomStatus = v.union(
   v.literal("lobby"),
   v.literal("playing"),
@@ -110,7 +116,40 @@ export default defineSchema({
     solves: v.number(),
     perfectSolves: v.number(),
     updatedAt: v.number(),
+    /** Fastest solve ever + the mode/difficulty it happened in. */
+    bestTimeMs: v.optional(v.number()),
+    bestMode: v.optional(solveMode),
+    bestDifficulty: v.optional(difficulty),
+    /** Lifetime points split by mode. */
+    soloPoints: v.optional(v.number()),
+    coopPoints: v.optional(v.number()),
+    versusPoints: v.optional(v.number()),
+    dailyPoints: v.optional(v.number()),
+    /** Fastest solve per mode. */
+    soloBestMs: v.optional(v.number()),
+    coopBestMs: v.optional(v.number()),
+    versusBestMs: v.optional(v.number()),
+    dailyBestMs: v.optional(v.number()),
   })
     .index("by_userId", ["userId"])
     .index("by_points", ["points"]),
+
+  /**
+   * One row per rated solve. Persistent ledger (rooms are deleted after the
+   * TTL) so the weekly leaderboard and fastest times survive cleanup.
+   */
+  solveEvents: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    image: v.optional(v.string()),
+    points: v.number(),
+    elapsedMs: v.number(),
+    mode: solveMode,
+    difficulty,
+    finishedAt: v.number(),
+    perfect: v.boolean(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_finishedAt", ["finishedAt"])
+    .index("by_userId_finishedAt", ["userId", "finishedAt"]),
 });
