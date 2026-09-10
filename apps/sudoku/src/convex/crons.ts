@@ -10,5 +10,11 @@ crons.interval(
   internal.rooms.closeInactive,
   {},
 );
+crons.interval(
+  "delete stale solve events",
+  { hours: 24 },
+  internal.ratings.cleanupSolveEvents,
+  {},
+);
 
 export default crons;

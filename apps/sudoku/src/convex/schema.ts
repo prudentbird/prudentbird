@@ -125,6 +125,11 @@ export default defineSchema({
     coopPoints: v.optional(v.number()),
     versusPoints: v.optional(v.number()),
     dailyPoints: v.optional(v.number()),
+    /** Lifetime solves split by mode. */
+    soloSolves: v.optional(v.number()),
+    coopSolves: v.optional(v.number()),
+    versusSolves: v.optional(v.number()),
+    dailySolves: v.optional(v.number()),
     /** Fastest solve per mode. */
     soloBestMs: v.optional(v.number()),
     coopBestMs: v.optional(v.number()),
@@ -148,8 +153,14 @@ export default defineSchema({
     difficulty,
     finishedAt: v.number(),
     perfect: v.boolean(),
+    /**
+     * Stable id for the rated solve (`room:<roomId>:<round>:<userId>` or
+     * `dailyAttempt:<attemptId>`). Makes rebuild backfills idempotent.
+     */
+    sourceKey: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_finishedAt", ["finishedAt"])
-    .index("by_userId_finishedAt", ["userId", "finishedAt"]),
+    .index("by_userId_finishedAt", ["userId", "finishedAt"])
+    .index("by_sourceKey", ["sourceKey"]),
 });

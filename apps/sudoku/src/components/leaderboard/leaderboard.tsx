@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import { PlayerAvatar } from "~/components/player-avatar";
@@ -28,8 +28,8 @@ function weekRangeLabel(start: number, end: number) {
   return `${fmt(start)} – ${fmt(end - 1)}`;
 }
 
-function resetLabel(end: number) {
-  const ms = Math.max(0, end - Date.now());
+function resetLabel(now: number, end: number) {
+  const ms = Math.max(0, end - now);
   const d = Math.floor(ms / 86_400_000);
   const h = Math.floor((ms % 86_400_000) / 3_600_000);
   if (d > 0) return `resets in ${d}d ${h}h`;
@@ -38,12 +38,32 @@ function resetLabel(end: number) {
   return `resets in ${m}m`;
 }
 
+/** Monday 00:00 UTC for the week containing `now` (client mirror of weekStartUtc). */
+function weekStartUtc(now: number): number {
+  const d = new Date(now);
+  const day = (d.getUTCDay() + 6) % 7; // Monday = 0 … Sunday = 6
+  const midnight = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate(),
+  );
+  return midnight - day * 86_400_000;
+}
+
 export function Leaderboard() {
   const { isLoading } = useConvexAuth();
   const [period, setPeriod] = useState<Period>("all");
+  // Ticks so the weekly countdown refreshes and the query re-runs at the
+  // Monday 00:00 UTC boundary while the page stays open.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const anchorWeekStart = useMemo(() => weekStartUtc(now), [now]);
   const board = useQuery(
     api.ratings.leaderboard,
-    isLoading ? "skip" : { period },
+    isLoading ? "skip" : { period, anchorWeekStart },
   );
 
   const subtitle = useMemo(() => {
@@ -53,10 +73,10 @@ export function Leaderboard() {
       ? ` · you're #${board.me.rank} with ${board.me.points.toLocaleString()} points`
       : "";
     if (board.period === "week") {
-      return `${players} this week · ${weekRangeLabel(board.weekStart, board.weekEnd)} · ${resetLabel(board.weekEnd)}${me}`;
+      return `${players} this week · ${weekRangeLabel(board.weekStart, board.weekEnd)} · ${resetLabel(now, board.weekEnd)}${me}`;
     }
     return `${players} rated${me}`;
-  }, [board]);
+  }, [board, now]);
 
   if (board === undefined) return <Quiet />;
 
@@ -64,7 +84,11 @@ export function Leaderboard() {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10 sm:py-14">
       <div className="flex flex-col gap-3">
         <h1 className="text-2xl font-medium tracking-tight">Leaderboard</h1>
-        <div className="flex gap-1 rounded-full border border-border/60 bg-muted/40 p-1 text-sm w-fit">
+        <div
+          role="tablist"
+          aria-label="Leaderboard period"
+          className="flex gap-1 rounded-full border border-border/60 bg-muted/40 p-1 text-sm w-fit"
+        >
           {(
             [
               { value: "all", label: "All time" },
@@ -73,6 +97,8 @@ export function Leaderboard() {
           ).map((t) => (
             <button
               key={t.value}
+              role="tab"
+              aria-selected={period === t.value}
               onClick={() => setPeriod(t.value)}
               className={cn(
                 "rounded-full px-4 py-1.5 transition-colors",
