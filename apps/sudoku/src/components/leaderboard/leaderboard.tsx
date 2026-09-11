@@ -1,36 +1,90 @@
 "use client";
 
+import { useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
+import type { Difficulty } from "~/convex/lib/sudoku";
+import type { SolveMode } from "~/convex/ratings";
 import { PlayerAvatar } from "~/components/player-avatar";
 import { Quiet } from "~/components/room/room";
+import { Choice } from "~/components/ui/choice";
 import {
   BASE_POINTS,
   HINT_PENALTY,
   PERFECT_MULTIPLIER,
 } from "~/convex/lib/rating";
+import { DIFFICULTY_LABEL, MODE_LABEL, formatDuration } from "~/lib/utils";
+
+type Period = "all" | "week";
+
+const PERIODS: readonly { value: Period; label: string }[] = [
+  { value: "all", label: "All time" },
+  { value: "week", label: "This week" },
+];
+
+const SOLVE_MODE_LABEL: Record<SolveMode, string> = {
+  ...MODE_LABEL,
+  daily: "Daily",
+};
+
+function fastest(best: {
+  ms: number;
+  mode: SolveMode;
+  difficulty: Difficulty;
+}) {
+  return `${formatDuration(best.ms)} · ${SOLVE_MODE_LABEL[best.mode]} ${DIFFICULTY_LABEL[best.difficulty].toLowerCase()}`;
+}
+
+function resetsIn(at: number): string {
+  const days = Math.max(0, Math.ceil((at - Date.now()) / (24 * 60 * 60_000)));
+  if (days <= 1) return "resets tomorrow";
+  return `resets in ${days} days`;
+}
 
 export function Leaderboard() {
   const { isLoading } = useConvexAuth();
-  const board = useQuery(api.ratings.leaderboard, isLoading ? "skip" : {});
+  const [period, setPeriod] = useState<Period>("all");
+  const board = useQuery(
+    api.ratings.leaderboard,
+    isLoading ? "skip" : { period },
+  );
 
-  if (board === undefined) return <Quiet />;
+  const subtitle = board
+    ? [
+        `${board.total} ${board.total === 1 ? "player" : "players"} ${
+          period === "week" ? "this week" : "rated"
+        }`,
+        period === "week" ? resetsIn(board.resetsAt) : null,
+        board.me
+          ? `you're #${board.me.rank} with ${board.me.points.toLocaleString()} points`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-8 px-4 py-10 sm:py-14">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <h1 className="text-2xl font-medium tracking-tight">Leaderboard</h1>
-        <p className="text-sm text-muted-foreground">
-          {board.total} {board.total === 1 ? "player" : "players"} rated
-          {board.me
-            ? ` · you're #${board.me.rank} with ${board.me.points.toLocaleString()} points`
-            : ""}
-        </p>
+        <Choice
+          label="Period"
+          value={period}
+          onChange={setPeriod}
+          options={PERIODS}
+        />
+        {subtitle ? (
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        ) : null}
       </div>
 
-      {board.rows.length === 0 ? (
+      {board === undefined ? (
+        <Quiet />
+      ) : board.rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nobody has solved a puzzle yet.
+          {period === "week"
+            ? "Nobody has solved a puzzle this week yet."
+            : "Nobody has solved a puzzle yet."}
         </p>
       ) : (
         <ol className="divide-y divide-border/50 border-y border-border/50">
@@ -45,13 +99,23 @@ export function Leaderboard() {
                 {r.rank}
               </span>
               <PlayerAvatar name={r.name} image={r.image} size={24} />
-              <span className="min-w-0 flex-1 truncate">
-                {r.name}
-                {r.isMe ? " · you" : ""}
-              </span>
-              <span className="hidden text-xs text-muted-foreground sm:inline">
-                {r.solves} {r.solves === 1 ? "solve" : "solves"} ·{" "}
-                {r.perfectSolves} perfect
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate">
+                  {r.name}
+                  {r.isMe ? " · you" : ""}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {r.solves} {r.solves === 1 ? "solve" : "solves"} ·{" "}
+                  {r.perfectSolves} perfect
+                  {r.best ? (
+                    <>
+                      {" · "}
+                      <span className="font-mono tabular-nums">
+                        {fastest(r.best)}
+                      </span>
+                    </>
+                  ) : null}
+                </span>
               </span>
               <span className="w-16 text-right tabular-nums">
                 {r.points.toLocaleString()}
@@ -66,7 +130,8 @@ export function Leaderboard() {
         {BASE_POINTS.hard} or {BASE_POINTS.expert} points by difficulty, scaled
         by speed against par (half to double), ×{PERFECT_MULTIPLIER} with no
         mistakes, −{HINT_PENALTY * 100}% per hint. Co-op splits by cells filled;
-        versus pays the winner.
+        versus pays the winner. Fastest time is your quickest solve at any
+        difficulty. The weekly board counts solves since Monday 00:00 UTC.
       </p>
     </div>
   );

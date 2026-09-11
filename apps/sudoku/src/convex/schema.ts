@@ -19,6 +19,8 @@ export const roomStatus = v.union(
   v.literal("closed"),
 );
 export const closeReason = v.union(v.literal("host"), v.literal("inactivity"));
+/** Where a rated solve happened. Rooms use `mode`; the daily puzzle is its own. */
+export const solveMode = v.union(mode, v.literal("daily"));
 
 export default defineSchema({
   rooms: defineTable({
@@ -109,8 +111,25 @@ export default defineSchema({
     points: v.number(),
     solves: v.number(),
     perfectSolves: v.number(),
+    /** Fastest rated solve, any difficulty. Unset until the first solve. */
+    bestMs: v.optional(v.number()),
+    bestMode: v.optional(solveMode),
+    bestDifficulty: v.optional(difficulty),
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
     .index("by_points", ["points"]),
+
+  /** One row per rated solve, so the leaderboard can be sliced by time. */
+  solves: defineTable({
+    userId: v.string(),
+    mode: solveMode,
+    difficulty,
+    elapsedMs: v.number(),
+    points: v.number(),
+    perfect: v.boolean(),
+    finishedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_finishedAt", ["finishedAt"]),
 });

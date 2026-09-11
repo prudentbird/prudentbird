@@ -1,3 +1,4 @@
+import { v, type Infer } from "convex/values";
 import { authComponent } from "./auth";
 import type { Doc } from "./_generated/dataModel";
 import {
@@ -6,39 +7,61 @@ import {
   type MutationCtx,
   type QueryCtx,
 } from "./_generated/server";
-import { blankCount } from "./lib/sudoku";
+import { blankCount, type Difficulty } from "./lib/sudoku";
 import { scorePoints } from "./lib/rating";
+import { solveMode } from "./schema";
 
 const LEADERBOARD_SIZE = 50;
 
+export type SolveMode = Infer<typeof solveMode>;
+
 type Who = { userId: string; name: string; image?: string };
 
-async function addPoints(
-  ctx: MutationCtx,
-  who: Who,
-  points: number,
-  perfect: boolean,
-) {
+type Solve = {
+  mode: SolveMode;
+  difficulty: Difficulty;
+  elapsedMs: number;
+  points: number;
+  perfect: boolean;
+  finishedAt: number;
+};
+
+type Best = { ms: number; mode: SolveMode; difficulty: Difficulty };
+
+/** Records one rated solve: appends to `solves` and folds it into `ratings`. */
+async function recordSolve(ctx: MutationCtx, who: Who, solve: Solve) {
+  await ctx.db.insert("solves", { userId: who.userId, ...solve });
+
   const existing = await ctx.db
     .query("ratings")
     .withIndex("by_userId", (q) => q.eq("userId", who.userId))
     .unique();
   const now = Date.now();
+  const best =
+    existing?.bestMs === undefined || solve.elapsedMs < existing.bestMs
+      ? {
+          bestMs: solve.elapsedMs,
+          bestMode: solve.mode,
+          bestDifficulty: solve.difficulty,
+        }
+      : {};
   if (existing) {
     await ctx.db.patch(existing._id, {
       name: who.name,
       image: who.image,
-      points: existing.points + points,
+      points: existing.points + solve.points,
       solves: existing.solves + 1,
-      perfectSolves: existing.perfectSolves + (perfect ? 1 : 0),
+      perfectSolves: existing.perfectSolves + (solve.perfect ? 1 : 0),
+      ...best,
       updatedAt: now,
     });
   } else {
     await ctx.db.insert("ratings", {
       ...who,
-      points,
+      points: solve.points,
       solves: 1,
-      perfectSolves: perfect ? 1 : 0,
+      perfectSolves: solve.perfect ? 1 : 0,
+      ...best,
       updatedAt: now,
     });
   }
@@ -103,13 +126,23 @@ export async function awardRoom(
   room: Doc<"rooms">,
   players: Doc<"players">[],
 ) {
-  for (const { player, points } of roomAwards(room, players)) {
+  const awards = roomAwards(room, players);
+  if (awards.length === 0) return;
+  const finishedAt = room.finishedAt!;
+  const elapsedMs = finishedAt - room.startedAt!;
+  for (const { player, points } of awards) {
     await ctx.db.patch(player._id, { points });
-    await addPoints(
+    await recordSolve(
       ctx,
       { userId: player.userId, name: player.name, image: player.image },
-      points,
-      player.mistakes === 0,
+      {
+        mode: room.mode,
+        difficulty: room.difficulty,
+        elapsedMs,
+        points,
+        perfect: player.mistakes === 0,
+        finishedAt,
+      },
     );
   }
 }
@@ -132,13 +165,22 @@ export async function awardDaily(
   daily: Doc<"dailies">,
   attempt: Doc<"dailyAttempts">,
 ) {
+  if (attempt.elapsedMs === undefined || attempt.finishedAt === undefined) {
+    return;
+  }
   const points = dailyAward(daily, attempt);
   await ctx.db.patch(attempt._id, { points });
-  await addPoints(
+  await recordSolve(
     ctx,
     { userId: attempt.userId, name: attempt.name, image: attempt.image },
-    points,
-    attempt.mistakes === 0,
+    {
+      mode: "daily",
+      difficulty: daily.difficulty,
+      elapsedMs: attempt.elapsedMs,
+      points,
+      perfect: attempt.mistakes === 0,
+      finishedAt: attempt.finishedAt,
+    },
   );
 }
 
@@ -156,27 +198,121 @@ export async function rankOf(
   return { rank: idx + 1, points: all[idx]!.points, total: all.length };
 }
 
-export const leaderboard = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    const all = await ctx.db
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Start of the current week: Monday 00:00 UTC. */
+export function weekStartUtc(now: number): number {
+  const d = new Date(now);
+  const sinceMonday = (d.getUTCDay() + 6) % 7;
+  return (
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) -
+    sinceMonday * DAY_MS
+  );
+}
+
+type Standing = {
+  userId: string;
+  name: string;
+  image?: string;
+  points: number;
+  solves: number;
+  perfectSolves: number;
+  best: Best | null;
+};
+
+async function allTimeStandings(ctx: QueryCtx): Promise<Standing[]> {
+  const all = await ctx.db
+    .query("ratings")
+    .withIndex("by_points")
+    .order("desc")
+    .collect();
+  return all.map((r) => ({
+    userId: r.userId,
+    name: r.name,
+    image: r.image,
+    points: r.points,
+    solves: r.solves,
+    perfectSolves: r.perfectSolves,
+    best:
+      r.bestMs !== undefined && r.bestMode && r.bestDifficulty
+        ? { ms: r.bestMs, mode: r.bestMode, difficulty: r.bestDifficulty }
+        : null,
+  }));
+}
+
+async function weeklyStandings(
+  ctx: QueryCtx,
+  since: number,
+): Promise<Standing[]> {
+  const solves = await ctx.db
+    .query("solves")
+    .withIndex("by_finishedAt", (q) => q.gte("finishedAt", since))
+    .collect();
+
+  const byUser = new Map<string, Standing>();
+  for (const s of solves) {
+    let row = byUser.get(s.userId);
+    if (!row) {
+      row = {
+        userId: s.userId,
+        name: "",
+        points: 0,
+        solves: 0,
+        perfectSolves: 0,
+        best: null,
+      };
+      byUser.set(s.userId, row);
+    }
+    row.points += s.points;
+    row.solves += 1;
+    if (s.perfect) row.perfectSolves += 1;
+    if (!row.best || s.elapsedMs < row.best.ms) {
+      row.best = { ms: s.elapsedMs, mode: s.mode, difficulty: s.difficulty };
+    }
+  }
+
+  // Names and avatars live on `ratings`, which every solver has a row in.
+  for (const row of byUser.values()) {
+    const rating = await ctx.db
       .query("ratings")
-      .withIndex("by_points")
-      .order("desc")
-      .collect();
-    const meIdx = user ? all.findIndex((r) => r.userId === user._id) : -1;
+      .withIndex("by_userId", (q) => q.eq("userId", row.userId))
+      .unique();
+    if (rating) {
+      row.name = rating.name;
+      row.image = rating.image;
+    }
+  }
+
+  return [...byUser.values()].sort(
+    (a, b) =>
+      b.points - a.points ||
+      (a.best?.ms ?? Infinity) - (b.best?.ms ?? Infinity),
+  );
+}
+
+export const period = v.union(v.literal("all"), v.literal("week"));
+
+export const leaderboard = query({
+  args: { period },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    const now = Date.now();
+    const weekStart = weekStartUtc(now);
+    const standings =
+      args.period === "week"
+        ? await weeklyStandings(ctx, weekStart)
+        : await allTimeStandings(ctx);
+    const meIdx = user ? standings.findIndex((r) => r.userId === user._id) : -1;
+    const me = meIdx === -1 ? null : standings[meIdx]!;
     return {
-      total: all.length,
-      me: meIdx === -1 ? null : { rank: meIdx + 1, points: all[meIdx]!.points },
-      rows: all.slice(0, LEADERBOARD_SIZE).map((r, i) => ({
+      period: args.period,
+      /** When the weekly board rolls over (next Monday 00:00 UTC). */
+      resetsAt: weekStart + 7 * DAY_MS,
+      total: standings.length,
+      me: me ? { rank: meIdx + 1, points: me.points } : null,
+      rows: standings.slice(0, LEADERBOARD_SIZE).map((r, i) => ({
         rank: i + 1,
-        userId: r.userId,
-        name: r.name,
-        image: r.image,
-        points: r.points,
-        solves: r.solves,
-        perfectSolves: r.perfectSolves,
+        ...r,
         isMe: user ? r.userId === user._id : false,
       })),
     };
@@ -184,7 +320,7 @@ export const leaderboard = query({
 });
 
 /**
- * Recomputes every rating from finished rooms and dailies.
+ * Recomputes every rating and solve from finished rooms and dailies.
  * Run after changing the formula: `npx convex run ratings:rebuild`.
  */
 export const rebuild = internalMutation({
@@ -192,6 +328,9 @@ export const rebuild = internalMutation({
   handler: async (ctx) => {
     for (const r of await ctx.db.query("ratings").collect()) {
       await ctx.db.delete(r._id);
+    }
+    for (const s of await ctx.db.query("solves").collect()) {
+      await ctx.db.delete(s._id);
     }
 
     const rooms = await ctx.db.query("rooms").collect();
