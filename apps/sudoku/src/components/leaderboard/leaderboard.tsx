@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { Difficulty } from "~/convex/lib/sudoku";
@@ -35,18 +35,41 @@ function fastest(best: {
   return `${formatDuration(best.ms)} · ${SOLVE_MODE_LABEL[best.mode]} ${DIFFICULTY_LABEL[best.difficulty].toLowerCase()}`;
 }
 
-function resetsIn(at: number): string {
-  const days = Math.max(0, Math.ceil((at - Date.now()) / (24 * 60 * 60_000)));
+function resetsIn(at: number, now: number): string {
+  const days = Math.max(0, Math.ceil((at - now) / (24 * 60 * 60_000)));
   if (days <= 1) return "resets tomorrow";
   return `resets in ${days} days`;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Monday 00:00 UTC for the week containing `now` (client mirror of the
+ * server's `weekStartUtc`, kept local so this file doesn't import Convex
+ * server code into the client bundle). */
+function weekStartUtc(now: number): number {
+  const d = new Date(now);
+  const sinceMonday = (d.getUTCDay() + 6) % 7;
+  return (
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) -
+    sinceMonday * DAY_MS
+  );
 }
 
 export function Leaderboard() {
   const { isLoading } = useConvexAuth();
   const [period, setPeriod] = useState<Period>("all");
+  // Ticks so the weekly query re-runs at the Monday 00:00 UTC boundary while
+  // the page stays open; Convex queries only refresh on data changes, not on
+  // a timer, so the args need to change to force a refetch.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const anchorWeekStart = useMemo(() => weekStartUtc(now), [now]);
   const board = useQuery(
     api.ratings.leaderboard,
-    isLoading ? "skip" : { period },
+    isLoading ? "skip" : { period, anchorWeekStart },
   );
 
   const subtitle = board
@@ -54,7 +77,7 @@ export function Leaderboard() {
         `${board.total} ${board.total === 1 ? "player" : "players"} ${
           period === "week" ? "this week" : "rated"
         }`,
-        period === "week" ? resetsIn(board.resetsAt) : null,
+        period === "week" ? resetsIn(board.resetsAt, now) : null,
         board.me
           ? `you're #${board.me.rank} with ${board.me.points.toLocaleString()} points`
           : null,

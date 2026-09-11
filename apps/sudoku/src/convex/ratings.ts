@@ -267,7 +267,7 @@ async function allTimeStandings(ctx: QueryCtx): Promise<Standing[]> {
     .withIndex("by_points")
     .order("desc")
     .collect();
-  return all.map((r) => ({
+  const standings = all.map((r) => ({
     userId: r.userId,
     name: r.name,
     image: r.image,
@@ -279,6 +279,12 @@ async function allTimeStandings(ctx: QueryCtx): Promise<Standing[]> {
         ? { ms: r.bestMs, mode: r.bestMode, difficulty: r.bestDifficulty }
         : null,
   }));
+  // by_points only orders by points; break ties by fastest solve, same as
+  // weeklyStandings, so equal-points rows have a stable, meaningful order.
+  return standings.sort(
+    (a, b) =>
+      b.points - a.points || (a.best?.ms ?? Infinity) - (b.best?.ms ?? Infinity),
+  );
 }
 
 async function weeklyStandings(
@@ -336,11 +342,19 @@ async function weeklyStandings(
 export const period = v.union(v.literal("all"), v.literal("week"));
 
 export const leaderboard = query({
-  args: { period },
+  args: {
+    period,
+    /**
+     * Client-computed Monday 00:00 UTC. Convex queries only refresh when
+     * subscribed data changes, not on a timer, so passing this makes the
+     * weekly query re-run when the client notices the week has rolled over.
+     */
+    anchorWeekStart: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     const now = Date.now();
-    const weekStart = weekStartUtc(now);
+    const weekStart = args.anchorWeekStart ?? weekStartUtc(now);
     const standings =
       args.period === "week"
         ? await weeklyStandings(ctx, weekStart)
