@@ -4,7 +4,7 @@ import { Leaderboard } from "~/components/leaderboard/leaderboard";
 export const metadata: Metadata = {
   title: "Leaderboard",
   description:
-    "Global rating across every solo, co-op, versus and daily solve.",
+    "All-time and weekly ratings across every solo, co-op, versus and daily solve, with each player's fastest time.",
 };
 
 export default function LeaderboardPage() {
