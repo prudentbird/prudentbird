@@ -16,13 +16,13 @@ state) + Better Auth (Google sign-in via the Convex Better Auth component).
   pays the winner). Formula in `src/convex/lib/rating.ts`; rebuild all
   ratings after changing it with `npx convex run ratings:rebuild`.
 
-- **Leaderboard** — all-time and this-week (since Monday 00:00 UTC) boards
-  by points, each row showing solves, perfect solves and the player's fastest
-  solve with its mode and difficulty. Every rated solve is logged to the
-  persistent `solves` table (rooms are deleted after their TTL, so this is
-  the durable history) and kept indefinitely; `ratings:rebuild` backfills
-  missing games and recalculates every row under the current formula
-  without discarding ledger history.
+- **Leaderboard** — two boards, Scores (ranked by points) and Time (ranked
+  by fastest solve, any mode or difficulty), each with an all-time and a
+  this-week (since Monday 00:00 UTC, default) view. Every rated solve is
+  logged to the persistent `solves` table (rooms are deleted after their
+  TTL, so this is the durable history) and kept indefinitely;
+  `ratings:rebuild` backfills missing games and recalculates every row
+  under the current formula without discarding ledger history.
 
 ## Analytics (PostHog)
 

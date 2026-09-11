@@ -231,7 +231,7 @@ export async function rankOf(
 ): Promise<{ rank: number; points: number; total: number } | null> {
   // Reuse allTimeStandings so this matches the leaderboard's tie-break
   // (fastest solve) instead of the arbitrary by_points order for ties.
-  const standings = await allTimeStandings(ctx);
+  const standings = byScore(await allTimeStandings(ctx));
   const idx = standings.findIndex((r) => r.userId === userId);
   if (idx === -1) return null;
   return {
@@ -263,13 +263,28 @@ type Standing = {
   best: Best | null;
 };
 
+/** Ranks by points, ties broken by fastest solve. */
+function byScore(standings: Standing[]): Standing[] {
+  return [...standings].sort(
+    (a, b) =>
+      b.points - a.points || (a.best?.ms ?? Infinity) - (b.best?.ms ?? Infinity),
+  );
+}
+
+/** Ranks by fastest solve; players with no solve in the period don't qualify. */
+function byTime(standings: Standing[]): Standing[] {
+  return standings
+    .filter((s) => s.best !== null)
+    .sort((a, b) => a.best!.ms - b.best!.ms || b.points - a.points);
+}
+
 async function allTimeStandings(ctx: QueryCtx): Promise<Standing[]> {
   const all = await ctx.db
     .query("ratings")
     .withIndex("by_points")
     .order("desc")
     .collect();
-  const standings = all.map((r) => ({
+  return all.map((r) => ({
     userId: r.userId,
     name: r.name,
     image: r.image,
@@ -281,12 +296,6 @@ async function allTimeStandings(ctx: QueryCtx): Promise<Standing[]> {
         ? { ms: r.bestMs, mode: r.bestMode, difficulty: r.bestDifficulty }
         : null,
   }));
-  // by_points only orders by points; break ties by fastest solve, same as
-  // weeklyStandings, so equal-points rows have a stable, meaningful order.
-  return standings.sort(
-    (a, b) =>
-      b.points - a.points || (a.best?.ms ?? Infinity) - (b.best?.ms ?? Infinity),
-  );
 }
 
 async function weeklyStandings(
@@ -334,18 +343,16 @@ async function weeklyStandings(
     }),
   );
 
-  return [...byUser.values()].sort(
-    (a, b) =>
-      b.points - a.points ||
-      (a.best?.ms ?? Infinity) - (b.best?.ms ?? Infinity),
-  );
+  return [...byUser.values()];
 }
 
 export const period = v.union(v.literal("all"), v.literal("week"));
+export const category = v.union(v.literal("score"), v.literal("time"));
 
 export const leaderboard = query({
   args: {
     period,
+    category: v.optional(category),
     /**
      * Client-computed Monday 00:00 UTC. Unused for the actual query — always
      * recomputed from server time below — it only needs to change value at
@@ -359,10 +366,12 @@ export const leaderboard = query({
     const user = await authComponent.safeGetAuthUser(ctx);
     const now = Date.now();
     const weekStart = weekStartUtc(now);
-    const standings =
+    const raw =
       args.period === "week"
         ? await weeklyStandings(ctx, weekStart)
         : await allTimeStandings(ctx);
+    const standings =
+      args.category === "time" ? byTime(raw) : byScore(raw);
     const meIdx = user ? standings.findIndex((r) => r.userId === user._id) : -1;
     const me = meIdx === -1 ? null : standings[meIdx]!;
     return {
@@ -370,7 +379,7 @@ export const leaderboard = query({
       /** When the weekly board rolls over (next Monday 00:00 UTC). */
       resetsAt: weekStart + 7 * DAY_MS,
       total: standings.length,
-      me: me ? { rank: meIdx + 1, points: me.points } : null,
+      me: me ? { rank: meIdx + 1, points: me.points, best: me.best } : null,
       rows: standings.slice(0, LEADERBOARD_SIZE).map((r, i) => ({
         rank: i + 1,
         ...r,
@@ -410,6 +419,8 @@ function rescore(s: {
 export const rebuild = internalMutation({
   args: {},
   handler: async (ctx) => {
+    const solvesBefore = (await ctx.db.query("solves").collect()).length;
+
     // Backfill solves missing from the ledger (idempotent via sourceKey).
     const rooms = await ctx.db.query("rooms").collect();
     for (const room of rooms) {
@@ -445,7 +456,8 @@ export const rebuild = internalMutation({
     for (const r of await ctx.db.query("ratings").collect()) {
       await ctx.db.delete(r._id);
     }
-    for (const s of await ctx.db.query("solves").collect()) {
+    const solves = await ctx.db.query("solves").collect();
+    for (const s of solves) {
       const points = rescore(s);
       if (points !== s.points) await ctx.db.patch(s._id, { points });
       const who = whoByUser.get(s.userId) ?? { name: "", image: undefined };
@@ -465,6 +477,14 @@ export const rebuild = internalMutation({
         },
       );
     }
+
+    return {
+      roomsScanned: rooms.length,
+      attemptsScanned: attempts.length,
+      solvesBackfilled: solves.length - solvesBefore,
+      solvesRescored: solves.length,
+      ratingsRebuilt: whoByUser.size,
+    };
   },
 });
 
