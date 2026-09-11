@@ -229,14 +229,16 @@ export async function rankOf(
   ctx: QueryCtx,
   userId: string,
 ): Promise<{ rank: number; points: number; total: number } | null> {
-  const all = await ctx.db
-    .query("ratings")
-    .withIndex("by_points")
-    .order("desc")
-    .collect();
-  const idx = all.findIndex((r) => r.userId === userId);
+  // Reuse allTimeStandings so this matches the leaderboard's tie-break
+  // (fastest solve) instead of the arbitrary by_points order for ties.
+  const standings = await allTimeStandings(ctx);
+  const idx = standings.findIndex((r) => r.userId === userId);
   if (idx === -1) return null;
-  return { rank: idx + 1, points: all[idx]!.points, total: all.length };
+  return {
+    rank: idx + 1,
+    points: standings[idx]!.points,
+    total: standings.length,
+  };
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -345,16 +347,18 @@ export const leaderboard = query({
   args: {
     period,
     /**
-     * Client-computed Monday 00:00 UTC. Convex queries only refresh when
-     * subscribed data changes, not on a timer, so passing this makes the
-     * weekly query re-run when the client notices the week has rolled over.
+     * Client-computed Monday 00:00 UTC. Unused for the actual query — always
+     * recomputed from server time below — it only needs to change value at
+     * the boundary so the query args differ and Convex re-runs the query;
+     * Convex queries otherwise only refresh when subscribed data changes,
+     * not on a timer.
      */
     anchorWeekStart: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     const now = Date.now();
-    const weekStart = args.anchorWeekStart ?? weekStartUtc(now);
+    const weekStart = weekStartUtc(now);
     const standings =
       args.period === "week"
         ? await weeklyStandings(ctx, weekStart)
@@ -464,21 +468,7 @@ export const rebuild = internalMutation({
   },
 });
 
-/**
- * Deletes solve ledger rows older than the retention window. The weekly
- * board only reads the current week, and lifetime totals live on the
- * ratings rows, so old events are expendable history. Runs daily via cron.
- */
-const SOLVE_RETENTION_MS = 180 * DAY_MS;
-
-export const cleanupSolves = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const cutoff = Date.now() - SOLVE_RETENTION_MS;
-    const stale = await ctx.db
-      .query("solves")
-      .withIndex("by_finishedAt", (q) => q.lt("finishedAt", cutoff))
-      .take(500);
-    for (const s of stale) await ctx.db.delete(s._id);
-  },
-});
+// No retention cron: `rebuild` fully recomputes `ratings` from the
+// `solves` ledger, so pruning old rows would silently drop their lifetime
+// points, solve counts and best times the next time rebuild runs. Revisit
+// once rebuild no longer needs the full ledger to recompute lifetime totals.

@@ -20,9 +20,9 @@ state) + Better Auth (Google sign-in via the Convex Better Auth component).
   by points, each row showing solves, perfect solves and the player's fastest
   solve with its mode and difficulty. Every rated solve is logged to the
   persistent `solves` table (rooms are deleted after their TTL, so this is
-  the durable history); `ratings:rebuild` backfills missing games and
-  recalculates every row under the current formula without discarding
-  existing ledger history. Solves older than 180 days are pruned daily.
+  the durable history) and kept indefinitely; `ratings:rebuild` backfills
+  missing games and recalculates every row under the current formula
+  without discarding ledger history.
 
 ## Analytics (PostHog)
 
