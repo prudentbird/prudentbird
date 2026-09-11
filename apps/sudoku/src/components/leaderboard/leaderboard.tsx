@@ -16,10 +16,16 @@ import {
 import { DIFFICULTY_LABEL, MODE_LABEL, formatDuration } from "~/lib/utils";
 
 type Period = "all" | "week";
+type Category = "score" | "time";
+
+const CATEGORIES: readonly { value: Category; label: string }[] = [
+  { value: "score", label: "Scores" },
+  { value: "time", label: "Time" },
+];
 
 const PERIODS: readonly { value: Period; label: string }[] = [
-  { value: "all", label: "All time" },
   { value: "week", label: "This week" },
+  { value: "all", label: "All time" },
 ];
 
 const SOLVE_MODE_LABEL: Record<SolveMode, string> = {
@@ -27,12 +33,8 @@ const SOLVE_MODE_LABEL: Record<SolveMode, string> = {
   daily: "Daily",
 };
 
-function fastest(best: {
-  ms: number;
-  mode: SolveMode;
-  difficulty: Difficulty;
-}) {
-  return `${formatDuration(best.ms)} · ${SOLVE_MODE_LABEL[best.mode]} ${DIFFICULTY_LABEL[best.difficulty].toLowerCase()}`;
+function modeAndDifficulty(best: { mode: SolveMode; difficulty: Difficulty }) {
+  return `${SOLVE_MODE_LABEL[best.mode]} ${DIFFICULTY_LABEL[best.difficulty].toLowerCase()}`;
 }
 
 function resetsIn(at: number, now: number): string {
@@ -57,7 +59,8 @@ function weekStartUtc(now: number): number {
 
 export function Leaderboard() {
   const { isLoading } = useConvexAuth();
-  const [period, setPeriod] = useState<Period>("all");
+  const [category, setCategory] = useState<Category>("score");
+  const [period, setPeriod] = useState<Period>("week");
   // Ticks so the weekly query re-runs at the Monday 00:00 UTC boundary while
   // the page stays open; Convex queries only refresh on data changes, not on
   // a timer, so the args need to change to force a refetch.
@@ -69,33 +72,52 @@ export function Leaderboard() {
   const anchorWeekStart = useMemo(() => weekStartUtc(now), [now]);
   const board = useQuery(
     api.ratings.leaderboard,
-    isLoading ? "skip" : { period, anchorWeekStart },
+    isLoading ? "skip" : { period, category, anchorWeekStart },
   );
 
   const subtitle = board
     ? [
         `${board.total} ${board.total === 1 ? "player" : "players"} ${
-          period === "week" ? "this week" : "rated"
+          period === "week" ? "this week" : "ranked"
         }`,
         period === "week" ? resetsIn(board.resetsAt, now) : null,
         board.me
-          ? `you're #${board.me.rank} with ${board.me.points.toLocaleString()} points`
+          ? category === "time" && board.me.best
+            ? `you're #${board.me.rank} at ${formatDuration(board.me.best.ms)}`
+            : `you're #${board.me.rank} with ${board.me.points.toLocaleString()} points`
           : null,
       ]
         .filter(Boolean)
         .join(" · ")
     : null;
 
+  const emptyMessage =
+    category === "time"
+      ? period === "week"
+        ? "Nobody has a fastest time this week yet."
+        : "Nobody has a fastest time yet."
+      : period === "week"
+        ? "Nobody has solved a puzzle this week yet."
+        : "Nobody has solved a puzzle yet.";
+
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-8 px-4 py-10 sm:py-14">
       <div className="flex flex-col gap-3">
         <h1 className="text-2xl font-medium tracking-tight">Leaderboard</h1>
-        <Choice
-          label="Period"
-          value={period}
-          onChange={setPeriod}
-          options={PERIODS}
-        />
+        <div className="flex flex-col gap-2">
+          <Choice
+            label="Leaderboard"
+            value={category}
+            onChange={setCategory}
+            options={CATEGORIES}
+          />
+          <Choice
+            label="Period"
+            value={period}
+            onChange={setPeriod}
+            options={PERIODS}
+          />
+        </div>
         {subtitle ? (
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         ) : null}
@@ -104,11 +126,7 @@ export function Leaderboard() {
       {board === undefined ? (
         <Quiet />
       ) : board.rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {period === "week"
-            ? "Nobody has solved a puzzle this week yet."
-            : "Nobody has solved a puzzle yet."}
-        </p>
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
       ) : (
         <ol className="divide-y divide-border/50 border-y border-border/50">
           {board.rows.map((r) => (
@@ -130,31 +148,48 @@ export function Leaderboard() {
                 <span className="truncate text-xs text-muted-foreground">
                   {r.solves} {r.solves === 1 ? "solve" : "solves"} ·{" "}
                   {r.perfectSolves} perfect
-                  {r.best ? (
+                  {category === "score" && r.best ? (
                     <>
                       {" · "}
                       <span className="font-mono tabular-nums">
-                        {fastest(r.best)}
+                        {formatDuration(r.best.ms)} · {modeAndDifficulty(r.best)}
                       </span>
                     </>
                   ) : null}
                 </span>
               </span>
-              <span className="w-16 text-right tabular-nums">
-                {r.points.toLocaleString()}
-              </span>
+              {category === "time" && r.best ? (
+                <span className="flex flex-col items-end">
+                  <span className="font-mono text-sm tabular-nums">
+                    {formatDuration(r.best.ms)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {modeAndDifficulty(r.best)}
+                  </span>
+                </span>
+              ) : (
+                <span className="w-16 text-right tabular-nums">
+                  {r.points.toLocaleString()}
+                </span>
+              )}
             </li>
           ))}
         </ol>
       )}
 
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Every solve scores {BASE_POINTS.easy}, {BASE_POINTS.medium},{" "}
-        {BASE_POINTS.hard} or {BASE_POINTS.expert} points by difficulty, scaled
-        by speed against par (half to double), ×{PERFECT_MULTIPLIER} with no
-        mistakes, −{HINT_PENALTY * 100}% per hint. Co-op splits by cells filled;
-        versus pays the winner. Fastest time is your quickest solve at any
-        difficulty. The weekly board counts solves since Monday 00:00 UTC.
+        {category === "score" ? (
+          <>
+            Every solve scores {BASE_POINTS.easy}, {BASE_POINTS.medium},{" "}
+            {BASE_POINTS.hard} or {BASE_POINTS.expert} points by difficulty,
+            scaled by speed against par (half to double), ×{PERFECT_MULTIPLIER}{" "}
+            with no mistakes, −{HINT_PENALTY * 100}% per hint. Co-op splits by
+            cells filled; versus pays the winner.
+          </>
+        ) : (
+          "Ranked by your single fastest solve, any mode or difficulty."
+        )}{" "}
+        The weekly board counts solves since Monday 00:00 UTC.
       </p>
     </div>
   );
