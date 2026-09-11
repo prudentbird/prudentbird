@@ -24,14 +24,37 @@ type Solve = {
   points: number;
   perfect: boolean;
   finishedAt: number;
+  /** Score inputs, stored on the ledger so rebuilds can recalculate. */
+  mistakes: number;
+  hints: number;
+  share?: number;
+  /**
+   * Stable id for the rated solve (`room:<roomId>:<round>:<userId>` or
+   * `dailyAttempt:<attemptId>`). Skipped when already recorded, which makes
+   * rebuild backfills idempotent.
+   */
+  sourceKey?: string;
 };
 
 type Best = { ms: number; mode: SolveMode; difficulty: Difficulty };
 
+async function hasSolve(ctx: MutationCtx, sourceKey: string) {
+  const existing = await ctx.db
+    .query("solves")
+    .withIndex("by_sourceKey", (q) => q.eq("sourceKey", sourceKey))
+    .unique();
+  return existing !== null;
+}
+
 /** Records one rated solve: appends to `solves` and folds it into `ratings`. */
 async function recordSolve(ctx: MutationCtx, who: Who, solve: Solve) {
+  if (solve.sourceKey && (await hasSolve(ctx, solve.sourceKey))) return;
   await ctx.db.insert("solves", { userId: who.userId, ...solve });
+  await applyToRating(ctx, who, solve);
+}
 
+/** Folds one solve into the per-user `ratings` row (no ledger write). */
+async function applyToRating(ctx: MutationCtx, who: Who, solve: Solve) {
   const existing = await ctx.db
     .query("ratings")
     .withIndex("by_userId", (q) => q.eq("userId", who.userId))
@@ -71,7 +94,13 @@ async function recordSolve(ctx: MutationCtx, who: Who, solve: Solve) {
 export function roomAwards(
   room: Doc<"rooms">,
   players: Doc<"players">[],
-): Array<{ player: Doc<"players">; points: number }> {
+): Array<{
+  player: Doc<"players">;
+  points: number;
+  mistakes: number;
+  hints: number;
+  share?: number;
+}> {
   if (room.status !== "finished" || !room.startedAt || !room.finishedAt) {
     return [];
   }
@@ -89,6 +118,8 @@ export function roomAwards(
           mistakes: winner.mistakes,
           hints: winner.hints ?? 0,
         }),
+        mistakes: winner.mistakes,
+        hints: winner.hints ?? 0,
       },
     ];
   }
@@ -115,6 +146,9 @@ export function roomAwards(
         hints: p.hints ?? 0,
         share,
       }),
+      mistakes: p.mistakes,
+      hints: p.hints ?? 0,
+      share,
     });
   }
   return awards;
@@ -130,7 +164,7 @@ export async function awardRoom(
   if (awards.length === 0) return;
   const finishedAt = room.finishedAt!;
   const elapsedMs = finishedAt - room.startedAt!;
-  for (const { player, points } of awards) {
+  for (const { player, points, mistakes, hints, share } of awards) {
     await ctx.db.patch(player._id, { points });
     await recordSolve(
       ctx,
@@ -142,6 +176,10 @@ export async function awardRoom(
         points,
         perfect: player.mistakes === 0,
         finishedAt,
+        mistakes,
+        hints,
+        share,
+        sourceKey: `room:${room._id}:${room.round}:${player.userId}`,
       },
     );
   }
@@ -180,6 +218,9 @@ export async function awardDaily(
       points,
       perfect: attempt.mistakes === 0,
       finishedAt: attempt.finishedAt,
+      mistakes: attempt.mistakes,
+      hints: attempt.hints,
+      sourceKey: `dailyAttempt:${attempt._id}`,
     },
   );
 }
@@ -272,16 +313,18 @@ async function weeklyStandings(
   }
 
   // Names and avatars live on `ratings`, which every solver has a row in.
-  for (const row of byUser.values()) {
-    const rating = await ctx.db
-      .query("ratings")
-      .withIndex("by_userId", (q) => q.eq("userId", row.userId))
-      .unique();
-    if (rating) {
-      row.name = rating.name;
-      row.image = rating.image;
-    }
-  }
+  await Promise.all(
+    [...byUser.values()].map(async (row) => {
+      const rating = await ctx.db
+        .query("ratings")
+        .withIndex("by_userId", (q) => q.eq("userId", row.userId))
+        .unique();
+      if (rating) {
+        row.name = rating.name;
+        row.image = rating.image;
+      }
+    }),
+  );
 
   return [...byUser.values()].sort(
     (a, b) =>
@@ -319,20 +362,37 @@ export const leaderboard = query({
   },
 });
 
+/** Recomputes points for a ledger row under the current formula. */
+function rescore(s: {
+  difficulty: Difficulty;
+  elapsedMs: number;
+  mistakes: number;
+  hints: number;
+  share?: number;
+}): number {
+  return scorePoints({
+    difficulty: s.difficulty,
+    elapsedMs: s.elapsedMs,
+    mistakes: s.mistakes,
+    hints: s.hints,
+    share: s.share,
+  });
+}
+
 /**
- * Recomputes every rating and solve from finished rooms and dailies.
+ * Recomputes every rating from the `solves` ledger, recalculating each row
+ * under the current formula and backfilling any finished rooms and dailies
+ * missing from it.
  * Run after changing the formula: `npx convex run ratings:rebuild`.
+ *
+ * The ledger is the canonical history: it is never deleted here, because
+ * rooms are removed by TTL cleanup and could not be reconstructed. Missing
+ * solves are inserted idempotently via their stable `sourceKey`.
  */
 export const rebuild = internalMutation({
   args: {},
   handler: async (ctx) => {
-    for (const r of await ctx.db.query("ratings").collect()) {
-      await ctx.db.delete(r._id);
-    }
-    for (const s of await ctx.db.query("solves").collect()) {
-      await ctx.db.delete(s._id);
-    }
-
+    // Backfill solves missing from the ledger (idempotent via sourceKey).
     const rooms = await ctx.db.query("rooms").collect();
     for (const room of rooms) {
       const players = await ctx.db
@@ -353,5 +413,58 @@ export const rebuild = internalMutation({
       if (!daily) continue;
       await awardDaily(ctx, daily, attempt);
     }
+
+    // Re-aggregate every rating from the full ledger (now including
+    // backfills), recalculating each solve under the current formula.
+    // `solves` doesn't carry name/image, so snapshot them from `ratings`
+    // before wiping it.
+    const whoByUser = new Map(
+      (await ctx.db.query("ratings").collect()).map((r) => [
+        r.userId,
+        { name: r.name, image: r.image },
+      ]),
+    );
+    for (const r of await ctx.db.query("ratings").collect()) {
+      await ctx.db.delete(r._id);
+    }
+    for (const s of await ctx.db.query("solves").collect()) {
+      const points = rescore(s);
+      if (points !== s.points) await ctx.db.patch(s._id, { points });
+      const who = whoByUser.get(s.userId) ?? { name: "", image: undefined };
+      await applyToRating(
+        ctx,
+        { userId: s.userId, ...who },
+        {
+          mode: s.mode,
+          difficulty: s.difficulty,
+          elapsedMs: s.elapsedMs,
+          points,
+          perfect: s.perfect,
+          finishedAt: s.finishedAt,
+          mistakes: s.mistakes,
+          hints: s.hints,
+          share: s.share,
+        },
+      );
+    }
+  },
+});
+
+/**
+ * Deletes solve ledger rows older than the retention window. The weekly
+ * board only reads the current week, and lifetime totals live on the
+ * ratings rows, so old events are expendable history. Runs daily via cron.
+ */
+const SOLVE_RETENTION_MS = 180 * DAY_MS;
+
+export const cleanupSolves = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const cutoff = Date.now() - SOLVE_RETENTION_MS;
+    const stale = await ctx.db
+      .query("solves")
+      .withIndex("by_finishedAt", (q) => q.lt("finishedAt", cutoff))
+      .take(500);
+    for (const s of stale) await ctx.db.delete(s._id);
   },
 });

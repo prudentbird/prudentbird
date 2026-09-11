@@ -19,7 +19,10 @@ state) + Better Auth (Google sign-in via the Convex Better Auth component).
 - **Leaderboard** — all-time and this-week (since Monday 00:00 UTC) boards
   by points, each row showing solves, perfect solves and the player's fastest
   solve with its mode and difficulty. Every rated solve is logged to the
-  `solves` table; `ratings:rebuild` backfills it from existing games.
+  persistent `solves` table (rooms are deleted after their TTL, so this is
+  the durable history); `ratings:rebuild` backfills missing games and
+  recalculates every row under the current formula without discarding
+  existing ledger history. Solves older than 180 days are pruned daily.
 
 ## Analytics (PostHog)
 

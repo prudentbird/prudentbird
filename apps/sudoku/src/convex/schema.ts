@@ -120,7 +120,11 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_points", ["points"]),
 
-  /** One row per rated solve, so the leaderboard can be sliced by time. */
+  /**
+   * One row per rated solve, so the leaderboard can be sliced by time.
+   * Persistent ledger (rooms are deleted after their TTL) so weekly
+   * standings and best times survive room cleanup.
+   */
   solves: defineTable({
     userId: v.string(),
     mode: solveMode,
@@ -129,7 +133,18 @@ export default defineSchema({
     points: v.number(),
     perfect: v.boolean(),
     finishedAt: v.number(),
+    /** Score inputs so `ratings:rebuild` can recalculate after formula changes. */
+    mistakes: v.number(),
+    hints: v.number(),
+    /** Fraction of the board filled (co-op splits); omitted elsewhere. */
+    share: v.optional(v.number()),
+    /**
+     * Stable id for the rated solve (`room:<roomId>:<round>:<userId>` or
+     * `dailyAttempt:<attemptId>`). Makes rebuild backfills idempotent.
+     */
+    sourceKey: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
-    .index("by_finishedAt", ["finishedAt"]),
+    .index("by_finishedAt", ["finishedAt"])
+    .index("by_sourceKey", ["sourceKey"]),
 });
