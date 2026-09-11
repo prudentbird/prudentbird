@@ -2,7 +2,6 @@ import { v, type Infer } from "convex/values";
 import { authComponent } from "./auth";
 import type { Doc } from "./_generated/dataModel";
 import {
-  internalMutation,
   query,
   type MutationCtx,
   type QueryCtx,
@@ -24,14 +23,14 @@ type Solve = {
   points: number;
   perfect: boolean;
   finishedAt: number;
-  /** Score inputs, stored on the ledger so rebuilds can recalculate. */
+  /** Score inputs, stored on the ledger alongside each solve. */
   mistakes: number;
   hints: number;
   share?: number;
   /**
    * Stable id for the rated solve (`room:<roomId>:<round>:<userId>` or
-   * `dailyAttempt:<attemptId>`). Skipped when already recorded, which makes
-   * rebuild backfills idempotent.
+   * `dailyAttempt:<attemptId>`). Skipped when already recorded, which keeps
+   * duplicate award calls idempotent.
    */
   sourceKey?: string;
 };
@@ -90,7 +89,7 @@ async function applyToRating(ctx: MutationCtx, who: Who, solve: Solve) {
   }
 }
 
-/** Per-player points for a finished room. Pure, so the rebuild can reuse it. */
+/** Per-player points for a finished room. */
 export function roomAwards(
   room: Doc<"rooms">,
   players: Doc<"players">[],
@@ -389,106 +388,6 @@ export const leaderboard = query({
   },
 });
 
-/** Recomputes points for a ledger row under the current formula. */
-function rescore(s: {
-  difficulty: Difficulty;
-  elapsedMs: number;
-  mistakes: number;
-  hints: number;
-  share?: number;
-}): number {
-  return scorePoints({
-    difficulty: s.difficulty,
-    elapsedMs: s.elapsedMs,
-    mistakes: s.mistakes,
-    hints: s.hints,
-    share: s.share,
-  });
-}
-
-/**
- * Recomputes every rating from the `solves` ledger, recalculating each row
- * under the current formula and backfilling any finished rooms and dailies
- * missing from it.
- * Run after changing the formula: `npx convex run ratings:rebuild`.
- *
- * The ledger is the canonical history: it is never deleted here, because
- * rooms are removed by TTL cleanup and could not be reconstructed. Missing
- * solves are inserted idempotently via their stable `sourceKey`.
- */
-export const rebuild = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const solvesBefore = (await ctx.db.query("solves").collect()).length;
-
-    // Backfill solves missing from the ledger (idempotent via sourceKey).
-    const rooms = await ctx.db.query("rooms").collect();
-    for (const room of rooms) {
-      const players = await ctx.db
-        .query("players")
-        .withIndex("by_roomId", (q) => q.eq("roomId", room._id))
-        .collect();
-      for (const p of players) {
-        if (p.points !== undefined)
-          await ctx.db.patch(p._id, { points: undefined });
-      }
-      await awardRoom(ctx, room, players);
-    }
-
-    const attempts = await ctx.db.query("dailyAttempts").collect();
-    for (const attempt of attempts) {
-      if (!attempt.finishedAt) continue;
-      const daily = await ctx.db.get(attempt.dailyId);
-      if (!daily) continue;
-      await awardDaily(ctx, daily, attempt);
-    }
-
-    // Re-aggregate every rating from the full ledger (now including
-    // backfills), recalculating each solve under the current formula.
-    // `solves` doesn't carry name/image, so snapshot them from `ratings`
-    // before wiping it.
-    const whoByUser = new Map(
-      (await ctx.db.query("ratings").collect()).map((r) => [
-        r.userId,
-        { name: r.name, image: r.image },
-      ]),
-    );
-    for (const r of await ctx.db.query("ratings").collect()) {
-      await ctx.db.delete(r._id);
-    }
-    const solves = await ctx.db.query("solves").collect();
-    for (const s of solves) {
-      const points = rescore(s);
-      if (points !== s.points) await ctx.db.patch(s._id, { points });
-      const who = whoByUser.get(s.userId) ?? { name: "", image: undefined };
-      await applyToRating(
-        ctx,
-        { userId: s.userId, ...who },
-        {
-          mode: s.mode,
-          difficulty: s.difficulty,
-          elapsedMs: s.elapsedMs,
-          points,
-          perfect: s.perfect,
-          finishedAt: s.finishedAt,
-          mistakes: s.mistakes,
-          hints: s.hints,
-          share: s.share,
-        },
-      );
-    }
-
-    return {
-      roomsScanned: rooms.length,
-      attemptsScanned: attempts.length,
-      solvesBackfilled: solves.length - solvesBefore,
-      solvesRescored: solves.length,
-      ratingsRebuilt: whoByUser.size,
-    };
-  },
-});
-
-// No retention cron: `rebuild` fully recomputes `ratings` from the
-// `solves` ledger, so pruning old rows would silently drop their lifetime
-// points, solve counts and best times the next time rebuild runs. Revisit
-// once rebuild no longer needs the full ledger to recompute lifetime totals.
+// No retention cron: pruning old `solves` rows would silently drop their
+// lifetime points, solve counts and best times from `ratings`, which has no
+// other way to recompute lifetime totals.

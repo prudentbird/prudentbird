@@ -133,14 +133,14 @@ export default defineSchema({
     points: v.number(),
     perfect: v.boolean(),
     finishedAt: v.number(),
-    /** Score inputs so `ratings:rebuild` can recalculate after formula changes. */
+    /** Score inputs behind `points`, kept for reference. */
     mistakes: v.number(),
     hints: v.number(),
     /** Fraction of the board filled (co-op splits); omitted elsewhere. */
     share: v.optional(v.number()),
     /**
      * Stable id for the rated solve (`room:<roomId>:<round>:<userId>` or
-     * `dailyAttempt:<attemptId>`). Makes rebuild backfills idempotent.
+     * `dailyAttempt:<attemptId>`). Keeps duplicate award calls idempotent.
      */
     sourceKey: v.optional(v.string()),
   })
