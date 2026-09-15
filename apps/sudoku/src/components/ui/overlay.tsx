@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "~/lib/utils";
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 /** Bottom sheet on small screens, centred panel on larger ones. */
 export function Overlay({
@@ -15,10 +18,37 @@ export function Overlay({
   label: string;
   onDismiss?: () => void;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Move focus into the dialog on open and hand it back on close, since
+  // this can open without a click (e.g. the first-visit guide).
   useEffect(() => {
-    if (!onDismiss) return;
+    const previous = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+    return () => previous?.focus();
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onDismiss();
+      if (e.key === "Escape") {
+        onDismiss?.();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const panel = panelRef.current;
+      const focusable = panel
+        ? Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
+        : [];
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -33,9 +63,11 @@ export function Overlay({
       className="fixed inset-0 z-[60] flex items-end justify-center bg-background/80 backdrop-blur-sm sm:items-center sm:p-6"
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "safe-bottom relative max-h-[92dvh] w-full overflow-y-auto border-t border-border/60 bg-background sm:max-w-md sm:rounded-sm sm:border",
+          "safe-bottom relative max-h-[92dvh] w-full overflow-y-auto border-t border-border/60 bg-background outline-none sm:max-w-md sm:rounded-sm sm:border",
           "animate-in duration-300 fade-in slide-in-from-bottom-6 sm:slide-in-from-bottom-2",
           className,
         )}

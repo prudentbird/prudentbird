@@ -181,6 +181,7 @@ export function Play({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (guide.open) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -244,7 +245,7 @@ export function Play({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enterDigit, erase, undo, hint, onHint, setSelected]);
+  }, [enterDigit, erase, undo, hint, onHint, setSelected, guide.open]);
 
   const errorSet = useMemo(() => new Set(errors), [errors]);
   const selectedValue = selected === null ? "0" : board[selected]!;
@@ -311,7 +312,9 @@ export function Play({
         <aside className="flex flex-col gap-8">{aside}</aside>
       </div>
       {overlay}
-      {guide.open ? <HowToPlay onDismiss={guide.close} /> : null}
+      {guide.open ? (
+        <HowToPlay onDismiss={guide.close} hasHint={!!onHint} />
+      ) : null}
     </div>
   );
 }

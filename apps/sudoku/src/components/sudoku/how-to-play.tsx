@@ -11,7 +11,7 @@ function hasSeenGuide(): boolean {
   try {
     return localStorage.getItem(SEEN_KEY) === "1";
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -40,7 +40,14 @@ export function useHowToPlay() {
   };
 }
 
-export function HowToPlay({ onDismiss }: { onDismiss: () => void }) {
+export function HowToPlay({
+  onDismiss,
+  hasHint,
+}: {
+  onDismiss: () => void;
+  /** Whether this game mode offers the Hint tool (rooms may not). */
+  hasHint: boolean;
+}) {
   return (
     <Overlay label="How to play" onDismiss={onDismiss}>
       <div className="flex flex-col gap-6 p-6 sm:p-8">
@@ -62,14 +69,17 @@ export function HowToPlay({ onDismiss }: { onDismiss: () => void }) {
             <ul className="list-disc space-y-1 pl-4">
               <li>Select a cell, then tap a digit to fill it in.</li>
               <li>Notes toggles pencil marks for candidate digits.</li>
-              <li>Hint reveals a cell and explains the reasoning.</li>
+              {hasHint ? (
+                <li>Hint reveals a cell and explains the reasoning.</li>
+              ) : null}
               <li>Undo steps back through your moves.</li>
             </ul>
           </section>
           <section>
             <h3 className="mb-1 font-medium text-foreground">Keyboard</h3>
             <p>
-              Arrows move · 1–9 enter · ⌫ erase · N notes · H hint · ⌘Z undo
+              Arrows move · 1–9 enter · ⌫ erase · N notes
+              {hasHint ? " · H hint" : ""} · ⌘Z undo
             </p>
           </section>
         </div>
