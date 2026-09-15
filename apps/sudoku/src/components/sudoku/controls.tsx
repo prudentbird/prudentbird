@@ -17,6 +17,7 @@ type ControlsProps = {
   onToggleNotes: () => void;
   onHint?: () => void;
   hintsLeft?: number;
+  onHelp?: () => void;
 };
 
 export function Controls({
@@ -31,6 +32,7 @@ export function Controls({
   onToggleNotes,
   onHint,
   hintsLeft,
+  onHelp,
 }: ControlsProps) {
   const counts = new Array<number>(10).fill(0);
   for (let i = 0; i < 81; i++) counts[board.charCodeAt(i) - 48]++;
@@ -86,6 +88,7 @@ export function Controls({
             disabled={disabled || (hintsLeft !== undefined && hintsLeft <= 0)}
           />
         ) : null}
+        {onHelp ? <Tool label="How to play" onClick={onHelp} /> : null}
       </div>
     </div>
   );
