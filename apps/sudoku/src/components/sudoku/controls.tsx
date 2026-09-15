@@ -83,7 +83,7 @@ export function Controls({
           <Tool
             label={hintsLeft !== undefined ? `Hint (${hintsLeft})` : "Hint"}
             onClick={onHint}
-            disabled={disabled || hintsLeft === 0}
+            disabled={disabled || (hintsLeft !== undefined && hintsLeft <= 0)}
           />
         ) : null}
       </div>

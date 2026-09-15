@@ -106,14 +106,15 @@ export const place = mutation({
 
 /**
  * Reveals the correct digit for a cell. Not in versus, where it would be
- * a free win. Counts towards the player's hint tally.
+ * a free win. Counts towards the room's shared hint tally, capped at
+ * MAX_HINTS for the whole game (not per player).
  */
 export const hint = mutation({
   args: { roomId: v.id("rooms"), cell: v.union(v.number(), v.null()) },
   handler: async (ctx, args) => {
     const { room, player } = await requireMember(ctx, args.roomId);
     if (room.status !== "playing" || room.mode === "versus") return null;
-    if ((player.hints ?? 0) >= MAX_HINTS) return null;
+    if ((room.hints ?? 0) >= MAX_HINTS) return null;
 
     let cell = args.cell;
     const isOpen = (i: number) =>
@@ -135,6 +136,7 @@ export const hint = mutation({
     await ctx.db.patch(room._id, {
       board,
       owners,
+      hints: (room.hints ?? 0) + 1,
       ...(solved ? { status: "finished", finishedAt: now } : {}),
     });
     await ctx.db.patch(player._id, { hints: (player.hints ?? 0) + 1 });

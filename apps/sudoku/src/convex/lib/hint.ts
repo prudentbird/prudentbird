@@ -47,7 +47,7 @@ function isHiddenSingle(
 /** Step-by-step reasoning for why `value` fits at `cell`. */
 export function explainHint(board: string, cell: number, value: number): string[] {
   const cands = candidates(board, cell);
-  if (cands.length === 1) {
+  if (cands.length === 1 && cands[0] === value) {
     return [
       "Every other digit already appears in this cell's row, column, or 3×3 box.",
       `${value} is the only digit left that fits — a naked single.`,
@@ -62,17 +62,19 @@ export function explainHint(board: string, cell: number, value: number): string[
       [box, "3×3 box"],
     ];
   })();
-  for (const [unit, name] of units) {
-    if (isHiddenSingle(board, unit, cell, value)) {
-      return [
-        `Every other empty cell in this ${name} already rules out ${value}.`,
-        `That makes this the only cell in the ${name} that can hold ${value} — a hidden single.`,
-      ];
+  if (cands.includes(value)) {
+    for (const [unit, name] of units) {
+      if (isHiddenSingle(board, unit, cell, value)) {
+        return [
+          `Every other empty cell in this ${name} already rules out ${value}.`,
+          `That makes this the only cell in the ${name} that can hold ${value} — a hidden single.`,
+        ];
+      }
     }
   }
 
   return [
     "This one needs a longer chain of deduction than a single row, column, or box check.",
-    `${value} is the digit that keeps the rest of the puzzle solvable.`,
+    `${value} is the solution digit for this hint.`,
   ];
 }

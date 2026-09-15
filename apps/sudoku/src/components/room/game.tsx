@@ -139,8 +139,8 @@ export function Game({ view }: { view: RoomView }) {
       <p className="text-sm text-muted-foreground">
         {filled} of {totalBlanks} filled · {myPlayer?.mistakes ?? 0}{" "}
         {myPlayer?.mistakes === 1 ? "mistake" : "mistakes"}
-        {shared && myPlayer?.hints
-          ? ` · ${myPlayer.hints} ${myPlayer.hints === 1 ? "hint" : "hints"}`
+        {shared && room.hints
+          ? ` · ${room.hints} ${room.hints === 1 ? "hint" : "hints"}`
           : ""}
       </p>
 
@@ -178,7 +178,7 @@ export function Game({ view }: { view: RoomView }) {
         locked={locked}
         onPlace={onPlace}
         onHint={shared ? onHint : undefined}
-        hintsLeft={shared ? MAX_HINTS - (myPlayer?.hints ?? 0) : undefined}
+        hintsLeft={shared ? MAX_HINTS - room.hints : undefined}
         cellColors={cellColors}
         cursors={cursors}
         onSelect={onSelect}

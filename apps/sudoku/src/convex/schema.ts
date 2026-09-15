@@ -43,6 +43,8 @@ export default defineSchema({
     winnerPlayerId: v.optional(v.id("players")),
     /** Increments on every rematch so clients can reset local state. */
     round: v.number(),
+    /** Shared hint count for the room, capped at MAX_HINTS. Unused in versus. */
+    hints: v.optional(v.number()),
     /** Set on games imported from guest play, to make imports idempotent. */
     importKey: v.optional(v.string()),
     closedAt: v.optional(v.number()),
