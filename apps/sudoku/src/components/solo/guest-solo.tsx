@@ -263,7 +263,7 @@ function SoloGame({
         locked={finished}
         onPlace={onPlace}
         onHint={onHint}
-        hintsLeft={MAX_HINTS - game.hints}
+        hintsLeft={Math.max(0, MAX_HINTS - game.hints)}
         topBar={topBar}
         aside={aside}
         overlay={

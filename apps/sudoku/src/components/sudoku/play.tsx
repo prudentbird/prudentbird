@@ -280,7 +280,11 @@ export function Play({
             />
           </div>
           {hintNote ? (
-            <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
+            >
               <ol className="list-decimal space-y-1 pl-4">
                 {hintNote.steps.map((step, i) => (
                   <li key={i}>{step}</li>

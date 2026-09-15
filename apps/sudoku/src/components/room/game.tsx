@@ -178,7 +178,7 @@ export function Game({ view }: { view: RoomView }) {
         locked={locked}
         onPlace={onPlace}
         onHint={shared ? onHint : undefined}
-        hintsLeft={shared ? MAX_HINTS - room.hints : undefined}
+        hintsLeft={shared ? Math.max(0, MAX_HINTS - room.hints) : undefined}
         cellColors={cellColors}
         cursors={cursors}
         onSelect={onSelect}

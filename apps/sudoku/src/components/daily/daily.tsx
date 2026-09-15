@@ -169,7 +169,7 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
         locked={finished}
         onPlace={onPlace}
         onHint={onHint}
-        hintsLeft={MAX_HINTS - attempt.hints}
+        hintsLeft={Math.max(0, MAX_HINTS - attempt.hints)}
         topBar={topBar}
         aside={aside}
         overlay={
