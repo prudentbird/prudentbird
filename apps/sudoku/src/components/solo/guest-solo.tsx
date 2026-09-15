@@ -17,6 +17,8 @@ import {
   wrongCells,
   type Difficulty,
 } from "~/convex/lib/sudoku";
+import { explainHint } from "~/convex/lib/hint";
+import { MAX_HINTS } from "~/convex/lib/rating";
 import {
   newLocalGame,
   pushHistory,
@@ -173,6 +175,7 @@ function SoloGame({
   const onHint = useCallback(
     async (cell: number | null) => {
       if (game.finishedAt) return null;
+      if (game.hints >= MAX_HINTS) return null;
       const isOpen = (i: number) =>
         game.puzzle[i] === "0" && game.board[i] !== game.solution[i];
       let target = cell;
@@ -182,11 +185,9 @@ function SoloGame({
         if (open.length === 0) return null;
         target = open[Math.floor(Math.random() * open.length)]!;
       }
-      const board = setCell(
-        game.board,
-        target,
-        game.solution.charCodeAt(target) - 48,
-      );
+      const value = game.solution.charCodeAt(target) - 48;
+      const steps = explainHint(game.board, target, value);
+      const board = setCell(game.board, target, value);
       const solved = board === game.solution;
       track("hint_used", {
         mode: "solo",
@@ -199,7 +200,7 @@ function SoloGame({
         hints: game.hints + 1,
         ...(solved ? { finishedAt: Date.now() } : {}),
       });
-      return target;
+      return { cell: target, steps };
     },
     [game, onChange, isAuthenticated],
   );
@@ -262,6 +263,7 @@ function SoloGame({
         locked={finished}
         onPlace={onPlace}
         onHint={onHint}
+        hintsLeft={Math.max(0, MAX_HINTS - game.hints)}
         topBar={topBar}
         aside={aside}
         overlay={

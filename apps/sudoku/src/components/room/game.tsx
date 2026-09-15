@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { RoomView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
+import { MAX_HINTS } from "~/convex/lib/rating";
 import { playerColor } from "~/lib/players";
 import { DIFFICULTY_LABEL, MODE_LABEL } from "~/lib/utils";
 import { useBecame } from "~/hooks/use-became";
@@ -138,8 +139,8 @@ export function Game({ view }: { view: RoomView }) {
       <p className="text-sm text-muted-foreground">
         {filled} of {totalBlanks} filled · {myPlayer?.mistakes ?? 0}{" "}
         {myPlayer?.mistakes === 1 ? "mistake" : "mistakes"}
-        {shared && myPlayer?.hints
-          ? ` · ${myPlayer.hints} ${myPlayer.hints === 1 ? "hint" : "hints"}`
+        {shared && room.hints
+          ? ` · ${room.hints} ${room.hints === 1 ? "hint" : "hints"}`
           : ""}
       </p>
 
@@ -177,6 +178,7 @@ export function Game({ view }: { view: RoomView }) {
         locked={locked}
         onPlace={onPlace}
         onHint={shared ? onHint : undefined}
+        hintsLeft={shared ? Math.max(0, MAX_HINTS - room.hints) : undefined}
         cellColors={cellColors}
         cursors={cursors}
         onSelect={onSelect}

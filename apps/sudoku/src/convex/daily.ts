@@ -8,6 +8,8 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { awardDaily } from "./ratings";
+import { explainHint } from "./lib/hint";
+import { MAX_HINTS } from "./lib/rating";
 import { dailyCompletedEvent, dailyProps, track } from "./analytics";
 import {
   blankCount,
@@ -285,6 +287,7 @@ export const hint = mutation({
     const attempt = await findAttempt(ctx, daily._id, user._id);
     if (!attempt) throw new Error("Start the daily first");
     if (attempt.finishedAt) return null;
+    if (attempt.hints >= MAX_HINTS) return null;
 
     let cell = args.cell;
     const isOpen = (i: number) =>
@@ -297,6 +300,7 @@ export const hint = mutation({
     }
 
     const value = daily.solution.charCodeAt(cell) - 48;
+    const steps = explainHint(attempt.board, cell, value);
     const board = setCell(attempt.board, cell, value);
     const solved = board === daily.solution;
     const now = Date.now();
@@ -313,7 +317,7 @@ export const hint = mutation({
       properties: dailyProps(daily),
     });
     if (solved) await finishDaily(ctx, daily, attempt._id);
-    return cell;
+    return { cell, steps };
   },
 });
 

@@ -308,6 +308,7 @@ export const rematch = mutation({
       finishedAt: undefined,
       winnerPlayerId: undefined,
       round: room.round + 1,
+      hints: 0,
     });
     for (const p of previousPlayers) {
       await ctx.db.patch(p._id, {
@@ -386,6 +387,7 @@ export const get = query({
         finishedAt: room.finishedAt,
         winnerPlayerId: room.winnerPlayerId,
         round: room.round,
+        hints: room.hints ?? 0,
         closedAt: room.closedAt,
         closedReason: room.closedReason,
       },
