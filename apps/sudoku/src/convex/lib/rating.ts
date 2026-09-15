@@ -18,6 +18,8 @@ export const PAR_MS: Record<Difficulty, number> = {
 
 export const PERFECT_MULTIPLIER = 1.25;
 export const HINT_PENALTY = 0.1;
+/** Max hints a player may request in a single game. */
+export const MAX_HINTS = 3;
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, n));

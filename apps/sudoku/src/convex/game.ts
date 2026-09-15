@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { mutation, type MutationCtx } from "./_generated/server";
 import { requireMember } from "./rooms";
 import { setCell } from "./lib/sudoku";
+import { explainHint } from "./lib/hint";
+import { MAX_HINTS } from "./lib/rating";
 import { awardRoom } from "./ratings";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
@@ -111,6 +113,7 @@ export const hint = mutation({
   handler: async (ctx, args) => {
     const { room, player } = await requireMember(ctx, args.roomId);
     if (room.status !== "playing" || room.mode === "versus") return null;
+    if ((player.hints ?? 0) >= MAX_HINTS) return null;
 
     let cell = args.cell;
     const isOpen = (i: number) =>
@@ -123,6 +126,7 @@ export const hint = mutation({
     }
 
     const value = room.solution.charCodeAt(cell) - 48;
+    const steps = explainHint(room.board, cell, value);
     const board = setCell(room.board, cell, value);
     const owners = room.owners.slice();
     owners[cell] = player._id;
@@ -140,7 +144,7 @@ export const hint = mutation({
       properties: roomProps(room),
     });
     if (solved) await finishRoom(ctx, (await ctx.db.get(room._id))!);
-    return cell;
+    return { cell, steps };
   },
 });
 

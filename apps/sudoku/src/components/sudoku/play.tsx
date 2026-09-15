@@ -14,6 +14,9 @@ import { Controls } from "~/components/sudoku/controls";
 
 type Move = { cell: number; prev: number; next: number };
 
+/** A revealed cell plus the step-by-step reasoning for why it fits. */
+export type HintResult = { cell: number; steps: string[] };
+
 export type PlayProps = {
   puzzle: string;
   board: string;
@@ -21,7 +24,9 @@ export type PlayProps = {
   locked: boolean;
   onPlace: (cell: number, value: number) => Promise<unknown> | void;
   /** When provided, a Hint tool appears. Resolves to the revealed cell. */
-  onHint?: (cell: number | null) => Promise<number | null | undefined>;
+  onHint?: (cell: number | null) => Promise<HintResult | null | undefined>;
+  /** Hints remaining before the Hint tool disables itself. */
+  hintsLeft?: number;
   cellColors?: ReadonlyArray<string | undefined>;
   cursors?: ReadonlyMap<number, CellCursor[]>;
   /** Fired whenever the selection changes (for live cursors). */
@@ -42,6 +47,7 @@ export function Play({
   locked,
   onPlace,
   onHint,
+  hintsLeft,
   cellColors,
   cursors,
   onSelect,
@@ -54,6 +60,7 @@ export function Play({
   const [notes, setNotes] = useState<Map<number, number>>(() => new Map());
   const [history, setHistory] = useState<Move[]>([]);
   const [flash, setFlash] = useState<number | null>(null);
+  const [hintNote, setHintNote] = useState<HintResult | null>(null);
 
   const boardRef = useRef(board);
   useEffect(() => {
@@ -145,22 +152,24 @@ export function Play({
 
   const hint = useCallback(async () => {
     if (!onHint || locked) return;
+    if (hintsLeft !== undefined && hintsLeft <= 0) return;
     try {
-      const cell = await onHint(isEditable(selected) ? selected : null);
-      if (typeof cell === "number") {
-        setSelected(cell);
-        setFlash(cell);
+      const result = await onHint(isEditable(selected) ? selected : null);
+      if (result) {
+        setSelected(result.cell);
+        setFlash(result.cell);
+        setHintNote(result);
         setNotes((old) => {
-          if (!old.has(cell)) return old;
+          if (!old.has(result.cell)) return old;
           const next = new Map(old);
-          next.delete(cell);
+          next.delete(result.cell);
           return next;
         });
       }
     } catch {
       // surfaced via server state
     }
-  }, [onHint, locked, isEditable, selected, setSelected]);
+  }, [onHint, locked, hintsLeft, isEditable, selected, setSelected]);
 
   useEffect(() => {
     if (flash === null) return;
@@ -267,8 +276,26 @@ export function Play({
               onUndo={undo}
               onToggleNotes={() => setNotesMode((v) => !v)}
               onHint={onHint ? () => void hint() : undefined}
+              hintsLeft={hintsLeft}
             />
           </div>
+          {hintNote ? (
+            <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              <ol className="list-decimal space-y-1 pl-4">
+                {hintNote.steps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+              <button
+                type="button"
+                onClick={() => setHintNote(null)}
+                aria-label="Dismiss hint explanation"
+                className="shrink-0 cursor-pointer text-muted-foreground/60 hover:text-foreground"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
           <p className="hidden text-xs text-muted-foreground/70 lg:block">
             Arrows move · 1–9 enter · ⌫ erase · N notes
             {onHint ? " · H hint" : ""} · ⌘Z undo

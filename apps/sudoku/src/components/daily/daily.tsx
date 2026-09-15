@@ -6,6 +6,7 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { DailyView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
+import { MAX_HINTS } from "~/convex/lib/rating";
 import { formatDailyDate, todayUtc } from "~/lib/daily";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
 import { track } from "~/lib/analytics";
@@ -168,6 +169,7 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
         locked={finished}
         onPlace={onPlace}
         onHint={onHint}
+        hintsLeft={MAX_HINTS - attempt.hints}
         topBar={topBar}
         aside={aside}
         overlay={
