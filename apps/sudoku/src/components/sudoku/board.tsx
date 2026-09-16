@@ -1,6 +1,7 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
+import type { HintHighlight } from "~/convex/lib/hint";
 import { cn } from "~/lib/utils";
 
 export type CellCursor = { color: string; name: string };
@@ -19,10 +20,29 @@ type BoardProps = {
   cursors?: ReadonlyMap<number, CellCursor[]>;
   /** Cell to briefly flash (e.g. after a hint). */
   flash?: number | null;
+  /** Cells called out by the current hint step; replaces the usual shading. */
+  highlight?: HintHighlight | null;
   disabled?: boolean;
 };
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
+/** Inset shadows tracing the outer edges of a unit. */
+function unitOutline(cell: number, unit: ReadonlySet<number>): string[] {
+  if (!unit.has(cell)) return [];
+  const r = Math.floor(cell / 9);
+  const c = cell % 9;
+  const edges: string[] = [];
+  if (c === 0 || !unit.has(cell - 1))
+    edges.push("inset 2px 0 0 0 var(--entry)");
+  if (c === 8 || !unit.has(cell + 1))
+    edges.push("inset -2px 0 0 0 var(--entry)");
+  if (r === 0 || !unit.has(cell - 9))
+    edges.push("inset 0 2px 0 0 var(--entry)");
+  if (r === 8 || !unit.has(cell + 9))
+    edges.push("inset 0 -2px 0 0 var(--entry)");
+  return edges;
+}
 
 export const Board = memo(function Board({
   puzzle,
@@ -34,6 +54,7 @@ export const Board = memo(function Board({
   cellColors,
   cursors,
   flash,
+  highlight,
   disabled,
 }: BoardProps) {
   const selRow = selected === null ? -1 : Math.floor(selected / 9);
@@ -43,6 +64,15 @@ export const Board = memo(function Board({
       ? -1
       : Math.floor(selRow / 3) * 3 + Math.floor(selCol / 3);
   const selValue = selected === null ? "0" : board[selected];
+
+  const hinted = useMemo(
+    () => ({
+      sources: new Set(highlight?.sources ?? []),
+      sweeps: new Set(highlight?.sweeps ?? []),
+      unit: new Set(highlight?.unit ?? []),
+    }),
+    [highlight],
+  );
 
   return (
     <div
@@ -67,6 +97,16 @@ export const Board = memo(function Board({
         const cellCursors = cursors?.get(i);
         const color = cellColors?.[i];
         const cellNotes = value === "0" ? (notes.get(i) ?? 0) : 0;
+        const isSource = hinted.sources.has(i);
+        const isTarget = highlight?.target === i;
+        const hintRings = highlight
+          ? [
+              ...unitOutline(i, hinted.unit),
+              // The cell under discussion, ringed so it stands out from the
+              // rest of its unit.
+              ...(isTarget ? ["inset 0 0 0 2px var(--hint)"] : []),
+            ]
+          : [];
 
         return (
           <button
@@ -86,22 +126,38 @@ export const Board = memo(function Board({
               r % 3 === 2 && r !== 8 && "border-b-2 border-b-foreground/80",
               c === 8 && "border-r-0",
               r === 8 && "border-b-0",
-              isSelected
-                ? "bg-entry/20"
-                : sameValue
-                  ? "bg-entry/10"
-                  : isPeer
-                    ? "bg-muted/60"
-                    : "bg-transparent",
+              // While a hint walks the player through a deduction, its
+              // highlight replaces the usual selection shading entirely.
+              highlight
+                ? isSource
+                  ? "bg-hint text-hint-foreground"
+                  : isTarget
+                    ? "bg-background"
+                    : hinted.sweeps.has(i)
+                      ? "bg-entry/15"
+                      : "bg-transparent"
+                : isSelected
+                  ? "bg-entry/20"
+                  : sameValue
+                    ? "bg-entry/10"
+                    : isPeer
+                      ? "bg-muted/60"
+                      : "bg-transparent",
               given ? "font-medium text-foreground" : "text-entry",
+              // Comes after given/text-entry so twMerge keeps this color,
+              // not the one it would otherwise conflict-resolve against.
+              isSource && "text-hint-foreground font-medium",
               isError && "text-destructive",
               flash === i && "animate-flash",
             )}
             style={{
-              color: !given && !isError && color ? color : undefined,
-              boxShadow: cellCursors?.length
-                ? `inset 0 0 0 2px ${cellCursors[0]!.color}`
-                : undefined,
+              color:
+                !given && !isError && color && !isSource ? color : undefined,
+              boxShadow: hintRings.length
+                ? hintRings.join(", ")
+                : cellCursors?.length
+                  ? `inset 0 0 0 2px ${cellCursors[0]!.color}`
+                  : undefined,
             }}
           >
             {value !== "0" ? (

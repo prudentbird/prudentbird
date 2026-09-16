@@ -17,6 +17,8 @@ type ControlsProps = {
   onToggleNotes: () => void;
   onHint?: () => void;
   hintsLeft?: number;
+  /** Set while a hint walkthrough is still on screen. */
+  hintBusy?: boolean;
   onHelp?: () => void;
 };
 
@@ -32,6 +34,7 @@ export function Controls({
   onToggleNotes,
   onHint,
   hintsLeft,
+  hintBusy,
   onHelp,
 }: ControlsProps) {
   const counts = new Array<number>(10).fill(0);
@@ -85,7 +88,11 @@ export function Controls({
           <Tool
             label={hintsLeft !== undefined ? `Hint (${hintsLeft})` : "Hint"}
             onClick={onHint}
-            disabled={disabled || (hintsLeft !== undefined && hintsLeft <= 0)}
+            disabled={
+              disabled ||
+              hintBusy ||
+              (hintsLeft !== undefined && hintsLeft <= 0)
+            }
           />
         ) : null}
         {onHelp ? <Tool label="How to play" onClick={onHelp} /> : null}

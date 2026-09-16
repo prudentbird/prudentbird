@@ -17,7 +17,7 @@ import {
   wrongCells,
   type Difficulty,
 } from "~/convex/lib/sudoku";
-import { explainHint } from "~/convex/lib/hint";
+import { buildHint } from "~/convex/lib/hint";
 import { MAX_HINTS } from "~/convex/lib/rating";
 import {
   newLocalGame,
@@ -176,31 +176,22 @@ function SoloGame({
     async (cell: number | null) => {
       if (game.finishedAt) return null;
       if (game.hints >= MAX_HINTS) return null;
-      const isOpen = (i: number) =>
-        game.puzzle[i] === "0" && game.board[i] !== game.solution[i];
-      let target = cell;
-      if (target === null || !isOpen(target)) {
-        const open: number[] = [];
-        for (let i = 0; i < 81; i++) if (isOpen(i)) open.push(i);
-        if (open.length === 0) return null;
-        target = open[Math.floor(Math.random() * open.length)]!;
+      const open: number[] = [];
+      for (let i = 0; i < 81; i++) {
+        if (game.puzzle[i] === "0" && game.board[i] !== game.solution[i]) {
+          open.push(i);
+        }
       }
-      const value = game.solution.charCodeAt(target) - 48;
-      const steps = explainHint(game.board, target, value);
-      const board = setCell(game.board, target, value);
-      const solved = board === game.solution;
+      // The digit lands through `onPlace` at the end of the walkthrough.
+      const hint = buildHint(game.board, game.solution, open, cell);
+      if (!hint) return null;
       track("hint_used", {
         mode: "solo",
         difficulty: game.difficulty,
         is_guest: !isAuthenticated,
       });
-      onChange({
-        ...game,
-        board,
-        hints: game.hints + 1,
-        ...(solved ? { finishedAt: Date.now() } : {}),
-      });
-      return { cell: target, steps };
+      onChange({ ...game, hints: game.hints + 1 });
+      return hint;
     },
     [game, onChange, isAuthenticated],
   );

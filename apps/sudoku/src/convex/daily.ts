@@ -8,7 +8,7 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { awardDaily } from "./ratings";
-import { explainHint } from "./lib/hint";
+import { buildHint } from "./lib/hint";
 import { MAX_HINTS } from "./lib/rating";
 import { dailyCompletedEvent, dailyProps, track } from "./analytics";
 import {
@@ -289,35 +289,25 @@ export const hint = mutation({
     if (attempt.finishedAt) return null;
     if (attempt.hints >= MAX_HINTS) return null;
 
-    let cell = args.cell;
-    const isOpen = (i: number) =>
-      daily.puzzle[i] === "0" && attempt.board[i] !== daily.solution[i];
-    if (cell === null || !Number.isInteger(cell) || !isOpen(cell)) {
-      const open: number[] = [];
-      for (let i = 0; i < 81; i++) if (isOpen(i)) open.push(i);
-      if (open.length === 0) return null;
-      cell = open[Math.floor(Math.random() * open.length)]!;
+    const open: number[] = [];
+    for (let i = 0; i < 81; i++) {
+      if (daily.puzzle[i] === "0" && attempt.board[i] !== daily.solution[i]) {
+        open.push(i);
+      }
     }
+    const preferred =
+      args.cell !== null && Number.isInteger(args.cell) ? args.cell : null;
+    // The digit lands through `place` once the walkthrough runs out of steps.
+    const hint = buildHint(attempt.board, daily.solution, open, preferred);
+    if (!hint) return null;
 
-    const value = daily.solution.charCodeAt(cell) - 48;
-    const steps = explainHint(attempt.board, cell, value);
-    const board = setCell(attempt.board, cell, value);
-    const solved = board === daily.solution;
-    const now = Date.now();
-    await ctx.db.patch(attempt._id, {
-      board,
-      hints: attempt.hints + 1,
-      ...(solved
-        ? { finishedAt: now, elapsedMs: now - attempt.startedAt }
-        : {}),
-    });
+    await ctx.db.patch(attempt._id, { hints: attempt.hints + 1 });
     await track(ctx, {
       distinctId: user._id,
       event: "hint_used",
       properties: dailyProps(daily),
     });
-    if (solved) await finishDaily(ctx, daily, attempt._id);
-    return { cell, steps };
+    return hint;
   },
 });
 

@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, type MutationCtx } from "./_generated/server";
 import { requireMember } from "./rooms";
 import { setCell } from "./lib/sudoku";
-import { explainHint } from "./lib/hint";
+import { buildHint } from "./lib/hint";
 import { MAX_HINTS } from "./lib/rating";
 import { awardRoom } from "./ratings";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -105,9 +105,10 @@ export const place = mutation({
 });
 
 /**
- * Reveals the correct digit for a cell. Not in versus, where it would be
- * a free win. Counts towards the room's shared hint tally, capped at
- * MAX_HINTS for the whole game (not per player).
+ * Builds the walkthrough for one cell. Not in versus, where it would be a
+ * free win. Counts towards the room's shared hint tally, capped at MAX_HINTS
+ * for the whole game (not per player). The digit itself is placed through
+ * `place` once the player reaches the end of the walkthrough.
  */
 export const hint = mutation({
   args: { roomId: v.id("rooms"), cell: v.union(v.number(), v.null()) },
@@ -116,37 +117,25 @@ export const hint = mutation({
     if (room.status !== "playing" || room.mode === "versus") return null;
     if ((room.hints ?? 0) >= MAX_HINTS) return null;
 
-    let cell = args.cell;
-    const isOpen = (i: number) =>
-      room.puzzle[i] === "0" && room.board[i] !== room.solution[i];
-    if (cell === null || !Number.isInteger(cell) || !isOpen(cell)) {
-      const open: number[] = [];
-      for (let i = 0; i < 81; i++) if (isOpen(i)) open.push(i);
-      if (open.length === 0) return null;
-      cell = open[Math.floor(Math.random() * open.length)]!;
+    const open: number[] = [];
+    for (let i = 0; i < 81; i++) {
+      if (room.puzzle[i] === "0" && room.board[i] !== room.solution[i]) {
+        open.push(i);
+      }
     }
+    const preferred =
+      args.cell !== null && Number.isInteger(args.cell) ? args.cell : null;
+    const hint = buildHint(room.board, room.solution, open, preferred);
+    if (!hint) return null;
 
-    const value = room.solution.charCodeAt(cell) - 48;
-    const steps = explainHint(room.board, cell, value);
-    const board = setCell(room.board, cell, value);
-    const owners = room.owners.slice();
-    owners[cell] = player._id;
-    const solved = board === room.solution;
-    const now = Date.now();
-    await ctx.db.patch(room._id, {
-      board,
-      owners,
-      hints: (room.hints ?? 0) + 1,
-      ...(solved ? { status: "finished", finishedAt: now } : {}),
-    });
+    await ctx.db.patch(room._id, { hints: (room.hints ?? 0) + 1 });
     await ctx.db.patch(player._id, { hints: (player.hints ?? 0) + 1 });
     await track(ctx, {
       distinctId: player.userId,
       event: "hint_used",
       properties: roomProps(room),
     });
-    if (solved) await finishRoom(ctx, (await ctx.db.get(room._id))!);
-    return { cell, steps };
+    return hint;
   },
 });
 

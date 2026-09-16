@@ -8,15 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { Hint } from "~/convex/lib/hint";
 import { PEERS } from "~/convex/lib/sudoku";
 import { Board, type CellCursor } from "~/components/sudoku/board";
 import { Controls } from "~/components/sudoku/controls";
+import { HintGuide } from "~/components/sudoku/hint-guide";
 import { HowToPlay, useHowToPlay } from "~/components/sudoku/how-to-play";
 
 type Move = { cell: number; prev: number; next: number };
-
-/** A revealed cell plus the step-by-step reasoning for why it fits. */
-export type HintResult = { cell: number; steps: string[] };
 
 export type PlayProps = {
   puzzle: string;
@@ -24,8 +23,8 @@ export type PlayProps = {
   errors: readonly number[];
   locked: boolean;
   onPlace: (cell: number, value: number) => Promise<unknown> | void;
-  /** When provided, a Hint tool appears. Resolves to the revealed cell. */
-  onHint?: (cell: number | null) => Promise<HintResult | null | undefined>;
+  /** When provided, a Hint tool appears. Resolves to the walkthrough. */
+  onHint?: (cell: number | null) => Promise<Hint | null | undefined>;
   /** Hints remaining before the Hint tool disables itself. */
   hintsLeft?: number;
   cellColors?: ReadonlyArray<string | undefined>;
@@ -61,7 +60,12 @@ export function Play({
   const [notes, setNotes] = useState<Map<number, number>>(() => new Map());
   const [history, setHistory] = useState<Move[]>([]);
   const [flash, setFlash] = useState<number | null>(null);
-  const [hintNote, setHintNote] = useState<HintResult | null>(null);
+  const [hintGuide, setHintGuide] = useState<{
+    hint: Hint;
+    step: number;
+    /** Only meaningful on the final step, where the digit actually lands. */
+    placement: "pending" | "placing" | "placed" | "failed";
+  } | null>(null);
   const guide = useHowToPlay();
 
   const boardRef = useRef(board);
@@ -80,30 +84,40 @@ export function Play({
     [locked, puzzle],
   );
 
+  // Local bookkeeping (undo history, pencil-mark cleanup) is applied
+  // optimistically and never rolled back — only the network write can fail,
+  // and only the hint walkthrough (below) needs to know if it did.
+  const bookkeepLocal = useCallback((cell: number, value: number) => {
+    const prev = boardRef.current.charCodeAt(cell) - 48;
+    if (prev === value) return;
+    setHistory((h) => [...h.slice(-99), { cell, prev, next: value }]);
+    if (value !== 0) {
+      setNotes((old) => {
+        const next = new Map(old);
+        next.delete(cell);
+        for (const p of PEERS[cell]) {
+          const m = old.get(p);
+          if (m && m & (1 << value)) next.set(p, m & ~(1 << value));
+        }
+        return next;
+      });
+    }
+  }, []);
+
   const commit = useCallback(
     (cell: number, value: number) => {
-      const prev = boardRef.current.charCodeAt(cell) - 48;
-      if (prev === value) return;
-      setHistory((h) => [...h.slice(-99), { cell, prev, next: value }]);
-      if (value !== 0) {
-        setNotes((old) => {
-          const next = new Map(old);
-          next.delete(cell);
-          for (const p of PEERS[cell]) {
-            const m = old.get(p);
-            if (m && m & (1 << value)) next.set(p, m & ~(1 << value));
-          }
-          return next;
-        });
-      }
+      bookkeepLocal(cell, value);
       void Promise.resolve(onPlace(cell, value)).catch(() => {});
     },
-    [onPlace],
+    [bookkeepLocal, onPlace],
   );
 
   const enterDigit = useCallback(
     (d: number) => {
-      if (!isEditable(selected)) return;
+      // Blocked while a hint walkthrough is open: editing another cell is
+      // harmless, but erasing or overwriting the just-explained one would
+      // leave the "must be N" final step pointing at an empty cell.
+      if (hintGuide || !isEditable(selected)) return;
       if (notesMode) {
         if (board[selected] !== "0") return;
         setNotes((old) => {
@@ -115,11 +129,11 @@ export function Play({
       }
       commit(selected, d);
     },
-    [isEditable, selected, notesMode, board, commit],
+    [isEditable, selected, notesMode, board, commit, hintGuide],
   );
 
   const erase = useCallback(() => {
-    if (!isEditable(selected)) return;
+    if (hintGuide || !isEditable(selected)) return;
     if (board[selected] !== "0") {
       commit(selected, 0);
     } else if (notes.get(selected)) {
@@ -129,7 +143,7 @@ export function Play({
         return next;
       });
     }
-  }, [isEditable, selected, board, notes, commit]);
+  }, [isEditable, selected, board, notes, commit, hintGuide]);
 
   const historyRef = useRef(history);
   useEffect(() => {
@@ -137,7 +151,9 @@ export function Play({
   }, [history]);
 
   const undo = useCallback(() => {
-    if (locked) return;
+    // Undo could otherwise pop the hint's own history entry and revert the
+    // digit the walkthrough just placed, out from under a still-open guide.
+    if (locked || hintGuide) return;
     const stack = [...historyRef.current];
     // Skip entries another player has since overwritten.
     while (stack.length) {
@@ -150,28 +166,71 @@ export function Play({
     }
     historyRef.current = stack;
     setHistory(stack);
-  }, [locked, onPlace, setSelected]);
+  }, [locked, hintGuide, onPlace, setSelected]);
+
+  // A ref, not state: `hintGuide` only updates once `onHint` resolves, so a
+  // second click or "H" press before then would still see it as null and
+  // fire a second request. This flips synchronously on the first click.
+  const hintRequestInFlight = useRef(false);
 
   const hint = useCallback(async () => {
     if (!onHint || locked) return;
+    if (hintGuide || hintRequestInFlight.current) return;
     if (hintsLeft !== undefined && hintsLeft <= 0) return;
+    hintRequestInFlight.current = true;
     try {
       const result = await onHint(isEditable(selected) ? selected : null);
       if (result) {
         setSelected(result.cell);
-        setFlash(result.cell);
-        setHintNote(result);
-        setNotes((old) => {
-          if (!old.has(result.cell)) return old;
-          const next = new Map(old);
-          next.delete(result.cell);
-          return next;
-        });
+        setHintGuide({ hint: result, step: 0, placement: "pending" });
       }
     } catch {
       // surfaced via server state
+    } finally {
+      hintRequestInFlight.current = false;
     }
-  }, [onHint, locked, hintsLeft, isEditable, selected, setSelected]);
+  }, [onHint, locked, hintGuide, hintsLeft, isEditable, selected, setSelected]);
+
+  // The hint is already spent server-side by the time the walkthrough opens,
+  // so a failed write here must not vanish silently — the player is told and
+  // can retry, rather than losing the hint with nothing to show for it.
+  const placeHint = useCallback(
+    (hint: Hint) => {
+      setFlash(hint.cell);
+      setHintGuide({ hint, step: hint.steps.length - 1, placement: "placing" });
+      void Promise.resolve(onPlace(hint.cell, hint.value)).then(
+        () =>
+          setHintGuide((g) =>
+            g && g.hint === hint ? { ...g, placement: "placed" } : g,
+          ),
+        () =>
+          setHintGuide((g) =>
+            g && g.hint === hint ? { ...g, placement: "failed" } : g,
+          ),
+      );
+    },
+    [onPlace],
+  );
+
+  const nextHintStep = useCallback(() => {
+    if (!hintGuide) return;
+    const step = hintGuide.step + 1;
+    if (step >= hintGuide.hint.steps.length) return;
+    if (step === hintGuide.hint.steps.length - 1) {
+      bookkeepLocal(hintGuide.hint.cell, hintGuide.hint.value);
+      placeHint(hintGuide.hint);
+    } else {
+      setHintGuide({ ...hintGuide, step });
+    }
+  }, [hintGuide, bookkeepLocal, placeHint]);
+
+  const retryHintPlacement = useCallback(() => {
+    if (hintGuide?.placement === "failed") placeHint(hintGuide.hint);
+  }, [hintGuide, placeHint]);
+
+  const prevHintStep = useCallback(() => {
+    setHintGuide((g) => (g && g.step > 0 ? { ...g, step: g.step - 1 } : g));
+  }, []);
 
   useEffect(() => {
     if (flash === null) return;
@@ -224,6 +283,8 @@ export function Play({
           }
           return;
         case "Escape":
+          // Deliberately does not close the hint walkthrough: a hint is
+          // spent either way, so the only way out is to read it through.
           setSelected(null);
           return;
         case "ArrowUp":
@@ -249,6 +310,8 @@ export function Play({
 
   const errorSet = useMemo(() => new Set(errors), [errors]);
   const selectedValue = selected === null ? "0" : board[selected]!;
+  // A finished game drops the walkthrough rather than freezing it on screen.
+  const openHintGuide = locked ? null : hintGuide;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-8">
@@ -265,6 +328,7 @@ export function Play({
             cellColors={cellColors}
             cursors={cursors}
             flash={flash}
+            highlight={openHintGuide?.hint.steps[openHintGuide.step]?.highlight}
             disabled={locked}
           />
           <div className="safe-bottom sticky bottom-0 z-20 -mx-4 bg-background/90 px-4 pt-1 pb-2 backdrop-blur lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none">
@@ -273,43 +337,42 @@ export function Play({
               selectedValue={selectedValue}
               notesMode={notesMode}
               canUndo={history.length > 0}
-              disabled={locked}
+              // Disabled while the walkthrough is open too, not just when
+              // the game is locked: erase/undo could otherwise pull the
+              // just-explained digit back out from under a still-open guide.
+              disabled={locked || openHintGuide !== null}
               onDigit={enterDigit}
               onErase={erase}
               onUndo={undo}
               onToggleNotes={() => setNotesMode((v) => !v)}
               onHint={onHint ? () => void hint() : undefined}
               hintsLeft={hintsLeft}
+              hintBusy={openHintGuide !== null}
               onHelp={guide.show}
             />
           </div>
-          {hintNote ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
-            >
-              <ol className="list-decimal space-y-1 pl-4">
-                {hintNote.steps.map((step, i) => (
-                  <li key={i}>{step}</li>
-                ))}
-              </ol>
-              <button
-                type="button"
-                onClick={() => setHintNote(null)}
-                aria-label="Dismiss hint explanation"
-                className="shrink-0 cursor-pointer text-muted-foreground/60 hover:text-foreground"
-              >
-                ×
-              </button>
-            </div>
-          ) : null}
           <p className="hidden text-xs text-muted-foreground/70 lg:block">
             Arrows move · 1–9 enter · ⌫ erase · N notes
             {onHint ? " · H hint" : ""} · ⌘Z undo
           </p>
         </div>
-        <aside className="flex flex-col gap-8">{aside}</aside>
+        <aside className="flex flex-col gap-8">
+          {/* Below lg the walkthrough is a fixed bottom sheet, so it sits
+              outside this column's flow; at lg it heads up the sidebar,
+              where it stays in view for the whole deduction. */}
+          {openHintGuide ? (
+            <HintGuide
+              hint={openHintGuide.hint}
+              step={openHintGuide.step}
+              placement={openHintGuide.placement}
+              onBack={prevHintStep}
+              onNext={nextHintStep}
+              onRetry={retryHintPlacement}
+              onDone={() => setHintGuide(null)}
+            />
+          ) : null}
+          {aside}
+        </aside>
       </div>
       {overlay}
       {guide.open ? (
