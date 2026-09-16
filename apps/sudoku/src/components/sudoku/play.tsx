@@ -114,7 +114,10 @@ export function Play({
 
   const enterDigit = useCallback(
     (d: number) => {
-      if (!isEditable(selected)) return;
+      // Blocked while a hint walkthrough is open: editing another cell is
+      // harmless, but erasing or overwriting the just-explained one would
+      // leave the "must be N" final step pointing at an empty cell.
+      if (hintGuide || !isEditable(selected)) return;
       if (notesMode) {
         if (board[selected] !== "0") return;
         setNotes((old) => {
@@ -126,11 +129,11 @@ export function Play({
       }
       commit(selected, d);
     },
-    [isEditable, selected, notesMode, board, commit],
+    [isEditable, selected, notesMode, board, commit, hintGuide],
   );
 
   const erase = useCallback(() => {
-    if (!isEditable(selected)) return;
+    if (hintGuide || !isEditable(selected)) return;
     if (board[selected] !== "0") {
       commit(selected, 0);
     } else if (notes.get(selected)) {
@@ -140,7 +143,7 @@ export function Play({
         return next;
       });
     }
-  }, [isEditable, selected, board, notes, commit]);
+  }, [isEditable, selected, board, notes, commit, hintGuide]);
 
   const historyRef = useRef(history);
   useEffect(() => {
@@ -148,7 +151,9 @@ export function Play({
   }, [history]);
 
   const undo = useCallback(() => {
-    if (locked) return;
+    // Undo could otherwise pop the hint's own history entry and revert the
+    // digit the walkthrough just placed, out from under a still-open guide.
+    if (locked || hintGuide) return;
     const stack = [...historyRef.current];
     // Skip entries another player has since overwritten.
     while (stack.length) {
@@ -161,12 +166,18 @@ export function Play({
     }
     historyRef.current = stack;
     setHistory(stack);
-  }, [locked, onPlace, setSelected]);
+  }, [locked, hintGuide, onPlace, setSelected]);
+
+  // A ref, not state: `hintGuide` only updates once `onHint` resolves, so a
+  // second click or "H" press before then would still see it as null and
+  // fire a second request. This flips synchronously on the first click.
+  const hintRequestInFlight = useRef(false);
 
   const hint = useCallback(async () => {
     if (!onHint || locked) return;
-    if (hintGuide) return; // finish the walkthrough on screen first
+    if (hintGuide || hintRequestInFlight.current) return;
     if (hintsLeft !== undefined && hintsLeft <= 0) return;
+    hintRequestInFlight.current = true;
     try {
       const result = await onHint(isEditable(selected) ? selected : null);
       if (result) {
@@ -175,6 +186,8 @@ export function Play({
       }
     } catch {
       // surfaced via server state
+    } finally {
+      hintRequestInFlight.current = false;
     }
   }, [onHint, locked, hintGuide, hintsLeft, isEditable, selected, setSelected]);
 
@@ -324,7 +337,10 @@ export function Play({
               selectedValue={selectedValue}
               notesMode={notesMode}
               canUndo={history.length > 0}
-              disabled={locked}
+              // Disabled while the walkthrough is open too, not just when
+              // the game is locked: erase/undo could otherwise pull the
+              // just-explained digit back out from under a still-open guide.
+              disabled={locked || openHintGuide !== null}
               onDigit={enterDigit}
               onErase={erase}
               onUndo={undo}

@@ -144,7 +144,9 @@ export const Board = memo(function Board({
                       ? "bg-muted/60"
                       : "bg-transparent",
               given ? "font-medium text-foreground" : "text-entry",
-              isSource && "font-medium",
+              // Comes after given/text-entry so twMerge keeps this color,
+              // not the one it would otherwise conflict-resolve against.
+              isSource && "text-hint-foreground font-medium",
               isError && "text-destructive",
               flash === i && "animate-flash",
             )}
