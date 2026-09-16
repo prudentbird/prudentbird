@@ -63,6 +63,8 @@ export function Play({
   const [hintGuide, setHintGuide] = useState<{
     hint: Hint;
     step: number;
+    /** Only meaningful on the final step, where the digit actually lands. */
+    placement: "pending" | "placing" | "placed" | "failed";
   } | null>(null);
   const guide = useHowToPlay();
 
@@ -82,25 +84,32 @@ export function Play({
     [locked, puzzle],
   );
 
+  // Local bookkeeping (undo history, pencil-mark cleanup) is applied
+  // optimistically and never rolled back — only the network write can fail,
+  // and only the hint walkthrough (below) needs to know if it did.
+  const bookkeepLocal = useCallback((cell: number, value: number) => {
+    const prev = boardRef.current.charCodeAt(cell) - 48;
+    if (prev === value) return;
+    setHistory((h) => [...h.slice(-99), { cell, prev, next: value }]);
+    if (value !== 0) {
+      setNotes((old) => {
+        const next = new Map(old);
+        next.delete(cell);
+        for (const p of PEERS[cell]) {
+          const m = old.get(p);
+          if (m && m & (1 << value)) next.set(p, m & ~(1 << value));
+        }
+        return next;
+      });
+    }
+  }, []);
+
   const commit = useCallback(
     (cell: number, value: number) => {
-      const prev = boardRef.current.charCodeAt(cell) - 48;
-      if (prev === value) return;
-      setHistory((h) => [...h.slice(-99), { cell, prev, next: value }]);
-      if (value !== 0) {
-        setNotes((old) => {
-          const next = new Map(old);
-          next.delete(cell);
-          for (const p of PEERS[cell]) {
-            const m = old.get(p);
-            if (m && m & (1 << value)) next.set(p, m & ~(1 << value));
-          }
-          return next;
-        });
-      }
+      bookkeepLocal(cell, value);
       void Promise.resolve(onPlace(cell, value)).catch(() => {});
     },
-    [onPlace],
+    [bookkeepLocal, onPlace],
   );
 
   const enterDigit = useCallback(
@@ -162,30 +171,52 @@ export function Play({
       const result = await onHint(isEditable(selected) ? selected : null);
       if (result) {
         setSelected(result.cell);
-        setHintGuide({ hint: result, step: 0 });
+        setHintGuide({ hint: result, step: 0, placement: "pending" });
       }
     } catch {
       // surfaced via server state
     }
   }, [onHint, locked, hintGuide, hintsLeft, isEditable, selected, setSelected]);
 
-  // The digit only lands once the walkthrough reaches the step that spells it
-  // out, so the player sees the reasoning before the answer.
+  // The hint is already spent server-side by the time the walkthrough opens,
+  // so a failed write here must not vanish silently — the player is told and
+  // can retry, rather than losing the hint with nothing to show for it.
+  const placeHint = useCallback(
+    (hint: Hint) => {
+      setFlash(hint.cell);
+      setHintGuide({ hint, step: hint.steps.length - 1, placement: "placing" });
+      void Promise.resolve(onPlace(hint.cell, hint.value)).then(
+        () =>
+          setHintGuide((g) =>
+            g && g.hint === hint ? { ...g, placement: "placed" } : g,
+          ),
+        () =>
+          setHintGuide((g) =>
+            g && g.hint === hint ? { ...g, placement: "failed" } : g,
+          ),
+      );
+    },
+    [onPlace],
+  );
+
   const nextHintStep = useCallback(() => {
     if (!hintGuide) return;
     const step = hintGuide.step + 1;
     if (step >= hintGuide.hint.steps.length) return;
-    setHintGuide({ hint: hintGuide.hint, step });
     if (step === hintGuide.hint.steps.length - 1) {
-      commit(hintGuide.hint.cell, hintGuide.hint.value);
-      setFlash(hintGuide.hint.cell);
+      bookkeepLocal(hintGuide.hint.cell, hintGuide.hint.value);
+      placeHint(hintGuide.hint);
+    } else {
+      setHintGuide({ ...hintGuide, step });
     }
-  }, [hintGuide, commit]);
+  }, [hintGuide, bookkeepLocal, placeHint]);
+
+  const retryHintPlacement = useCallback(() => {
+    if (hintGuide?.placement === "failed") placeHint(hintGuide.hint);
+  }, [hintGuide, placeHint]);
 
   const prevHintStep = useCallback(() => {
-    setHintGuide((g) =>
-      g && g.step > 0 ? { hint: g.hint, step: g.step - 1 } : g,
-    );
+    setHintGuide((g) => (g && g.step > 0 ? { ...g, step: g.step - 1 } : g));
   }, []);
 
   useEffect(() => {
@@ -317,8 +348,10 @@ export function Play({
             <HintGuide
               hint={openHintGuide.hint}
               step={openHintGuide.step}
+              placement={openHintGuide.placement}
               onBack={prevHintStep}
               onNext={nextHintStep}
+              onRetry={retryHintPlacement}
               onDone={() => setHintGuide(null)}
             />
           ) : null}

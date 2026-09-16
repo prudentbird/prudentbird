@@ -8,8 +8,11 @@ type HintGuideProps = {
   hint: Hint;
   /** Index of the step on screen. */
   step: number;
+  /** Status of writing the digit; only meaningful on the final step. */
+  placement: "pending" | "placing" | "placed" | "failed";
   onBack: () => void;
   onNext: () => void;
+  onRetry: () => void;
   onDone: () => void;
 };
 
@@ -21,8 +24,10 @@ type HintGuideProps = {
 export function HintGuide({
   hint,
   step,
+  placement,
   onBack,
   onNext,
+  onRetry,
   onDone,
 }: HintGuideProps) {
   const last = step === hint.steps.length - 1;
@@ -61,11 +66,19 @@ export function HintGuide({
         </p>
       </div>
 
+      {last && placement === "failed" ? (
+        <p role="alert" className="text-center text-sm text-destructive">
+          Couldn&apos;t save that — check your connection and try again.
+        </p>
+      ) : null}
+
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={onBack}
-          disabled={step === 0}
+          // Once the final step is reached the digit is already being
+          // written; rewinding here would let Next re-trigger that write.
+          disabled={step === 0 || last}
           aria-label="Previous step"
           className="-m-2 cursor-pointer p-2 text-entry transition-opacity disabled:invisible"
         >
@@ -84,7 +97,15 @@ export function HintGuide({
           ))}
         </div>
 
-        {last ? (
+        {last && placement === "failed" ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="-m-2 cursor-pointer p-2 text-sm font-medium text-destructive"
+          >
+            Try again
+          </button>
+        ) : last && placement === "placed" ? (
           <button
             type="button"
             onClick={onDone}
@@ -92,6 +113,13 @@ export function HintGuide({
           >
             Done
           </button>
+        ) : last ? (
+          <span
+            aria-live="polite"
+            className="p-2 text-sm text-muted-foreground"
+          >
+            Saving…
+          </span>
         ) : (
           <button
             type="button"
