@@ -11,6 +11,7 @@ import {
 import { PEERS } from "~/convex/lib/sudoku";
 import { Board, type CellCursor } from "~/components/sudoku/board";
 import { Controls } from "~/components/sudoku/controls";
+import { HowToPlay, useHowToPlay } from "~/components/sudoku/how-to-play";
 
 type Move = { cell: number; prev: number; next: number };
 
@@ -61,6 +62,7 @@ export function Play({
   const [history, setHistory] = useState<Move[]>([]);
   const [flash, setFlash] = useState<number | null>(null);
   const [hintNote, setHintNote] = useState<HintResult | null>(null);
+  const guide = useHowToPlay();
 
   const boardRef = useRef(board);
   useEffect(() => {
@@ -179,6 +181,7 @@ export function Play({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (guide.open) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -242,7 +245,7 @@ export function Play({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enterDigit, erase, undo, hint, onHint, setSelected]);
+  }, [enterDigit, erase, undo, hint, onHint, setSelected, guide.open]);
 
   const errorSet = useMemo(() => new Set(errors), [errors]);
   const selectedValue = selected === null ? "0" : board[selected]!;
@@ -277,6 +280,7 @@ export function Play({
               onToggleNotes={() => setNotesMode((v) => !v)}
               onHint={onHint ? () => void hint() : undefined}
               hintsLeft={hintsLeft}
+              onHelp={guide.show}
             />
           </div>
           {hintNote ? (
@@ -308,6 +312,9 @@ export function Play({
         <aside className="flex flex-col gap-8">{aside}</aside>
       </div>
       {overlay}
+      {guide.open ? (
+        <HowToPlay onDismiss={guide.close} hasHint={!!onHint} />
+      ) : null}
     </div>
   );
 }
