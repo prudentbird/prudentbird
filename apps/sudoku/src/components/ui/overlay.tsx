@@ -21,10 +21,14 @@ export function Overlay({
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Move focus into the dialog on open and hand it back on close, since
-  // this can open without a click (e.g. the first-visit guide).
+  // this can open without a click (e.g. the first-visit guide). Focusing
+  // the first real control (rather than the panel) keeps it as the Tab
+  // trap's boundary and gives keyboard users a visible focus ring.
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    panelRef.current?.focus();
+    const panel = panelRef.current;
+    const first = panel?.querySelector<HTMLElement>(FOCUSABLE);
+    (first ?? panel)?.focus();
     return () => previous?.focus();
   }, []);
 
@@ -67,7 +71,7 @@ export function Overlay({
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "safe-bottom relative max-h-[92dvh] w-full overflow-y-auto border-t border-border/60 bg-background outline-none sm:max-w-md sm:rounded-sm sm:border",
+          "safe-bottom relative max-h-[92dvh] w-full overflow-y-auto border-t border-border/60 bg-background sm:max-w-md sm:rounded-sm sm:border",
           "animate-in duration-300 fade-in slide-in-from-bottom-6 sm:slide-in-from-bottom-2",
           className,
         )}
