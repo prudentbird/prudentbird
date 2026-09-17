@@ -3,7 +3,8 @@ import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { internalAction, type MutationCtx } from "./_generated/server";
 import { blankCount } from "./lib/sudoku";
-import { dailyAward, roomAwards } from "./ratings";
+import { dailyAward, roomAwards, roomElapsed } from "./ratings";
+import { clockElapsed } from "./lib/clock";
 
 /** Mutations can't fetch, so `track` schedules an action that posts a batch. */
 export type AnalyticsEvent = {
@@ -92,7 +93,7 @@ export function roomFinishedEvents(
   players: Doc<"players">[],
 ): AnalyticsEvent[] {
   if (!room.startedAt || !room.finishedAt) return [];
-  const durationMs = room.finishedAt - room.startedAt;
+  const durationMs = roomElapsed(room);
   const base = { ...roomProps(room), player_count: players.length };
   const points = new Map(
     roomAwards(room, players).map((a) => [a.player._id, a.points]),
@@ -138,7 +139,9 @@ export function versusLateFinishEvent(
     properties: {
       ...roomProps(room),
       player_count: playerCount,
-      duration_ms: room.startedAt ? finishedAt - room.startedAt : 0,
+      duration_ms: room.startedAt
+        ? clockElapsed({ ...room, startedAt: room.startedAt }, finishedAt)
+        : 0,
       mistakes: player.mistakes,
       hints: player.hints ?? 0,
       points: 0,
@@ -154,7 +157,10 @@ export function roomAbandonedEvents(
 ): AnalyticsEvent[] {
   if (room.status !== "playing" || !room.startedAt) return [];
   const totalBlanks = blankCount(room.puzzle);
-  const durationMs = closedAt - room.startedAt;
+  const durationMs = clockElapsed(
+    { ...room, startedAt: room.startedAt },
+    closedAt,
+  );
   return players.map((p) => {
     const board = room.mode === "versus" ? p.board : room.board;
     let filled = 0;

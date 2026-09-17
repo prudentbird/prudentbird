@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { RoomView } from "~/lib/room-view";
 import type { Difficulty } from "~/convex/lib/sudoku";
+import { clockElapsed, type Clock } from "~/convex/lib/clock";
 import { Button } from "~/components/ui/button";
 import { Overlay } from "~/components/ui/overlay";
 import { Choice } from "~/components/ui/choice";
@@ -24,8 +25,14 @@ export function Results({
   const [difficulty, setDifficulty] = useState<Difficulty>(room.difficulty);
   const [busy, setBusy] = useState(false);
 
+  // The room's own clock, with paused stretches (solo only) already out. The
+  // per-player read below drops `finishedAt` so a versus runner-up isn't
+  // capped at the winner's time.
+  const clock: Clock | null = room.startedAt
+    ? { ...room, startedAt: room.startedAt }
+    : null;
   const elapsed =
-    room.startedAt && room.finishedAt ? room.finishedAt - room.startedAt : 0;
+    clock && room.finishedAt ? clockElapsed(clock, room.finishedAt) : 0;
   const isVersus = room.mode === "versus";
   const isSolo = room.mode === "solo";
   const winner = players.find((p) => p._id === room.winnerPlayerId);
@@ -105,8 +112,13 @@ export function Results({
                   </span>
                   <span className="font-mono text-xs tabular-nums text-muted-foreground">
                     {isVersus
-                      ? p.finishedAt && room.startedAt
-                        ? formatDuration(p.finishedAt - room.startedAt)
+                      ? p.finishedAt && clock
+                        ? formatDuration(
+                            clockElapsed(
+                              { ...clock, finishedAt: undefined },
+                              p.finishedAt,
+                            ),
+                          )
                         : `${pct}%`
                       : `${p.filled} cells`}
                     {" · "}

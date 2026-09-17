@@ -1,12 +1,9 @@
 import { v, type Infer } from "convex/values";
 import { authComponent } from "./auth";
 import type { Doc } from "./_generated/dataModel";
-import {
-  query,
-  type MutationCtx,
-  type QueryCtx,
-} from "./_generated/server";
+import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { blankCount, type Difficulty } from "./lib/sudoku";
+import { clockElapsed } from "./lib/clock";
 import { scorePoints } from "./lib/rating";
 import { solveMode } from "./schema";
 
@@ -89,6 +86,15 @@ async function applyToRating(ctx: MutationCtx, who: Who, solve: Solve) {
   }
 }
 
+/**
+ * Active play time for a finished room, with paused stretches (solo only)
+ * taken out. Rooms from before the play clock fall back to wall time.
+ */
+export function roomElapsed(room: Doc<"rooms">): number {
+  if (!room.startedAt || !room.finishedAt) return 0;
+  return clockElapsed({ ...room, startedAt: room.startedAt }, room.finishedAt);
+}
+
 /** Per-player points for a finished room. */
 export function roomAwards(
   room: Doc<"rooms">,
@@ -103,7 +109,7 @@ export function roomAwards(
   if (room.status !== "finished" || !room.startedAt || !room.finishedAt) {
     return [];
   }
-  const elapsedMs = room.finishedAt - room.startedAt;
+  const elapsedMs = roomElapsed(room);
 
   if (room.mode === "versus") {
     const winner = players.find((p) => p._id === room.winnerPlayerId);
@@ -162,7 +168,7 @@ export async function awardRoom(
   const awards = roomAwards(room, players);
   if (awards.length === 0) return;
   const finishedAt = room.finishedAt!;
-  const elapsedMs = finishedAt - room.startedAt!;
+  const elapsedMs = roomElapsed(room);
   for (const { player, points, mistakes, hints, share } of awards) {
     await ctx.db.patch(player._id, { points });
     await recordSolve(
@@ -266,7 +272,8 @@ type Standing = {
 function byScore(standings: Standing[]): Standing[] {
   return [...standings].sort(
     (a, b) =>
-      b.points - a.points || (a.best?.ms ?? Infinity) - (b.best?.ms ?? Infinity),
+      b.points - a.points ||
+      (a.best?.ms ?? Infinity) - (b.best?.ms ?? Infinity),
   );
 }
 
@@ -369,8 +376,7 @@ export const leaderboard = query({
       args.period === "week"
         ? await weeklyStandings(ctx, weekStart)
         : await allTimeStandings(ctx);
-    const standings =
-      args.category === "time" ? byTime(raw) : byScore(raw);
+    const standings = args.category === "time" ? byTime(raw) : byScore(raw);
     const meIdx = user ? standings.findIndex((r) => r.userId === user._id) : -1;
     const me = meIdx === -1 ? null : standings[meIdx]!;
     return {
