@@ -5,7 +5,7 @@ import { setCell } from "./lib/sudoku";
 import { buildHint } from "./lib/hint";
 import { MAX_HINTS } from "./lib/rating";
 import { awardRoom } from "./ratings";
-import { pauseClock, resumeClock, type Clock } from "./lib/clock";
+import { pauseClock, wakeClock, type Clock } from "./lib/clock";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   roomFinishedEvents,
@@ -23,13 +23,15 @@ async function roomPlayers(ctx: MutationCtx, roomId: Id<"rooms">) {
 
 /**
  * A move proves the player is at the board, so the room's clock runs again
- * even if a pause write got there first; finishing stops it for good. Only
- * solo rooms ever pause, so elsewhere this just records the activity. Rooms
- * mid-round always have `startedAt`, and the clock falls back to it anyway.
+ * even if a pause write got there first — unless the player has explicitly
+ * held it, which only a `resume` lifts; finishing stops it for good either
+ * way. Only solo rooms ever pause or hold, so elsewhere this just records
+ * the activity. Rooms mid-round always have `startedAt`, and the clock falls
+ * back to it anyway.
  */
 function roomClock(room: Doc<"rooms">, at: number, finished: boolean) {
   const clock: Clock = { ...room, startedAt: room.startedAt ?? at };
-  return finished ? pauseClock(clock, at) : resumeClock(clock, at);
+  return finished ? pauseClock(clock, at) : wakeClock(clock, at);
 }
 
 async function finishRoom(ctx: MutationCtx, room: Doc<"rooms">) {

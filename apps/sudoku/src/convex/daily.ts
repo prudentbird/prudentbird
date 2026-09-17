@@ -14,7 +14,7 @@ import {
   applyClock,
   clockUnchanged,
   pauseClock,
-  resumeClock,
+  wakeClock,
 } from "./lib/clock";
 import { MAX_HINTS } from "./lib/rating";
 import { dailyCompletedEvent, dailyProps, track } from "./analytics";
@@ -284,8 +284,9 @@ export const place = mutation({
     const solved = board === daily.solution;
     const now = Date.now();
     // A move proves the player is at the board, so the clock runs again even
-    // if a pause write got there first; solving stops it for good.
-    const clock = solved ? pauseClock(attempt, now) : resumeClock(attempt, now);
+    // if a pause write got there first — unless they've explicitly held it,
+    // which only a `resume` lifts; solving stops it for good either way.
+    const clock = solved ? pauseClock(attempt, now) : wakeClock(attempt, now);
     await ctx.db.patch(attempt._id, {
       board,
       mistakes: isWrong ? attempt.mistakes + 1 : attempt.mistakes,
@@ -321,7 +322,7 @@ export const hint = mutation({
 
     await ctx.db.patch(attempt._id, {
       hints: attempt.hints + 1,
-      ...resumeClock(attempt, Date.now()),
+      ...wakeClock(attempt, Date.now()),
     });
     await track(ctx, {
       distinctId: user._id,
