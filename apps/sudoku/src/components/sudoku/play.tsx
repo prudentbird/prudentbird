@@ -14,6 +14,7 @@ import { Board, type CellCursor } from "~/components/sudoku/board";
 import { Controls } from "~/components/sudoku/controls";
 import { HintGuide } from "~/components/sudoku/hint-guide";
 import { HowToPlay, useHowToPlay } from "~/components/sudoku/how-to-play";
+import { Button } from "~/components/ui/button";
 
 type Move = { cell: number; prev: number; next: number };
 
@@ -22,6 +23,10 @@ export type PlayProps = {
   board: string;
   errors: readonly number[];
   locked: boolean;
+  /** Clock stopped: the board is covered and every input is refused. */
+  paused?: boolean;
+  /** Lifts a pause the player asked for. Absent while auto-paused. */
+  onResume?: () => void;
   onPlace: (cell: number, value: number) => Promise<unknown> | void;
   /** When provided, a Hint tool appears. Resolves to the walkthrough. */
   onHint?: (cell: number | null) => Promise<Hint | null | undefined>;
@@ -37,6 +42,26 @@ export type PlayProps = {
 };
 
 /**
+ * Hides the board whenever the clock is stopped, so a pause can't be used to
+ * study the grid for free. Auto-pauses (tab hidden or blurred) lift
+ * themselves on focus and so have nothing to click.
+ */
+function PausedCover({ onResume }: { onResume?: () => void }) {
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-sm bg-background/95 backdrop-blur-sm">
+      <p className="text-sm text-muted-foreground">Paused</p>
+      {onResume ? (
+        <Button onClick={onResume}>Resume</Button>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Come back to this tab to carry on.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * Board + controls + keyboard handling, shared by rooms and the daily.
  * Owns purely local state: selection, pencil marks, undo history.
  */
@@ -45,6 +70,8 @@ export function Play({
   board,
   errors,
   locked,
+  paused = false,
+  onResume,
   onPlace,
   onHint,
   hintsLeft,
@@ -80,8 +107,8 @@ export function Play({
 
   const isEditable = useCallback(
     (cell: number | null): cell is number =>
-      cell !== null && !locked && puzzle[cell] === "0",
-    [locked, puzzle],
+      cell !== null && !locked && !paused && puzzle[cell] === "0",
+    [locked, paused, puzzle],
   );
 
   // Local bookkeeping (undo history, pencil-mark cleanup) is applied
@@ -153,7 +180,7 @@ export function Play({
   const undo = useCallback(() => {
     // Undo could otherwise pop the hint's own history entry and revert the
     // digit the walkthrough just placed, out from under a still-open guide.
-    if (locked || hintGuide) return;
+    if (locked || paused || hintGuide) return;
     const stack = [...historyRef.current];
     // Skip entries another player has since overwritten.
     while (stack.length) {
@@ -166,7 +193,7 @@ export function Play({
     }
     historyRef.current = stack;
     setHistory(stack);
-  }, [locked, hintGuide, onPlace, setSelected]);
+  }, [locked, paused, hintGuide, onPlace, setSelected]);
 
   // A ref, not state: `hintGuide` only updates once `onHint` resolves, so a
   // second click or "H" press before then would still see it as null and
@@ -174,7 +201,7 @@ export function Play({
   const hintRequestInFlight = useRef(false);
 
   const hint = useCallback(async () => {
-    if (!onHint || locked) return;
+    if (!onHint || locked || paused) return;
     if (hintGuide || hintRequestInFlight.current) return;
     if (hintsLeft !== undefined && hintsLeft <= 0) return;
     hintRequestInFlight.current = true;
@@ -189,7 +216,16 @@ export function Play({
     } finally {
       hintRequestInFlight.current = false;
     }
-  }, [onHint, locked, hintGuide, hintsLeft, isEditable, selected, setSelected]);
+  }, [
+    onHint,
+    locked,
+    paused,
+    hintGuide,
+    hintsLeft,
+    isEditable,
+    selected,
+    setSelected,
+  ]);
 
   // The hint is already spent server-side by the time the walkthrough opens,
   // so a failed write here must not vanish silently — the player is told and
@@ -241,6 +277,13 @@ export function Play({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (guide.open) return;
+      if (paused) {
+        if (e.key === "Escape" || e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          onResume?.();
+        }
+        return;
+      }
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -306,11 +349,22 @@ export function Play({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enterDigit, erase, undo, hint, onHint, setSelected, guide.open]);
+  }, [
+    enterDigit,
+    erase,
+    undo,
+    hint,
+    onHint,
+    setSelected,
+    guide.open,
+    paused,
+    onResume,
+  ]);
 
   const errorSet = useMemo(() => new Set(errors), [errors]);
   const selectedValue = selected === null ? "0" : board[selected]!;
-  // A finished game drops the walkthrough rather than freezing it on screen.
+  // A finished game drops the walkthrough rather than freezing it on screen;
+  // a pause only hides it, since the deduction resumes with the clock.
   const openHintGuide = locked ? null : hintGuide;
 
   return (
@@ -318,19 +372,24 @@ export function Play({
       {topBar}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-12">
         <div className="mx-auto flex w-full max-w-[520px] flex-col gap-4">
-          <Board
-            puzzle={puzzle}
-            board={board}
-            errors={errorSet}
-            selected={selected}
-            onSelect={(cell) => setSelected(cell)}
-            notes={notes}
-            cellColors={cellColors}
-            cursors={cursors}
-            flash={flash}
-            highlight={openHintGuide?.hint.steps[openHintGuide.step]?.highlight}
-            disabled={locked}
-          />
+          <div className="relative">
+            <Board
+              puzzle={puzzle}
+              board={board}
+              errors={errorSet}
+              selected={selected}
+              onSelect={(cell) => setSelected(cell)}
+              notes={notes}
+              cellColors={cellColors}
+              cursors={cursors}
+              flash={flash}
+              highlight={
+                openHintGuide?.hint.steps[openHintGuide.step]?.highlight
+              }
+              disabled={locked || paused}
+            />
+            {paused ? <PausedCover onResume={onResume} /> : null}
+          </div>
           <div className="safe-bottom sticky bottom-0 z-20 -mx-4 bg-background/90 px-4 pt-1 pb-2 backdrop-blur lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none">
             <Controls
               board={board}
@@ -340,7 +399,7 @@ export function Play({
               // Disabled while the walkthrough is open too, not just when
               // the game is locked: erase/undo could otherwise pull the
               // just-explained digit back out from under a still-open guide.
-              disabled={locked || openHintGuide !== null}
+              disabled={locked || paused || openHintGuide !== null}
               onDigit={enterDigit}
               onErase={erase}
               onUndo={undo}
@@ -360,7 +419,7 @@ export function Play({
           {/* Below lg the walkthrough is a fixed bottom sheet, so it sits
               outside this column's flow; at lg it heads up the sidebar,
               where it stays in view for the whole deduction. */}
-          {openHintGuide ? (
+          {openHintGuide && !paused ? (
             <HintGuide
               hint={openHintGuide.hint}
               step={openHintGuide.step}
