@@ -87,7 +87,9 @@ export function Projects() {
         {projects.map((project) => {
           const isPrivateSource = mode === "source" && project.private;
           const href =
-            mode === "preview" ? project.link : (project.github ?? project.link);
+            mode === "preview"
+              ? project.link
+              : (project.github ?? project.link);
 
           if (isPrivateSource) {
             return (

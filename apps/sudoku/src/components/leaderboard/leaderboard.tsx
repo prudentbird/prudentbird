@@ -152,7 +152,8 @@ export function Leaderboard() {
                     <>
                       {" · "}
                       <span className="font-mono tabular-nums">
-                        {formatDuration(r.best.ms)} · {modeAndDifficulty(r.best)}
+                        {formatDuration(r.best.ms)} ·{" "}
+                        {modeAndDifficulty(r.best)}
                       </span>
                     </>
                   ) : null}
