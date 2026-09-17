@@ -1,6 +1,12 @@
 import { generatePuzzle, type Difficulty } from "~/convex/lib/sudoku";
+import {
+  applyClock,
+  clockPaused,
+  type Clock,
+  type ClockAction,
+} from "~/convex/lib/clock";
 
-export type LocalGame = {
+export type LocalGame = Clock & {
   /** Client-generated id; doubles as the import key when syncing. */
   id: string;
   difficulty: Difficulty;
@@ -9,8 +15,6 @@ export type LocalGame = {
   board: string;
   mistakes: number;
   hints: number;
-  startedAt: number;
-  finishedAt?: number;
 };
 
 const KEY = "sudoku.solo";
@@ -19,6 +23,7 @@ const HISTORY_LIMIT = 100;
 
 export function newLocalGame(difficulty: Difficulty): LocalGame {
   const { puzzle, solution } = generatePuzzle(difficulty);
+  const now = Date.now();
   return {
     id: crypto.randomUUID(),
     difficulty,
@@ -27,7 +32,10 @@ export function newLocalGame(difficulty: Difficulty): LocalGame {
     board: puzzle,
     mistakes: 0,
     hints: 0,
-    startedAt: Date.now(),
+    startedAt: now,
+    activeMs: 0,
+    runningSince: now,
+    lastActiveAt: now,
   };
 }
 
@@ -83,6 +91,35 @@ export const soloStore = {
     return () => listeners.delete(listener);
   },
 };
+
+/**
+ * Moves the saved game's play clock. The guest game is the only one whose
+ * clock lives in the browser, so this stands in for the Convex mutation the
+ * daily and rooms use; it reads through the store so back-to-back actions
+ * (mount reopening a clock, then a hidden tab pausing it) never see a stale
+ * game.
+ *
+ * `tickLocalClock` below keeps `lastActiveAt` fresh, so a stretch left open
+ * by a dead session closes within a heartbeat of when the tab really went.
+ */
+export function dispatchLocalClock(action: ClockAction) {
+  const game = soloStore.get();
+  if (!game || game.finishedAt !== undefined) return;
+  soloStore.set({ ...game, ...applyClock(game, action, Date.now()) });
+}
+
+/**
+ * Records that the tab is still alive and playing. Writing to local storage
+ * costs nothing, so unlike the daily this can run on a timer: since a repair
+ * bills up to the last activity recorded and no further, ticking is what
+ * turns "billed to your last move" into "billed to the last few seconds you
+ * were actually here".
+ */
+export function tickLocalClock() {
+  const game = soloStore.get();
+  if (!game || game.finishedAt !== undefined || clockPaused(game)) return;
+  soloStore.set({ ...game, lastActiveAt: Date.now() });
+}
 
 /** Finished guest games waiting to be attached to an account. */
 export function loadHistory(): LocalGame[] {
