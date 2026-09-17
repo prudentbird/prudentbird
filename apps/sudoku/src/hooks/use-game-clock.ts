@@ -95,16 +95,20 @@ export function useGameClock({
 
     // `blur` covers switching apps or windows with the tab still visible;
     // `visibilitychange` covers switching tabs and backgrounding on mobile,
-    // where `pagehide` is the last event a killed tab gets.
+    // where `pagehide` is the last event a killed tab gets; `pageshow` is
+    // its counterpart for a page restored from the back/forward cache,
+    // which doesn't always also fire `focus` or `visibilitychange`.
     window.addEventListener("blur", onAway);
     window.addEventListener("pagehide", onGone);
     window.addEventListener("focus", onBack);
+    window.addEventListener("pageshow", onBack);
     document.addEventListener("visibilitychange", onAway);
     document.addEventListener("visibilitychange", onBack);
     return () => {
       window.removeEventListener("blur", onAway);
       window.removeEventListener("pagehide", onGone);
       window.removeEventListener("focus", onBack);
+      window.removeEventListener("pageshow", onBack);
       document.removeEventListener("visibilitychange", onAway);
       document.removeEventListener("visibilitychange", onBack);
       // Leaving the board (navigating away, a rematch) stops the clock. This
