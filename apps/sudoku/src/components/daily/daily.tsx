@@ -10,7 +10,9 @@ import { MAX_HINTS } from "~/convex/lib/rating";
 import { formatDailyDate, todayUtc } from "~/lib/daily";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
 import { track } from "~/lib/analytics";
+import type { ClockAction } from "~/convex/lib/clock";
 import { useBecame } from "~/hooks/use-became";
+import { useGameClock } from "~/hooks/use-game-clock";
 import { Play } from "~/components/sudoku/play";
 import { Timer } from "~/components/sudoku/timer";
 import { Button } from "~/components/ui/button";
@@ -102,6 +104,19 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
     },
   );
   const hint = useMutation(api.daily.hint);
+  const moveClock = useMutation(api.daily.clock);
+
+  const dispatchClock = useCallback(
+    (action: ClockAction) => {
+      void moveClock({ date, action }).catch(() => {});
+    },
+    [moveClock, date],
+  );
+  const clock = useGameClock({
+    clock: attempt,
+    done: finished,
+    dispatch: dispatchClock,
+  });
 
   const onPlace = useCallback(
     (cell: number, value: number) => place({ date, cell, value }),
@@ -129,11 +144,7 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
           </span>
         </span>
       </div>
-      <Timer
-        startedAt={attempt.startedAt}
-        finishedAt={attempt.finishedAt}
-        className="text-sm"
-      />
+      <Timer clock={clock} className="text-sm" />
     </div>
   );
 
@@ -167,6 +178,8 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
         board={attempt.board}
         errors={attempt.errors}
         locked={finished}
+        paused={clock.paused}
+        onResume={clock.pausedByPlayer ? clock.toggle : undefined}
         onPlace={onPlace}
         onHint={onHint}
         hintsLeft={Math.max(0, MAX_HINTS - attempt.hints)}

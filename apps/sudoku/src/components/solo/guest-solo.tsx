@@ -20,14 +20,18 @@ import {
 import { buildHint } from "~/convex/lib/hint";
 import { MAX_HINTS } from "~/convex/lib/rating";
 import {
+  dispatchLocalClock,
   newLocalGame,
   pushHistory,
   soloStore,
+  tickLocalClock,
   type LocalGame,
 } from "~/lib/local-solo";
+import { clockElapsed, pauseClock, resumeClock } from "~/convex/lib/clock";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
 import { track } from "~/lib/analytics";
 import { useBecame } from "~/hooks/use-became";
+import { useGameClock } from "~/hooks/use-game-clock";
 import { useMounted } from "~/hooks/use-mounted";
 import { Play } from "~/components/sudoku/play";
 import { Timer } from "~/components/sudoku/timer";
@@ -56,7 +60,7 @@ function startGame(difficulty: Difficulty, isGuest: boolean) {
       mode: "solo",
       difficulty: current.difficulty,
       is_guest: isGuest,
-      duration_ms: Date.now() - current.startedAt,
+      duration_ms: clockElapsed(current, Date.now()),
       filled,
       total_blanks: totalBlanks,
     });
@@ -110,7 +114,7 @@ function GuestSoloInner() {
             mode: "solo",
             difficulty: g.difficulty,
             is_guest: isGuest,
-            duration_ms: g.finishedAt - g.startedAt,
+            duration_ms: clockElapsed(g, g.finishedAt),
             mistakes: g.mistakes,
             hints: g.hints,
           });
@@ -134,6 +138,12 @@ function SoloGame({
   const { isAuthenticated } = useConvexAuth();
   const finished = game.finishedAt !== undefined;
   const justFinished = useBecame(finished);
+  const clock = useGameClock({
+    clock: game,
+    done: finished,
+    dispatch: dispatchLocalClock,
+    onTick: tickLocalClock,
+  });
   const [showResults, setShowResults] = useState(true);
   const [nextDifficulty, setNextDifficulty] = useState<Difficulty>(
     game.difficulty,
@@ -162,11 +172,15 @@ function SoloGame({
       const board = setCell(game.board, cell, value);
       const wrong = value !== 0 && String(value) !== game.solution[cell];
       const solved = board === game.solution;
+      const now = Date.now();
       onChange({
         ...game,
         board,
         mistakes: wrong ? game.mistakes + 1 : game.mistakes,
-        ...(solved ? { finishedAt: Date.now() } : {}),
+        // A move means the player is at the board, so the clock runs again;
+        // solving stops it for good.
+        ...(solved ? pauseClock(game, now) : resumeClock(game, now)),
+        ...(solved ? { finishedAt: now } : {}),
       });
     },
     [game, onChange],
@@ -190,7 +204,11 @@ function SoloGame({
         difficulty: game.difficulty,
         is_guest: !isAuthenticated,
       });
-      onChange({ ...game, hints: game.hints + 1 });
+      onChange({
+        ...game,
+        hints: game.hints + 1,
+        ...resumeClock(game, Date.now()),
+      });
       return hint;
     },
     [game, onChange, isAuthenticated],
@@ -209,11 +227,7 @@ function SoloGame({
           Solo · {DIFFICULTY_LABEL[game.difficulty]}
         </span>
       </div>
-      <Timer
-        startedAt={game.startedAt}
-        finishedAt={game.finishedAt}
-        className="text-sm"
-      />
+      <Timer clock={clock} className="text-sm" />
     </div>
   );
 
@@ -252,6 +266,8 @@ function SoloGame({
         board={game.board}
         errors={errors}
         locked={finished}
+        paused={clock.paused}
+        onResume={clock.pausedByPlayer ? clock.toggle : undefined}
         onPlace={onPlace}
         onHint={onHint}
         hintsLeft={Math.max(0, MAX_HINTS - game.hints)}
@@ -269,7 +285,7 @@ function SoloGame({
                     Solved.
                   </h2>
                   <p className="font-mono text-2xl tabular-nums">
-                    {formatDuration(game.finishedAt! - game.startedAt)}
+                    {formatDuration(clockElapsed(game, game.finishedAt!))}
                   </p>
                 </div>
                 <p className="border-y border-border/50 py-3 text-sm text-muted-foreground">

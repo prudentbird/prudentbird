@@ -9,7 +9,9 @@ import { setCell } from "~/convex/lib/sudoku";
 import { MAX_HINTS } from "~/convex/lib/rating";
 import { playerColor } from "~/lib/players";
 import { DIFFICULTY_LABEL, MODE_LABEL } from "~/lib/utils";
+import type { Clock, ClockAction } from "~/convex/lib/clock";
 import { useBecame } from "~/hooks/use-became";
+import { useGameClock } from "~/hooks/use-game-clock";
 import { Play } from "~/components/sudoku/play";
 import type { CellCursor } from "~/components/sudoku/board";
 import { Timer } from "~/components/sudoku/timer";
@@ -57,6 +59,23 @@ export function Game({ view }: { view: RoomView }) {
   );
   const hint = useMutation(api.game.hint);
   const setCursor = useMutation(api.game.setCursor);
+  const moveClock = useMutation(api.rooms.clock);
+
+  // Co-op and versus share one clock between players, so one player's tab
+  // losing focus can't be allowed to stop it — only solo rooms pause.
+  const dispatchClock = useCallback(
+    (action: ClockAction) => {
+      void moveClock({ roomId: room._id, action }).catch(() => {});
+    },
+    [moveClock, room._id],
+  );
+  const clock = useGameClock({
+    clock: room.startedAt
+      ? ({ ...room, startedAt: room.startedAt } satisfies Clock)
+      : undefined,
+    done: locked,
+    dispatch: isSolo ? dispatchClock : undefined,
+  });
 
   const onPlace = useCallback(
     (cell: number, value: number) => place({ roomId: room._id, cell, value }),
@@ -126,11 +145,7 @@ export function Game({ view }: { view: RoomView }) {
           {MODE_LABEL[room.mode]} · {DIFFICULTY_LABEL[room.difficulty]}
         </span>
       </div>
-      <Timer
-        startedAt={room.startedAt}
-        finishedAt={room.finishedAt}
-        className="text-sm"
-      />
+      <Timer clock={clock} className="text-sm" />
     </div>
   );
 
@@ -176,6 +191,8 @@ export function Game({ view }: { view: RoomView }) {
         board={board}
         errors={errors}
         locked={locked}
+        paused={clock.paused}
+        onResume={clock.pausedByPlayer ? clock.toggle : undefined}
         onPlace={onPlace}
         onHint={shared ? onHint : undefined}
         hintsLeft={shared ? Math.max(0, MAX_HINTS - room.hints) : undefined}
