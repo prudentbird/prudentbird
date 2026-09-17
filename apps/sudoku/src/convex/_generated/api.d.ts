@@ -14,6 +14,8 @@ import type * as crons from "../crons.js";
 import type * as daily from "../daily.js";
 import type * as game from "../game.js";
 import type * as http from "../http.js";
+import type * as lib_clock from "../lib/clock.js";
+import type * as lib_hint from "../lib/hint.js";
 import type * as lib_rating from "../lib/rating.js";
 import type * as lib_sudoku from "../lib/sudoku.js";
 import type * as ratings from "../ratings.js";
@@ -33,6 +35,8 @@ declare const fullApi: ApiFromModules<{
   daily: typeof daily;
   game: typeof game;
   http: typeof http;
+  "lib/clock": typeof lib_clock;
+  "lib/hint": typeof lib_hint;
   "lib/rating": typeof lib_rating;
   "lib/sudoku": typeof lib_sudoku;
   ratings: typeof ratings;

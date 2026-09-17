@@ -17,6 +17,7 @@ import {
   wrongCells,
 } from "./lib/sudoku";
 import { awardRoom } from "./ratings";
+import { CLOCK_ACTIONS, applyClock, clockUnchanged } from "./lib/clock";
 import {
   roomAbandonedEvents,
   roomProps,
@@ -76,6 +77,53 @@ export async function requireMember(
   return { room, player };
 }
 
+/** Fields that put a room's play clock on the board and running. */
+function startClock(now: number) {
+  return {
+    startedAt: now,
+    activeMs: 0,
+    runningSince: now,
+    lastActiveAt: now,
+    pausedByPlayer: false,
+  };
+}
+
+/**
+ * Starts, stops or reopens a solo room's play clock. Co-op and versus rooms
+ * share one clock between players, so one player's tab losing focus can't be
+ * allowed to stop it — they are rejected here.
+ */
+export const clock = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    action: v.union(...CLOCK_ACTIONS.map((a) => v.literal(a))),
+  },
+  handler: async (ctx, args) => {
+    const { room } = await requireMember(ctx, args.roomId);
+    if (room.mode !== "solo") return;
+    if (room.status !== "playing" || !room.startedAt) return;
+
+    // Reopening repairs a stretch left open by a session that died without
+    // pausing, billing it up to the last activity recorded. Presence already
+    // pings while the tab is merely open, which is a far closer read on when
+    // it died than the player's last move.
+    let lastActiveAt = room.lastActiveAt;
+    if (args.action === "reopen") {
+      const players = await listPlayers(ctx, room._id);
+      const lastSeen = Math.max(0, ...players.map((p) => p.lastSeen));
+      lastActiveAt = Math.max(lastActiveAt ?? 0, lastSeen);
+    }
+
+    const patch = applyClock(
+      { ...room, startedAt: room.startedAt, lastActiveAt },
+      args.action,
+      Date.now(),
+    );
+    if (clockUnchanged(room, patch)) return;
+    await ctx.db.patch(room._id, patch);
+  },
+});
+
 /** Creates a room with a freshly generated puzzle. Returns the room code. */
 export const create = mutation({
   args: { mode, difficulty },
@@ -99,7 +147,7 @@ export const create = mutation({
       board: puzzle,
       owners: new Array(81).fill(null),
       createdAt: now,
-      ...(solo ? { startedAt: now } : {}),
+      ...(solo ? startClock(now) : {}),
       round: 1,
     });
 
@@ -202,7 +250,10 @@ export const start = mutation({
       throw new Error("Only the host can start the game");
     }
     if (room.status !== "lobby") return;
-    await ctx.db.patch(room._id, { status: "playing", startedAt: Date.now() });
+    await ctx.db.patch(room._id, {
+      status: "playing",
+      ...startClock(Date.now()),
+    });
     await track(
       ctx,
       roomStartedEvents(
@@ -304,7 +355,7 @@ export const rematch = mutation({
       board: puzzle,
       owners: new Array(81).fill(null),
       status: "playing",
-      startedAt: now,
+      ...startClock(now),
       finishedAt: undefined,
       winnerPlayerId: undefined,
       round: room.round + 1,
@@ -385,6 +436,9 @@ export const get = query({
         createdAt: room.createdAt,
         startedAt: room.startedAt,
         finishedAt: room.finishedAt,
+        activeMs: room.activeMs,
+        runningSince: room.runningSince,
+        pausedByPlayer: room.pausedByPlayer,
         winnerPlayerId: room.winnerPlayerId,
         round: room.round,
         hints: room.hints ?? 0,
@@ -453,6 +507,8 @@ export const importGuestGames = mutation({
         hints: v.number(),
         startedAt: v.number(),
         finishedAt: v.number(),
+        /** Active play time. Absent on games saved before the play clock. */
+        activeMs: v.optional(v.number()),
       }),
     ),
   },
@@ -472,7 +528,9 @@ export const importGuestGames = mutation({
         Number.isInteger(g.hints) &&
         g.hints >= 0 &&
         g.finishedAt > g.startedAt &&
-        g.finishedAt <= now + 60_000;
+        g.finishedAt <= now + 60_000 &&
+        (g.activeMs === undefined ||
+          (g.activeMs >= 0 && g.activeMs <= g.finishedAt - g.startedAt));
       if (!valid) continue;
 
       const importKey = `${user._id}:${g.id}`;
@@ -501,6 +559,10 @@ export const importGuestGames = mutation({
         createdAt: g.finishedAt,
         startedAt: g.startedAt,
         finishedAt: g.finishedAt,
+        // Already stopped: the guest game's own clock is the rated time.
+        activeMs: g.activeMs ?? g.finishedAt - g.startedAt,
+        lastActiveAt: g.finishedAt,
+        pausedByPlayer: false,
         round: 1,
         importKey,
       });

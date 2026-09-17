@@ -1,7 +1,8 @@
 import { authComponent } from "./auth";
 import { query } from "./_generated/server";
 import { dailyStatsFor } from "./daily";
-import { rankOf } from "./ratings";
+import { rankOf, roomElapsed } from "./ratings";
+import { clockElapsed } from "./lib/clock";
 import { DIFFICULTIES, type Difficulty } from "./lib/sudoku";
 
 type Bucket = {
@@ -90,12 +91,15 @@ export const me = query({
       if (room.mode === "versus") {
         won = room.winnerPlayerId === p._id;
         if (won && room.startedAt && p.finishedAt) {
-          ms = p.finishedAt - room.startedAt;
+          ms = clockElapsed(
+            { ...room, startedAt: room.startedAt },
+            p.finishedAt,
+          );
         }
       } else {
         won = room.status === "finished";
         if (won && room.startedAt && room.finishedAt) {
-          ms = room.finishedAt - room.startedAt;
+          ms = roomElapsed(room);
         }
       }
       const points = won ? (p.points ?? 0) : 0;

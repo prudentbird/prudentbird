@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useConvexAuth, useMutation } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import { clearHistory, loadHistory } from "~/lib/local-solo";
+import { clockElapsed } from "~/convex/lib/clock";
 
 /**
  * Whenever the user is signed in, uploads any finished guest solo games as
@@ -20,7 +21,9 @@ export function GuestSync() {
       return;
     }
     if (done.current) return;
-    const history = loadHistory().filter((g) => g.finishedAt !== undefined);
+    const history = loadHistory().filter(
+      (g): g is typeof g & { finishedAt: number } => g.finishedAt !== undefined,
+    );
     if (history.length === 0) return;
     done.current = true;
     importGames({
@@ -32,7 +35,8 @@ export function GuestSync() {
         mistakes: g.mistakes,
         hints: g.hints,
         startedAt: g.startedAt,
-        finishedAt: g.finishedAt!,
+        finishedAt: g.finishedAt,
+        activeMs: clockElapsed(g, g.finishedAt),
       })),
     })
       .then((imported) => clearHistory(imported))
