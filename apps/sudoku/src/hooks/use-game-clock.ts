@@ -39,8 +39,8 @@ function focused(): boolean {
  *
  * `onTick`, where a clock is cheap enough to write on a timer, records that
  * the tab is still here while the clock runs. That is what a later `reopen`
- * bills a crashed session up to, so supplying it lets the caller use the
- * shorter `HEARTBEAT_GRACE_MS`.
+ * bills a crashed session up to, so supplying it tightens that repair from
+ * "the player's last move" to "a heartbeat ago".
  */
 export function useGameClock({
   clock,
@@ -54,7 +54,10 @@ export function useGameClock({
   dispatch?: (action: ClockAction) => void;
   onTick?: () => void;
 }): GameClock {
-  const paused = clock ? clockPaused(clock) : false;
+  // Once done, the clock is never "paused" from the UI's point of view —
+  // solving stops it the same way pausing does (see pauseClock), so without
+  // this a completed board would render forever behind the pause cover.
+  const paused = !done && clock ? clockPaused(clock) : false;
   const held = paused && (clock?.pausedByPlayer ?? false);
   const canPause = dispatch !== undefined && !done;
 
