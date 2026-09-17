@@ -25,9 +25,9 @@ export function Results({
   const [difficulty, setDifficulty] = useState<Difficulty>(room.difficulty);
   const [busy, setBusy] = useState(false);
 
-  // The room's own clock, with paused stretches (solo only) already out. The
-  // per-player read below drops `finishedAt` so a versus runner-up isn't
-  // capped at the winner's time.
+  // The room's own clock, with paused stretches (solo only) already out.
+  // Used for the room/winner headline time only — versus never pauses, so a
+  // runner-up's own time below is read straight off the wall clock instead.
   const clock: Clock | null = room.startedAt
     ? { ...room, startedAt: room.startedAt }
     : null;
@@ -112,13 +112,13 @@ export function Results({
                   </span>
                   <span className="font-mono text-xs tabular-nums text-muted-foreground">
                     {isVersus
-                      ? p.finishedAt && clock
-                        ? formatDuration(
-                            clockElapsed(
-                              { ...clock, finishedAt: undefined },
-                              p.finishedAt,
-                            ),
-                          )
+                      ? p.finishedAt && room.startedAt
+                        ? // Plain wall time, not the room clock: versus never
+                          // pauses, and by the time a second player could
+                          // finish the room clock has already frozen at the
+                          // winner's finish, which would flatten every time
+                          // to the winner's.
+                          formatDuration(p.finishedAt - room.startedAt)
                         : `${pct}%`
                       : `${p.filled} cells`}
                     {" · "}
