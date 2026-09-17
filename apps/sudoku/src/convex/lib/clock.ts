@@ -84,6 +84,19 @@ export function resumeClock(clock: Clock, at: number): ClockPatch {
 }
 
 /**
+ * Opens a stretch the way ordinary activity does — a move, a hint — which is
+ * proof the player is at the board, but not the same as them explicitly
+ * pressing resume. A hold survives this, unlike an automatic pause: a move
+ * that was already in flight when the player pressed hold must not silently
+ * lift it out from under them once it lands. Only an explicit `resume` does
+ * that.
+ */
+export function wakeClock(clock: Clock, at: number): ClockPatch {
+  if (clock.pausedByPlayer) return pauseClock(clock, at, true);
+  return resumeClock(clock, at);
+}
+
+/**
  * First clock action of a browser session. A stretch still open here belongs
  * to a session that never got to pause (crash, killed tab, closed laptop), so
  * it is billed up to the last activity actually recorded rather than up to
@@ -99,10 +112,24 @@ export function resumeClock(clock: Clock, at: number): ClockPatch {
  * merely open, or the last move where nothing does.
  *
  * A clock the player held stays held — they lift it by hand.
+ *
+ * A row from before the clock existed (no activeMs, runningSince, or
+ * lastActiveAt at all) has been running unpaused since `startedAt` with
+ * nothing to repair — there was no pause/resume to lose. Reopening it is a
+ * no-op, not a repair: the alternative reads `lastActiveAt` as unknown and
+ * bills the dangling stretch down to zero, wiping out everything played
+ * before this shipped the moment the game is next opened.
  */
 export function reopenClock(clock: Clock, at: number): ClockPatch {
   const { activeMs, runningSince } = normalize(clock);
   const held = clock.pausedByPlayer ?? false;
+  const legacy =
+    clock.activeMs === undefined &&
+    clock.runningSince === undefined &&
+    clock.lastActiveAt === undefined;
+  if (legacy) {
+    return { activeMs, runningSince, lastActiveAt: at, pausedByPlayer: held };
+  }
   if (runningSince === undefined) {
     return {
       activeMs,
