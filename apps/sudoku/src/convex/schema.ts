@@ -40,6 +40,11 @@ export default defineSchema({
     createdAt: v.number(),
     startedAt: v.optional(v.number()),
     finishedAt: v.optional(v.number()),
+    /** Play clock; see convex/lib/clock.ts. Only solo rooms can pause. */
+    activeMs: v.optional(v.number()),
+    runningSince: v.optional(v.number()),
+    lastActiveAt: v.optional(v.number()),
+    pausedByPlayer: v.optional(v.boolean()),
     winnerPlayerId: v.optional(v.id("players")),
     /** Increments on every rematch so clients can reset local state. */
     round: v.number(),
@@ -98,6 +103,11 @@ export default defineSchema({
     hints: v.number(),
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),
+    /** Play clock; see convex/lib/clock.ts. */
+    activeMs: v.optional(v.number()),
+    runningSince: v.optional(v.number()),
+    lastActiveAt: v.optional(v.number()),
+    pausedByPlayer: v.optional(v.boolean()),
     elapsedMs: v.optional(v.number()),
     points: v.optional(v.number()),
   })
