@@ -5,6 +5,7 @@ import { setCell } from "./lib/sudoku";
 import { buildHint } from "./lib/hint";
 import { MAX_HINTS } from "./lib/rating";
 import { awardRoom } from "./ratings";
+import { pauseClock, resumeClock, type Clock } from "./lib/clock";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   roomFinishedEvents,
@@ -18,6 +19,17 @@ async function roomPlayers(ctx: MutationCtx, roomId: Id<"rooms">) {
     .query("players")
     .withIndex("by_roomId", (q) => q.eq("roomId", roomId))
     .collect();
+}
+
+/**
+ * A move proves the player is at the board, so the room's clock runs again
+ * even if a pause write got there first; finishing stops it for good. Only
+ * solo rooms ever pause, so elsewhere this just records the activity. Rooms
+ * mid-round always have `startedAt`, and the clock falls back to it anyway.
+ */
+function roomClock(room: Doc<"rooms">, at: number, finished: boolean) {
+  const clock: Clock = { ...room, startedAt: room.startedAt ?? at };
+  return finished ? pauseClock(clock, at) : resumeClock(clock, at);
 }
 
 async function finishRoom(ctx: MutationCtx, room: Doc<"rooms">) {
@@ -62,6 +74,7 @@ export const place = mutation({
       await ctx.db.patch(room._id, {
         board,
         owners,
+        ...roomClock(room, now, solved),
         ...(solved ? { status: "finished", finishedAt: now } : {}),
       });
       if (isWrong) {
@@ -87,6 +100,7 @@ export const place = mutation({
         winnerPlayerId: player._id,
         status: "finished",
         finishedAt: now,
+        ...roomClock(room, now, true),
       });
       await finishRoom(ctx, (await ctx.db.get(room._id))!);
     } else {
@@ -128,7 +142,10 @@ export const hint = mutation({
     const hint = buildHint(room.board, room.solution, open, preferred);
     if (!hint) return null;
 
-    await ctx.db.patch(room._id, { hints: (room.hints ?? 0) + 1 });
+    await ctx.db.patch(room._id, {
+      hints: (room.hints ?? 0) + 1,
+      ...roomClock(room, Date.now(), false),
+    });
     await ctx.db.patch(player._id, { hints: (player.hints ?? 0) + 1 });
     await track(ctx, {
       distinctId: player.userId,

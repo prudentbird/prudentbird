@@ -9,6 +9,13 @@ import {
 } from "./_generated/server";
 import { awardDaily } from "./ratings";
 import { buildHint } from "./lib/hint";
+import {
+  CLOCK_ACTIONS,
+  applyClock,
+  clockUnchanged,
+  pauseClock,
+  resumeClock,
+} from "./lib/clock";
 import { MAX_HINTS } from "./lib/rating";
 import { dailyCompletedEvent, dailyProps, track } from "./analytics";
 import {
@@ -156,6 +163,8 @@ export const start = mutation({
     const existing = await findAttempt(ctx, daily._id, user._id);
     if (existing) return;
 
+    const now = Date.now();
+
     await ctx.db.insert("dailyAttempts", {
       dailyId: daily._id,
       userId: user._id,
@@ -164,7 +173,11 @@ export const start = mutation({
       board: daily.puzzle,
       mistakes: 0,
       hints: 0,
-      startedAt: Date.now(),
+      startedAt: now,
+      activeMs: 0,
+      runningSince: now,
+      lastActiveAt: now,
+      pausedByPlayer: false,
     });
     await track(ctx, {
       distinctId: user._id,
@@ -225,6 +238,9 @@ export const get = query({
             hints: mine.hints,
             startedAt: mine.startedAt,
             finishedAt: mine.finishedAt,
+            activeMs: mine.activeMs,
+            runningSince: mine.runningSince,
+            pausedByPlayer: mine.pausedByPlayer,
             elapsedMs: mine.elapsedMs,
             points: mine.points,
             rank: myRank,
@@ -267,12 +283,14 @@ export const place = mutation({
     const isWrong = value !== 0 && String(value) !== daily.solution[cell];
     const solved = board === daily.solution;
     const now = Date.now();
+    // A move proves the player is at the board, so the clock runs again even
+    // if a pause write got there first; solving stops it for good.
+    const clock = solved ? pauseClock(attempt, now) : resumeClock(attempt, now);
     await ctx.db.patch(attempt._id, {
       board,
       mistakes: isWrong ? attempt.mistakes + 1 : attempt.mistakes,
-      ...(solved
-        ? { finishedAt: now, elapsedMs: now - attempt.startedAt }
-        : {}),
+      ...clock,
+      ...(solved ? { finishedAt: now, elapsedMs: clock.activeMs } : {}),
     });
     if (solved) await finishDaily(ctx, daily, attempt._id);
   },
@@ -301,13 +319,38 @@ export const hint = mutation({
     const hint = buildHint(attempt.board, daily.solution, open, preferred);
     if (!hint) return null;
 
-    await ctx.db.patch(attempt._id, { hints: attempt.hints + 1 });
+    await ctx.db.patch(attempt._id, {
+      hints: attempt.hints + 1,
+      ...resumeClock(attempt, Date.now()),
+    });
     await track(ctx, {
       distinctId: user._id,
       event: "hint_used",
       properties: dailyProps(daily),
     });
     return hint;
+  },
+});
+
+/**
+ * Starts, stops or reopens the caller's play clock. The client pauses on tab
+ * blur and hide, resumes on focus, and reopens once per session on mount.
+ */
+export const clock = mutation({
+  args: {
+    date: v.string(),
+    action: v.union(...CLOCK_ACTIONS.map((a) => v.literal(a))),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const daily = await findDaily(ctx, args.date);
+    if (!daily) throw new Error("Daily not found");
+    const attempt = await findAttempt(ctx, daily._id, user._id);
+    if (!attempt) return;
+    if (attempt.finishedAt) return;
+    const patch = applyClock(attempt, args.action, Date.now());
+    if (clockUnchanged(attempt, patch)) return;
+    await ctx.db.patch(attempt._id, patch);
   },
 });
 
