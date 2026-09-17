@@ -83,6 +83,11 @@ export function useGameClock({
       if (focused()) return;
       send("pause");
     };
+    // Unconditional: `pagehide` means the tab is going away, and OS focus
+    // state hasn't necessarily flipped yet at that point — closing the tab
+    // you're actively using is the single most common way a session ends,
+    // and gating this on `focused()` would miss exactly that case.
+    const onGone = () => send("pause");
     const onBack = () => {
       if (!focused() || heldRef.current) return;
       send("resume");
@@ -92,13 +97,13 @@ export function useGameClock({
     // `visibilitychange` covers switching tabs and backgrounding on mobile,
     // where `pagehide` is the last event a killed tab gets.
     window.addEventListener("blur", onAway);
-    window.addEventListener("pagehide", onAway);
+    window.addEventListener("pagehide", onGone);
     window.addEventListener("focus", onBack);
     document.addEventListener("visibilitychange", onAway);
     document.addEventListener("visibilitychange", onBack);
     return () => {
       window.removeEventListener("blur", onAway);
-      window.removeEventListener("pagehide", onAway);
+      window.removeEventListener("pagehide", onGone);
       window.removeEventListener("focus", onBack);
       document.removeEventListener("visibilitychange", onAway);
       document.removeEventListener("visibilitychange", onBack);
