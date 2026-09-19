@@ -39,8 +39,10 @@ export function Results({
   const winner = players.find((p) => p._id === room.winnerPlayerId);
   const iWon = winner?._id === me.playerId;
   const host = players.find((p) => p.userId === room.hostUserId);
-  const myPoints = players.find((p) => p._id === me.playerId)?.points ?? 0;
-  const lost = isVersus ? !winner : !solved;
+  const myPlayer = players.find((p) => p._id === me.playerId);
+  const myPoints = myPlayer?.points ?? 0;
+  // Someone else winning the race doesn't undo my own elimination.
+  const lost = isVersus ? Boolean(myPlayer?.outAt) || !winner : !solved;
 
   const ranked = [...players].sort((a, b) => {
     if (a.finishedAt && b.finishedAt) return a.finishedAt - b.finishedAt;
@@ -59,11 +61,11 @@ export function Results({
   };
 
   const title = isVersus
-    ? winner
-      ? iWon
+    ? lost
+      ? "Game over."
+      : iWon
         ? "You won."
-        : `${winner.name} won.`
-      : "Game over."
+        : `${winner?.name ?? "Someone"} won.`
     : solved
       ? "Solved."
       : "Game over.";

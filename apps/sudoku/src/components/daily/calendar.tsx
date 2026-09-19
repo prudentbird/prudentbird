@@ -47,12 +47,14 @@ export function Calendar() {
 
   const modifiers = useMemo(() => {
     const solved: Date[] = [];
+    const lost: Date[] = [];
     const inProgress: Date[] = [];
     for (const d of days.values()) {
       if (d.mine?.finished) solved.push(toDate(d.date));
-      else if (d.mine && !d.mine.lost) inProgress.push(toDate(d.date));
+      else if (d.mine?.lost) lost.push(toDate(d.date));
+      else if (d.mine) inProgress.push(toDate(d.date));
     }
-    return { solved, inProgress };
+    return { solved, lost, inProgress };
   }, [days]);
 
   if (isLoading) return <Quiet />;
@@ -116,7 +118,8 @@ export function Calendar() {
       />
 
       <p className="text-xs text-muted-foreground">
-        Filled days are solved. Underlined days are in progress.
+        Filled days are solved. Underlined days are in progress. Struck-through
+        days ran out of mistakes.
       </p>
     </div>
   );
@@ -130,6 +133,7 @@ function DailyDayButton({
   ...props
 }: React.ComponentProps<typeof DayButton> & { info?: Day }) {
   const solved = modifiers.solved === true;
+  const lost = modifiers.lost === true;
   const inProgress = modifiers.inProgress === true;
   const disabled = modifiers.disabled === true;
 
@@ -143,11 +147,13 @@ function DailyDayButton({
           ? `${info.date}, ${DIFFICULTY_LABEL[info.difficulty]}${
               solved
                 ? `, solved in ${formatDuration(info.mine?.elapsedMs ?? 0)}`
-                : inProgress
-                  ? ", in progress"
-                  : disabled
-                    ? ", not yet available"
-                    : ""
+                : lost
+                  ? ", game over"
+                  : inProgress
+                    ? ", in progress"
+                    : disabled
+                      ? ", not yet available"
+                      : ""
             }`
           : undefined
       }
@@ -164,6 +170,7 @@ function DailyDayButton({
         className={cn(
           "text-sm tabular-nums",
           inProgress && "underline decoration-entry underline-offset-4",
+          lost && "text-muted-foreground line-through decoration-destructive",
         )}
       >
         {children}
