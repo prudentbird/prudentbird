@@ -16,7 +16,7 @@ import {
   pauseClock,
   wakeClock,
 } from "./lib/clock";
-import { MAX_HINTS } from "./lib/rating";
+import { MAX_HINTS, MAX_MISTAKES } from "./lib/rating";
 import { dailyCompletedEvent, dailyProps, track } from "./analytics";
 import {
   blankCount,
@@ -238,6 +238,7 @@ export const get = query({
             hints: mine.hints,
             startedAt: mine.startedAt,
             finishedAt: mine.finishedAt,
+            lostAt: mine.lostAt,
             activeMs: mine.activeMs,
             runningSince: mine.runningSince,
             pausedByPlayer: mine.pausedByPlayer,
@@ -275,25 +276,42 @@ export const place = mutation({
     if (!daily) throw new Error("Daily not found");
     const attempt = await findAttempt(ctx, daily._id, user._id);
     if (!attempt) throw new Error("Start the daily first");
-    if (attempt.finishedAt) return;
+    if (attempt.finishedAt || attempt.lostAt) return;
     if (daily.puzzle[cell] !== "0") return;
     if (attempt.board[cell] === String(value)) return;
 
     const board = setCell(attempt.board, cell, value);
     const isWrong = value !== 0 && String(value) !== daily.solution[cell];
     const solved = board === daily.solution;
+    const mistakes = isWrong ? attempt.mistakes + 1 : attempt.mistakes;
+    const lost = !solved && mistakes >= MAX_MISTAKES;
     const now = Date.now();
     // A move proves the player is at the board, so the clock runs again even
     // if a pause write got there first — unless they've explicitly held it,
-    // which only a `resume` lifts; solving stops it for good either way.
-    const clock = solved ? pauseClock(attempt, now) : wakeClock(attempt, now);
+    // which only a `resume` lifts; finishing stops it for good either way.
+    const over = solved || lost;
+    const clock = over ? pauseClock(attempt, now) : wakeClock(attempt, now);
     await ctx.db.patch(attempt._id, {
       board,
-      mistakes: isWrong ? attempt.mistakes + 1 : attempt.mistakes,
+      mistakes,
       ...clock,
       ...(solved ? { finishedAt: now, elapsedMs: clock.activeMs } : {}),
+      ...(lost ? { lostAt: now, elapsedMs: clock.activeMs } : {}),
     });
-    if (solved) await finishDaily(ctx, daily, attempt._id);
+    if (solved) {
+      await finishDaily(ctx, daily, attempt._id);
+    } else if (lost) {
+      await track(ctx, {
+        distinctId: user._id,
+        event: "game_over",
+        properties: {
+          ...dailyProps(daily),
+          duration_ms: clock.activeMs,
+          mistakes,
+          hints: attempt.hints,
+        },
+      });
+    }
   },
 });
 
@@ -305,7 +323,7 @@ export const hint = mutation({
     if (!daily) throw new Error("Daily not found");
     const attempt = await findAttempt(ctx, daily._id, user._id);
     if (!attempt) throw new Error("Start the daily first");
-    if (attempt.finishedAt) return null;
+    if (attempt.finishedAt || attempt.lostAt) return null;
     if (attempt.hints >= MAX_HINTS) return null;
 
     const open: number[] = [];
@@ -348,7 +366,7 @@ export const clock = mutation({
     if (!daily) throw new Error("Daily not found");
     const attempt = await findAttempt(ctx, daily._id, user._id);
     if (!attempt) return;
-    if (attempt.finishedAt) return;
+    if (attempt.finishedAt || attempt.lostAt) return;
     const patch = applyClock(attempt, args.action, Date.now());
     if (clockUnchanged(attempt, patch)) return;
     await ctx.db.patch(attempt._id, patch);
@@ -405,6 +423,7 @@ export const calendar = query({
         mine: mine
           ? {
               finished: mine.finishedAt !== undefined,
+              lost: mine.lostAt !== undefined,
               elapsedMs: mine.elapsedMs,
               mistakes: mine.mistakes,
               filled: daily

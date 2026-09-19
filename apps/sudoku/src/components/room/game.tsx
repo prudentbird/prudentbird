@@ -6,7 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { RoomView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
-import { MAX_HINTS } from "~/convex/lib/rating";
+import { MAX_HINTS, MAX_MISTAKES } from "~/convex/lib/rating";
 import { playerColor } from "~/lib/players";
 import { DIFFICULTY_LABEL, MODE_LABEL } from "~/lib/utils";
 import type { Clock, ClockAction } from "~/convex/lib/clock";
@@ -22,15 +22,17 @@ import { EndRoom } from "~/components/room/end-room";
 import { Results } from "~/components/room/results";
 
 export function Game({ view }: { view: RoomView }) {
-  const { room, players, me, board, owners, errors, totalBlanks } = view;
+  const { room, players, me, board, owners, errors, totalBlanks, solved } =
+    view;
   const code = room.code;
   const isCoop = room.mode === "coop";
   const isSolo = room.mode === "solo";
   const shared = room.mode !== "versus";
   const finished = room.status === "finished";
   const myPlayer = players.find((p) => p._id === me.playerId);
-  const locked = finished || Boolean(myPlayer?.finishedAt);
-  const iWon = shared || room.winnerPlayerId === me.playerId;
+  const locked =
+    finished || Boolean(myPlayer?.finishedAt) || Boolean(myPlayer?.outAt);
+  const iWon = shared ? solved : room.winnerPlayerId === me.playerId;
 
   const [showResults, setShowResults] = useState(true);
   const justFinished = useBecame(finished);
@@ -152,8 +154,8 @@ export function Game({ view }: { view: RoomView }) {
   const aside = (
     <>
       <p className="text-sm text-muted-foreground">
-        {filled} of {totalBlanks} filled · {myPlayer?.mistakes ?? 0}{" "}
-        {myPlayer?.mistakes === 1 ? "mistake" : "mistakes"}
+        {filled} of {totalBlanks} filled · {myPlayer?.mistakes ?? 0}/
+        {MAX_MISTAKES} mistakes
         {shared && room.hints
           ? ` · ${room.hints} ${room.hints === 1 ? "hint" : "hints"}`
           : ""}

@@ -50,7 +50,7 @@ export function Calendar() {
     const inProgress: Date[] = [];
     for (const d of days.values()) {
       if (d.mine?.finished) solved.push(toDate(d.date));
-      else if (d.mine) inProgress.push(toDate(d.date));
+      else if (d.mine && !d.mine.lost) inProgress.push(toDate(d.date));
     }
     return { solved, inProgress };
   }, [days]);

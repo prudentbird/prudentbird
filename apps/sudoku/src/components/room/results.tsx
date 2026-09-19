@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { RoomView } from "~/lib/room-view";
 import type { Difficulty } from "~/convex/lib/sudoku";
+import { MAX_MISTAKES } from "~/convex/lib/rating";
 import { clockElapsed, type Clock } from "~/convex/lib/clock";
 import { Button } from "~/components/ui/button";
 import { Overlay } from "~/components/ui/overlay";
@@ -21,7 +22,7 @@ export function Results({
   onViewBoard: () => void;
 }) {
   const rematch = useMutation(api.rooms.rematch);
-  const { room, players, me, totalBlanks } = view;
+  const { room, players, me, totalBlanks, solved } = view;
   const [difficulty, setDifficulty] = useState<Difficulty>(room.difficulty);
   const [busy, setBusy] = useState(false);
 
@@ -57,10 +58,14 @@ export function Results({
   };
 
   const title = isVersus
-    ? iWon
-      ? "You won."
-      : `${winner?.name ?? "Someone"} won.`
-    : "Solved.";
+    ? winner
+      ? iWon
+        ? "You won."
+        : `${winner.name} won.`
+      : "Game over."
+    : solved
+      ? "Solved."
+      : "Game over.";
 
   return (
     <Overlay label="Results" onDismiss={onViewBoard}>
@@ -82,8 +87,7 @@ export function Results({
 
         {isSolo ? (
           <p className="border-y border-border/50 py-3 text-sm text-muted-foreground">
-            {players[0]?.mistakes ?? 0}{" "}
-            {players[0]?.mistakes === 1 ? "mistake" : "mistakes"}
+            {players[0]?.mistakes ?? 0}/{MAX_MISTAKES} mistakes
             {players[0]?.hints
               ? ` · ${players[0].hints} ${players[0].hints === 1 ? "hint" : "hints"}`
               : ""}
@@ -119,10 +123,12 @@ export function Results({
                           // winner's finish, which would flatten every time
                           // to the winner's.
                           formatDuration(p.finishedAt - room.startedAt)
-                        : `${pct}%`
+                        : p.outAt
+                          ? "out"
+                          : `${pct}%`
                       : `${p.filled} cells`}
                     {" · "}
-                    {p.mistakes}✕
+                    {p.mistakes}/{MAX_MISTAKES}✕
                     {!isVersus && p.hints ? ` · ${p.hints} hints` : ""}
                   </span>
                 </li>

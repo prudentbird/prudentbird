@@ -72,6 +72,8 @@ export default defineSchema({
     /** Versus: the player's own board (81 chars). */
     board: v.string(),
     mistakes: v.number(),
+    /** Versus: hit MAX_MISTAKES before finishing. Locks their board. */
+    outAt: v.optional(v.number()),
     hints: v.optional(v.number()),
     /** Rating points earned in this room's latest finished round. */
     points: v.optional(v.number()),
@@ -100,6 +102,9 @@ export default defineSchema({
     image: v.optional(v.string()),
     board: v.string(),
     mistakes: v.number(),
+    /** Hit MAX_MISTAKES before finishing. Distinct from finishedAt so lost
+     * attempts don't count toward streaks, the leaderboard, or awards. */
+    lostAt: v.optional(v.number()),
     hints: v.number(),
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),

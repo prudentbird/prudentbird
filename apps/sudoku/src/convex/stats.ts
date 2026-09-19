@@ -97,7 +97,9 @@ export const me = query({
           );
         }
       } else {
-        won = room.status === "finished";
+        // "finished" also covers a mistakes-out loss; only a matching board
+        // means the room was actually solved.
+        won = room.status === "finished" && room.board === room.solution;
         if (won && room.startedAt && room.finishedAt) {
           ms = roomElapsed(room);
         }

@@ -18,7 +18,7 @@ import {
   type Difficulty,
 } from "~/convex/lib/sudoku";
 import { buildHint } from "~/convex/lib/hint";
-import { MAX_HINTS } from "~/convex/lib/rating";
+import { MAX_HINTS, MAX_MISTAKES } from "~/convex/lib/rating";
 import {
   dispatchLocalClock,
   newLocalGame,
@@ -109,8 +109,11 @@ function GuestSoloInner() {
       game={game}
       onChange={(g) => {
         if (g.finishedAt) {
-          pushHistory(g);
-          track("game_completed", {
+          const won = g.board === g.solution;
+          // Only a real solve is worth attaching to the account later; a
+          // loss would otherwise get imported as if the board were solved.
+          if (won) pushHistory(g);
+          track(won ? "game_completed" : "game_over", {
             mode: "solo",
             difficulty: g.difficulty,
             is_guest: isGuest,
@@ -137,6 +140,7 @@ function SoloGame({
 }) {
   const { isAuthenticated } = useConvexAuth();
   const finished = game.finishedAt !== undefined;
+  const won = finished && game.board === game.solution;
   const justFinished = useBecame(finished);
   const clock = useGameClock({
     clock: game,
@@ -172,15 +176,17 @@ function SoloGame({
       const board = setCell(game.board, cell, value);
       const wrong = value !== 0 && String(value) !== game.solution[cell];
       const solved = board === game.solution;
+      const mistakes = wrong ? game.mistakes + 1 : game.mistakes;
+      const lost = !solved && mistakes >= MAX_MISTAKES;
       const now = Date.now();
       onChange({
         ...game,
         board,
-        mistakes: wrong ? game.mistakes + 1 : game.mistakes,
+        mistakes,
         // A move means the player is at the board, so the clock runs again;
-        // solving stops it for good.
-        ...(solved ? pauseClock(game, now) : resumeClock(game, now)),
-        ...(solved ? { finishedAt: now } : {}),
+        // finishing stops it for good either way.
+        ...(solved || lost ? pauseClock(game, now) : resumeClock(game, now)),
+        ...(solved || lost ? { finishedAt: now } : {}),
       });
     },
     [game, onChange],
@@ -234,8 +240,8 @@ function SoloGame({
   const aside = (
     <>
       <p className="text-sm text-muted-foreground">
-        {filled} of {totalBlanks} filled · {game.mistakes}{" "}
-        {game.mistakes === 1 ? "mistake" : "mistakes"}
+        {filled} of {totalBlanks} filled · {game.mistakes}/{MAX_MISTAKES}{" "}
+        mistakes
         {game.hints
           ? ` · ${game.hints} ${game.hints === 1 ? "hint" : "hints"}`
           : ""}
@@ -260,7 +266,7 @@ function SoloGame({
 
   return (
     <>
-      {justFinished ? <Celebration intensity="big" /> : null}
+      {justFinished && won ? <Celebration intensity="big" /> : null}
       <Play
         puzzle={game.puzzle}
         board={game.board}
@@ -282,14 +288,14 @@ function SoloGame({
                     Solo · {DIFFICULTY_LABEL[game.difficulty]}
                   </p>
                   <h2 className="text-3xl font-medium tracking-tight">
-                    Solved.
+                    {won ? "Solved." : "Game over."}
                   </h2>
                   <p className="font-mono text-2xl tabular-nums">
                     {formatDuration(clockElapsed(game, game.finishedAt!))}
                   </p>
                 </div>
                 <p className="border-y border-border/50 py-3 text-sm text-muted-foreground">
-                  {game.mistakes} {game.mistakes === 1 ? "mistake" : "mistakes"}
+                  {game.mistakes}/{MAX_MISTAKES} mistakes
                   {game.hints
                     ? ` · ${game.hints} ${game.hints === 1 ? "hint" : "hints"}`
                     : ""}

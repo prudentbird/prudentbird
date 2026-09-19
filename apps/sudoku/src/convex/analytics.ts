@@ -150,6 +150,26 @@ export function versusLateFinishEvent(
   };
 }
 
+/** `game_over` for a room that ended without anyone solving it (mistakes). */
+export function roomLostEvents(
+  room: Doc<"rooms">,
+  players: Doc<"players">[],
+): AnalyticsEvent[] {
+  if (!room.startedAt || !room.finishedAt) return [];
+  const durationMs = roomElapsed(room);
+  const base = { ...roomProps(room), player_count: players.length };
+  return players.map((p) => ({
+    distinctId: p.userId,
+    event: "game_over",
+    properties: {
+      ...base,
+      duration_ms: durationMs,
+      mistakes: p.mistakes,
+      hints: p.hints ?? 0,
+    },
+  }));
+}
+
 export function roomAbandonedEvents(
   room: Doc<"rooms">,
   players: Doc<"players">[],
