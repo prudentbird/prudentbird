@@ -19,7 +19,7 @@ import { Celebration } from "~/components/celebration";
 import { CopyLink } from "~/components/room/share-code";
 import { PlayersPanel } from "~/components/room/players-panel";
 import { EndRoom } from "~/components/room/end-room";
-import { Results } from "~/components/room/results";
+import { Eliminated, Results } from "~/components/room/results";
 
 export function Game({ view }: { view: RoomView }) {
   const { room, players, me, board, owners, errors, totalBlanks, solved } =
@@ -33,8 +33,14 @@ export function Game({ view }: { view: RoomView }) {
   const locked =
     finished || Boolean(myPlayer?.finishedAt) || Boolean(myPlayer?.outAt);
   const iWon = shared ? solved : room.winnerPlayerId === me.playerId;
+  // Versus only: out of mistakes while the race is still on for everyone
+  // else, so there's no room-level Results overlay to show yet.
+  const eliminatedEarly = !finished && Boolean(myPlayer?.outAt);
 
+  // Independent dismiss state: dismissing the early-elimination notice must
+  // not suppress the room's actual Results overlay once it finishes.
   const [showResults, setShowResults] = useState(true);
+  const [showEliminated, setShowEliminated] = useState(true);
   const justFinished = useBecame(finished);
   const celebrate = justFinished && iWon;
 
@@ -171,10 +177,13 @@ export function Game({ view }: { view: RoomView }) {
         </section>
       )}
 
-      {finished && !showResults ? (
+      {(finished && !showResults) || (eliminatedEarly && !showEliminated) ? (
         <button
           type="button"
-          onClick={() => setShowResults(true)}
+          onClick={() => {
+            setShowResults(true);
+            setShowEliminated(true);
+          }}
           className="cursor-pointer self-start text-sm underline underline-offset-2"
         >
           Show results
@@ -206,6 +215,8 @@ export function Game({ view }: { view: RoomView }) {
         overlay={
           finished && showResults ? (
             <Results view={view} onViewBoard={() => setShowResults(false)} />
+          ) : eliminatedEarly && showEliminated ? (
+            <Eliminated onViewBoard={() => setShowEliminated(false)} />
           ) : null
         }
       />

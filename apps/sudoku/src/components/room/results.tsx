@@ -40,6 +40,7 @@ export function Results({
   const iWon = winner?._id === me.playerId;
   const host = players.find((p) => p.userId === room.hostUserId);
   const myPoints = players.find((p) => p._id === me.playerId)?.points ?? 0;
+  const lost = isVersus ? !winner : !solved;
 
   const ranked = [...players].sort((a, b) => {
     if (a.finishedAt && b.finishedAt) return a.finishedAt - b.finishedAt;
@@ -149,10 +150,12 @@ export function Results({
             />
             <div className="flex items-center gap-2">
               <Button onClick={onRematch} disabled={busy}>
-                {busy ? "Starting…" : "Play again"}
+                {busy ? "Starting…" : lost ? "Restart" : "Play again"}
               </Button>
               <Button asChild variant="secondary">
-                <Link href="/">{isSolo ? "Done" : "Leave"}</Link>
+                <Link href="/">
+                  {lost ? "Abandon" : isSolo ? "Done" : "Leave"}
+                </Link>
               </Button>
             </div>
           </div>
@@ -162,10 +165,33 @@ export function Results({
               {host?.name ?? "The host"} can start another round.
             </p>
             <Button asChild variant="secondary" className="self-start">
-              <Link href="/">Leave</Link>
+              <Link href="/">{lost ? "Abandon" : "Leave"}</Link>
             </Button>
           </div>
         )}
+      </div>
+    </Overlay>
+  );
+}
+
+/**
+ * Shown to a versus player the moment they run out of mistakes while the
+ * race is still on for everyone else — there's nothing left for them to do
+ * but leave, since the room only rematches once it actually finishes.
+ */
+export function Eliminated({ onViewBoard }: { onViewBoard: () => void }) {
+  return (
+    <Overlay label="Game over" onDismiss={onViewBoard}>
+      <div className="flex flex-col gap-8 p-6 sm:p-8">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-3xl font-medium tracking-tight">Game over.</h2>
+          <p className="text-sm text-muted-foreground">
+            Out of mistakes. The others are still racing.
+          </p>
+        </div>
+        <Button asChild variant="secondary" className="self-start">
+          <Link href="/">Abandon</Link>
+        </Button>
       </div>
     </Overlay>
   );

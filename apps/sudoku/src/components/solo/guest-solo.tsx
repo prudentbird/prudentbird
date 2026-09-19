@@ -312,10 +312,10 @@ function SoloGame({
                   />
                   <div className="flex items-center gap-2">
                     <Button onClick={() => onNew(nextDifficulty)}>
-                      Play again
+                      {won ? "Play again" : "Restart"}
                     </Button>
                     <Button asChild variant="secondary">
-                      <Link href="/">Done</Link>
+                      <Link href="/">{won ? "Done" : "Abandon"}</Link>
                     </Button>
                   </div>
                 </div>
