@@ -129,6 +129,10 @@ export function roomAwards(
     ];
   }
 
+  // A room can also reach "finished" by running out of mistakes; that's a
+  // loss, not a solve, so nobody's owed points for it.
+  if (room.board !== room.solution) return [];
+
   const totalBlanks = blankCount(room.puzzle);
   const filled = new Map<string, number>();
   for (let i = 0; i < 81; i++) {

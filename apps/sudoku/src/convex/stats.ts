@@ -97,7 +97,10 @@ export const me = query({
           );
         }
       } else {
-        won = room.status === "finished";
+        // A closed room keeps its finishedAt and board, so check those
+        // directly rather than status — which a later host-close moves off
+        // "finished" — and rule out a mistakes-out loss via the board match.
+        won = room.finishedAt !== undefined && room.board === room.solution;
         if (won && room.startedAt && room.finishedAt) {
           ms = roomElapsed(room);
         }

@@ -367,6 +367,8 @@ export const rematch = mutation({
         mistakes: 0,
         hints: 0,
         finishedAt: undefined,
+        outAt: undefined,
+        points: undefined,
         cursor: undefined,
       });
     }
@@ -422,9 +424,15 @@ export const get = query({
     }
 
     const board = shared ? room.board : me.board;
+    // "finished" also covers running out of mistakes; this tells the client
+    // whether the room actually got solved, without exposing the solution.
+    const solved = shared
+      ? board === room.solution
+      : Boolean(room.winnerPlayerId);
 
     return {
       status: "ok" as const,
+      solved,
       room: {
         _id: room._id,
         code: room.code,
@@ -463,6 +471,7 @@ export const get = query({
           hints: p.hints ?? 0,
           points: p.points,
           finishedAt: p.finishedAt,
+          outAt: p.outAt,
           cursor: isCoop && p._id !== me._id ? p.cursor : undefined,
           filled: shared
             ? (coopFilled.get(p._id) ?? 0)

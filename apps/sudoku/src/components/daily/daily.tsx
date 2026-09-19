@@ -6,7 +6,7 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { DailyView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
-import { MAX_HINTS } from "~/convex/lib/rating";
+import { MAX_HINTS, MAX_MISTAKES } from "~/convex/lib/rating";
 import { formatDailyDate, todayUtc } from "~/lib/daily";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
 import { track } from "~/lib/analytics";
@@ -81,8 +81,10 @@ export function Daily({ date }: { date: string }) {
 function DailyGame({ view, date }: { view: DailyView; date: string }) {
   const { daily, attempt, totalBlanks } = view;
   if (!attempt) throw new Error("unreachable");
-  const finished = attempt.finishedAt !== undefined;
-  const justFinished = useBecame(finished);
+  const solved = attempt.finishedAt !== undefined;
+  const lost = attempt.lostAt !== undefined;
+  const over = solved || lost;
+  const justFinished = useBecame(over);
   const [showResults, setShowResults] = useState(true);
 
   const place = useMutation(api.daily.place).withOptimisticUpdate(
@@ -114,7 +116,7 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
   );
   const clock = useGameClock({
     clock: attempt,
-    done: finished,
+    done: over,
     dispatch: dispatchClock,
   });
 
@@ -151,14 +153,14 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
   const aside = (
     <>
       <p className="text-sm text-muted-foreground">
-        {attempt.filled} of {totalBlanks} filled · {attempt.mistakes}{" "}
-        {attempt.mistakes === 1 ? "mistake" : "mistakes"}
+        {attempt.filled} of {totalBlanks} filled · {attempt.mistakes}/
+        {MAX_MISTAKES} mistakes
         {attempt.hints
           ? ` · ${attempt.hints} ${attempt.hints === 1 ? "hint" : "hints"}`
           : ""}
       </p>
       <Leaderboard view={view} />
-      {finished && !showResults ? (
+      {over && !showResults ? (
         <button
           type="button"
           onClick={() => setShowResults(true)}
@@ -172,12 +174,12 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
 
   return (
     <>
-      {justFinished ? <Celebration intensity="big" /> : null}
+      {justFinished && solved ? <Celebration intensity="big" /> : null}
       <Play
         puzzle={daily.puzzle}
         board={attempt.board}
         errors={attempt.errors}
-        locked={finished}
+        locked={over}
         paused={clock.paused}
         onResume={clock.pausedByPlayer ? clock.toggle : undefined}
         onPlace={onPlace}
@@ -186,7 +188,7 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
         topBar={topBar}
         aside={aside}
         overlay={
-          finished && showResults ? (
+          over && showResults ? (
             <DailyResults
               view={view}
               date={date}
@@ -252,11 +254,14 @@ function DailyResults({
   const { daily, attempt, finishedCount } = view;
   const [copied, setCopied] = useState(false);
   if (!attempt) return null;
+  const lost = attempt.lostAt !== undefined;
   const elapsed = attempt.elapsedMs ?? 0;
   const isToday = date === todayUtc();
 
   const share = async () => {
-    const text = `Sudoku daily ${date} (${DIFFICULTY_LABEL[daily.difficulty]}) · ${formatDuration(elapsed)} · ${attempt.mistakes} ${
+    const text = `Sudoku daily ${date} (${DIFFICULTY_LABEL[daily.difficulty]})${
+      lost ? " · Game over" : ` · ${formatDuration(elapsed)}`
+    } · ${attempt.mistakes} ${
       attempt.mistakes === 1 ? "mistake" : "mistakes"
     }${attempt.rank ? ` · #${attempt.rank}` : ""}\n${window.location.origin}/daily/${date}`;
     try {
@@ -282,7 +287,11 @@ function DailyResults({
             {formatDailyDate(date)} · {DIFFICULTY_LABEL[daily.difficulty]}
           </p>
           <h2 className="text-3xl font-medium tracking-tight">
-            {attempt.rank === 1 ? "Fastest today." : "Done."}
+            {lost
+              ? "Game over."
+              : attempt.rank === 1
+                ? "Fastest today."
+                : "Done."}
           </h2>
           <p className="font-mono text-2xl tabular-nums">
             {formatDuration(elapsed)}
@@ -303,7 +312,9 @@ function DailyResults({
           </div>
           <div className="px-4">
             <dt className="text-xs text-muted-foreground">Mistakes</dt>
-            <dd className="tabular-nums">{attempt.mistakes}</dd>
+            <dd className="tabular-nums">
+              {attempt.mistakes}/{MAX_MISTAKES}
+            </dd>
           </div>
           <div className="pl-4">
             <dt className="text-xs text-muted-foreground">Hints</dt>

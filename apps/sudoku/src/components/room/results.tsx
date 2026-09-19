@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { RoomView } from "~/lib/room-view";
 import type { Difficulty } from "~/convex/lib/sudoku";
+import { MAX_MISTAKES } from "~/convex/lib/rating";
 import { clockElapsed, type Clock } from "~/convex/lib/clock";
 import { Button } from "~/components/ui/button";
 import { Overlay } from "~/components/ui/overlay";
@@ -21,7 +22,7 @@ export function Results({
   onViewBoard: () => void;
 }) {
   const rematch = useMutation(api.rooms.rematch);
-  const { room, players, me, totalBlanks } = view;
+  const { room, players, me, totalBlanks, solved } = view;
   const [difficulty, setDifficulty] = useState<Difficulty>(room.difficulty);
   const [busy, setBusy] = useState(false);
 
@@ -38,7 +39,11 @@ export function Results({
   const winner = players.find((p) => p._id === room.winnerPlayerId);
   const iWon = winner?._id === me.playerId;
   const host = players.find((p) => p.userId === room.hostUserId);
-  const myPoints = players.find((p) => p._id === me.playerId)?.points ?? 0;
+  const myPlayer = players.find((p) => p._id === me.playerId);
+  const myPoints = myPlayer?.points ?? 0;
+  // Anyone but the winner lost the race, whether by elimination or by
+  // simply not finishing first.
+  const lost = isVersus ? !iWon : !solved;
 
   const ranked = [...players].sort((a, b) => {
     if (a.finishedAt && b.finishedAt) return a.finishedAt - b.finishedAt;
@@ -57,10 +62,14 @@ export function Results({
   };
 
   const title = isVersus
-    ? iWon
-      ? "You won."
-      : `${winner?.name ?? "Someone"} won.`
-    : "Solved.";
+    ? lost
+      ? "Game over."
+      : iWon
+        ? "You won."
+        : `${winner?.name ?? "Someone"} won.`
+    : solved
+      ? "Solved."
+      : "Game over.";
 
   return (
     <Overlay label="Results" onDismiss={onViewBoard}>
@@ -82,8 +91,7 @@ export function Results({
 
         {isSolo ? (
           <p className="border-y border-border/50 py-3 text-sm text-muted-foreground">
-            {players[0]?.mistakes ?? 0}{" "}
-            {players[0]?.mistakes === 1 ? "mistake" : "mistakes"}
+            {players[0]?.mistakes ?? 0}/{MAX_MISTAKES} mistakes
             {players[0]?.hints
               ? ` · ${players[0].hints} ${players[0].hints === 1 ? "hint" : "hints"}`
               : ""}
@@ -119,10 +127,12 @@ export function Results({
                           // winner's finish, which would flatten every time
                           // to the winner's.
                           formatDuration(p.finishedAt - room.startedAt)
-                        : `${pct}%`
+                        : p.outAt
+                          ? "out"
+                          : `${pct}%`
                       : `${p.filled} cells`}
                     {" · "}
-                    {p.mistakes}✕
+                    {p.mistakes}/{MAX_MISTAKES}✕
                     {!isVersus && p.hints ? ` · ${p.hints} hints` : ""}
                   </span>
                 </li>
@@ -143,10 +153,12 @@ export function Results({
             />
             <div className="flex items-center gap-2">
               <Button onClick={onRematch} disabled={busy}>
-                {busy ? "Starting…" : "Play again"}
+                {busy ? "Starting…" : lost ? "Restart" : "Play again"}
               </Button>
               <Button asChild variant="secondary">
-                <Link href="/">{isSolo ? "Done" : "Leave"}</Link>
+                <Link href="/">
+                  {lost ? "Abandon" : isSolo ? "Done" : "Leave"}
+                </Link>
               </Button>
             </div>
           </div>
@@ -156,10 +168,33 @@ export function Results({
               {host?.name ?? "The host"} can start another round.
             </p>
             <Button asChild variant="secondary" className="self-start">
-              <Link href="/">Leave</Link>
+              <Link href="/">{lost ? "Abandon" : "Leave"}</Link>
             </Button>
           </div>
         )}
+      </div>
+    </Overlay>
+  );
+}
+
+/**
+ * Shown to a versus player the moment they run out of mistakes while the
+ * race is still on for everyone else — there's nothing left for them to do
+ * but leave, since the room only rematches once it actually finishes.
+ */
+export function Eliminated({ onViewBoard }: { onViewBoard: () => void }) {
+  return (
+    <Overlay label="Game over" onDismiss={onViewBoard}>
+      <div className="flex flex-col gap-8 p-6 sm:p-8">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-3xl font-medium tracking-tight">Game over.</h2>
+          <p className="text-sm text-muted-foreground">
+            Out of mistakes. The others are still racing.
+          </p>
+        </div>
+        <Button asChild variant="secondary" className="self-start">
+          <Link href="/">Abandon</Link>
+        </Button>
       </div>
     </Overlay>
   );

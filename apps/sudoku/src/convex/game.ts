@@ -3,14 +3,16 @@ import { mutation, type MutationCtx } from "./_generated/server";
 import { requireMember } from "./rooms";
 import { setCell } from "./lib/sudoku";
 import { buildHint } from "./lib/hint";
-import { MAX_HINTS } from "./lib/rating";
+import { MAX_HINTS, MAX_MISTAKES } from "./lib/rating";
 import { awardRoom } from "./ratings";
 import { pauseClock, wakeClock, type Clock } from "./lib/clock";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   roomFinishedEvents,
+  roomLostEvents,
   roomProps,
   track,
+  versusEliminatedEvent,
   versusLateFinishEvent,
 } from "./analytics";
 
@@ -73,49 +75,85 @@ export const place = mutation({
       const owners = room.owners.slice();
       owners[cell] = value === 0 ? null : player._id;
       const solved = board === room.solution;
+      const mistakes = isWrong ? player.mistakes + 1 : player.mistakes;
+      const lost = !solved && mistakes >= MAX_MISTAKES;
       await ctx.db.patch(room._id, {
         board,
         owners,
-        ...roomClock(room, now, solved),
-        ...(solved ? { status: "finished", finishedAt: now } : {}),
+        ...roomClock(room, now, solved || lost),
+        ...(solved || lost ? { status: "finished", finishedAt: now } : {}),
       });
       if (isWrong) {
-        await ctx.db.patch(player._id, { mistakes: player.mistakes + 1 });
+        await ctx.db.patch(player._id, { mistakes });
       }
-      if (solved) await finishRoom(ctx, (await ctx.db.get(room._id))!);
+      if (solved) {
+        await finishRoom(ctx, (await ctx.db.get(room._id))!);
+      } else if (lost) {
+        const finished = (await ctx.db.get(room._id))!;
+        await track(
+          ctx,
+          roomLostEvents(finished, await roomPlayers(ctx, finished._id)),
+        );
+      }
       return;
     }
 
     // versus
-    if (player.finishedAt) return;
+    if (player.finishedAt || player.outAt) return;
     if (player.board[cell] === String(value)) return;
     const board = setCell(player.board, cell, value);
     const solved = board === room.solution;
+    const mistakes = isWrong ? player.mistakes + 1 : player.mistakes;
+    const out = !solved && mistakes >= MAX_MISTAKES;
     await ctx.db.patch(player._id, {
       board,
-      mistakes: isWrong ? player.mistakes + 1 : player.mistakes,
+      mistakes,
       ...(solved ? { finishedAt: now } : {}),
+      ...(out ? { outAt: now } : {}),
     });
-    if (!solved) return;
-    if (!room.winnerPlayerId) {
+    if (solved) {
+      if (!room.winnerPlayerId) {
+        await ctx.db.patch(room._id, {
+          winnerPlayerId: player._id,
+          status: "finished",
+          finishedAt: now,
+          ...roomClock(room, now, true),
+        });
+        await finishRoom(ctx, (await ctx.db.get(room._id))!);
+      } else {
+        const players = await roomPlayers(ctx, room._id);
+        await track(
+          ctx,
+          versusLateFinishEvent(
+            room,
+            (await ctx.db.get(player._id))!,
+            players.length,
+            now,
+          ),
+        );
+      }
+      return;
+    }
+    if (!out) return;
+    // Tracked the moment this player is out, not whenever the room finishes —
+    // a winner emerging later would otherwise leave their own loss untracked.
+    const players = await roomPlayers(ctx, room._id);
+    await track(
+      ctx,
+      versusEliminatedEvent(room, player, players.length, mistakes, now),
+    );
+    // Elimination doesn't end the race for whoever's left — only stops the
+    // room once every remaining player has finished or run out of mistakes.
+    if (room.winnerPlayerId) return;
+    const stillIn = players.some(
+      (p) => p._id !== player._id && !p.finishedAt && !p.outAt,
+    );
+    if (!stillIn) {
       await ctx.db.patch(room._id, {
-        winnerPlayerId: player._id,
         status: "finished",
         finishedAt: now,
         ...roomClock(room, now, true),
       });
-      await finishRoom(ctx, (await ctx.db.get(room._id))!);
-    } else {
-      const players = await roomPlayers(ctx, room._id);
-      await track(
-        ctx,
-        versusLateFinishEvent(
-          room,
-          (await ctx.db.get(player._id))!,
-          players.length,
-          now,
-        ),
-      );
     }
   },
 });

@@ -135,6 +135,8 @@ function DailySection() {
         : null;
   const attempt = view?.status === "ok" ? view.attempt : null;
   const done = attempt?.finishedAt !== undefined;
+  const lost = attempt?.lostAt !== undefined;
+  const over = done || lost;
 
   return (
     <section>
@@ -162,13 +164,15 @@ function DailySection() {
               ? ` · done in ${formatDuration(attempt.elapsedMs ?? 0)}${
                   attempt.rank ? ` · #${attempt.rank}` : ""
                 }`
-              : attempt
-                ? ` · in progress, ${attempt.filled} filled`
-                : ""}
+              : lost
+                ? " · game over"
+                : attempt
+                  ? ` · in progress, ${attempt.filled} filled`
+                  : ""}
           </span>
         </span>
         <span className="shrink-0 text-sm text-muted-foreground group-hover:text-foreground">
-          {done ? "Results →" : attempt ? "Continue →" : "Play →"}
+          {over ? "Results →" : attempt ? "Continue →" : "Play →"}
         </span>
       </Link>
     </section>

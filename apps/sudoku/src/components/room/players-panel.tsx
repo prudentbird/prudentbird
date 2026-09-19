@@ -1,6 +1,7 @@
 "use client";
 
 import type { RoomView } from "~/lib/room-view";
+import { MAX_MISTAKES } from "~/convex/lib/rating";
 import { PRESENCE_WINDOW_MS } from "~/lib/presence";
 import { useNow } from "~/hooks/use-now";
 import { playerColor } from "~/lib/players";
@@ -39,8 +40,10 @@ export function PlayersPanel({ view }: { view: RoomView }) {
                 {isVersus
                   ? p.finishedAt
                     ? "done"
-                    : `${pct}%`
-                  : `${p.filled} · ${p.mistakes}✕`}
+                    : p.outAt
+                      ? "out"
+                      : `${pct}%`
+                  : `${p.filled} · ${p.mistakes}/${MAX_MISTAKES}✕`}
               </span>
             </div>
             {isVersus ? (

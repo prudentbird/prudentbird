@@ -6,7 +6,7 @@ import { useMutation } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { RoomView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
-import { MAX_HINTS } from "~/convex/lib/rating";
+import { MAX_HINTS, MAX_MISTAKES } from "~/convex/lib/rating";
 import { playerColor } from "~/lib/players";
 import { DIFFICULTY_LABEL, MODE_LABEL } from "~/lib/utils";
 import type { Clock, ClockAction } from "~/convex/lib/clock";
@@ -19,20 +19,28 @@ import { Celebration } from "~/components/celebration";
 import { CopyLink } from "~/components/room/share-code";
 import { PlayersPanel } from "~/components/room/players-panel";
 import { EndRoom } from "~/components/room/end-room";
-import { Results } from "~/components/room/results";
+import { Eliminated, Results } from "~/components/room/results";
 
 export function Game({ view }: { view: RoomView }) {
-  const { room, players, me, board, owners, errors, totalBlanks } = view;
+  const { room, players, me, board, owners, errors, totalBlanks, solved } =
+    view;
   const code = room.code;
   const isCoop = room.mode === "coop";
   const isSolo = room.mode === "solo";
   const shared = room.mode !== "versus";
   const finished = room.status === "finished";
   const myPlayer = players.find((p) => p._id === me.playerId);
-  const locked = finished || Boolean(myPlayer?.finishedAt);
-  const iWon = shared || room.winnerPlayerId === me.playerId;
+  const locked =
+    finished || Boolean(myPlayer?.finishedAt) || Boolean(myPlayer?.outAt);
+  const iWon = shared ? solved : room.winnerPlayerId === me.playerId;
+  // Versus only: out of mistakes while the race is still on for everyone
+  // else, so there's no room-level Results overlay to show yet.
+  const eliminatedEarly = !finished && Boolean(myPlayer?.outAt);
 
+  // Independent dismiss state: dismissing the early-elimination notice must
+  // not suppress the room's actual Results overlay once it finishes.
   const [showResults, setShowResults] = useState(true);
+  const [showEliminated, setShowEliminated] = useState(true);
   const justFinished = useBecame(finished);
   const celebrate = justFinished && iWon;
 
@@ -152,8 +160,8 @@ export function Game({ view }: { view: RoomView }) {
   const aside = (
     <>
       <p className="text-sm text-muted-foreground">
-        {filled} of {totalBlanks} filled · {myPlayer?.mistakes ?? 0}{" "}
-        {myPlayer?.mistakes === 1 ? "mistake" : "mistakes"}
+        {filled} of {totalBlanks} filled · {myPlayer?.mistakes ?? 0}/
+        {MAX_MISTAKES} mistakes
         {shared && room.hints
           ? ` · ${room.hints} ${room.hints === 1 ? "hint" : "hints"}`
           : ""}
@@ -169,13 +177,16 @@ export function Game({ view }: { view: RoomView }) {
         </section>
       )}
 
-      {finished && !showResults ? (
+      {(finished && !showResults) || (eliminatedEarly && !showEliminated) ? (
         <button
           type="button"
-          onClick={() => setShowResults(true)}
+          onClick={() => {
+            setShowResults(true);
+            setShowEliminated(true);
+          }}
           className="cursor-pointer self-start text-sm underline underline-offset-2"
         >
-          Show results
+          {finished && !showResults ? "Show results" : "Show game over"}
         </button>
       ) : null}
 
@@ -204,6 +215,8 @@ export function Game({ view }: { view: RoomView }) {
         overlay={
           finished && showResults ? (
             <Results view={view} onViewBoard={() => setShowResults(false)} />
+          ) : eliminatedEarly && showEliminated ? (
+            <Eliminated onViewBoard={() => setShowEliminated(false)} />
           ) : null
         }
       />

@@ -12,6 +12,14 @@ export type AnalyticsEvents = {
     mistakes: number;
     hints: number;
   };
+  game_over: {
+    mode: Mode;
+    difficulty: string;
+    is_guest: boolean;
+    duration_ms: number;
+    mistakes: number;
+    hints: number;
+  };
   game_abandoned: {
     mode: Mode;
     difficulty: string;
