@@ -12,6 +12,7 @@ import {
   roomLostEvents,
   roomProps,
   track,
+  versusEliminatedEvent,
   versusLateFinishEvent,
 } from "./analytics";
 
@@ -133,25 +134,26 @@ export const place = mutation({
       }
       return;
     }
+    if (!out) return;
+    // Tracked the moment this player is out, not whenever the room finishes —
+    // a winner emerging later would otherwise leave their own loss untracked.
+    const players = await roomPlayers(ctx, room._id);
+    await track(
+      ctx,
+      versusEliminatedEvent(room, player, players.length, mistakes, now),
+    );
     // Elimination doesn't end the race for whoever's left — only stops the
     // room once every remaining player has finished or run out of mistakes.
-    if (out && !room.winnerPlayerId) {
-      const players = await roomPlayers(ctx, room._id);
-      const stillIn = players.some(
-        (p) => p._id !== player._id && !p.finishedAt && !p.outAt,
-      );
-      if (!stillIn) {
-        await ctx.db.patch(room._id, {
-          status: "finished",
-          finishedAt: now,
-          ...roomClock(room, now, true),
-        });
-        const finished = (await ctx.db.get(room._id))!;
-        await track(
-          ctx,
-          roomLostEvents(finished, await roomPlayers(ctx, finished._id)),
-        );
-      }
+    if (room.winnerPlayerId) return;
+    const stillIn = players.some(
+      (p) => p._id !== player._id && !p.finishedAt && !p.outAt,
+    );
+    if (!stillIn) {
+      await ctx.db.patch(room._id, {
+        status: "finished",
+        finishedAt: now,
+        ...roomClock(room, now, true),
+      });
     }
   },
 });

@@ -259,7 +259,9 @@ function DailyResults({
   const isToday = date === todayUtc();
 
   const share = async () => {
-    const text = `Sudoku daily ${date} (${DIFFICULTY_LABEL[daily.difficulty]}) · ${formatDuration(elapsed)} · ${attempt.mistakes} ${
+    const text = `Sudoku daily ${date} (${DIFFICULTY_LABEL[daily.difficulty]})${
+      lost ? " · Game over" : ` · ${formatDuration(elapsed)}`
+    } · ${attempt.mistakes} ${
       attempt.mistakes === 1 ? "mistake" : "mistakes"
     }${attempt.rank ? ` · #${attempt.rank}` : ""}\n${window.location.origin}/daily/${date}`;
     try {

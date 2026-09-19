@@ -186,7 +186,7 @@ export function Game({ view }: { view: RoomView }) {
           }}
           className="cursor-pointer self-start text-sm underline underline-offset-2"
         >
-          Show results
+          {finished && !showResults ? "Show results" : "Show game over"}
         </button>
       ) : null}
 
