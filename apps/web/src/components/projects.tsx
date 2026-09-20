@@ -25,6 +25,12 @@ const projects: Project[] = [
     description: "Encrypted environment variable management for teams.",
   },
   {
+    name: "Sudoku",
+    link: "https://sudoku.prudentbird.com",
+    github: "https://github.com/prudentbird/prudentbird",
+    description: "Realtime multiplayer sudoku, play with friends live.",
+  },
+  {
     name: "FuseIon",
     link: "https://fuseion.app",
     github: "https://github.com/prudentbird/fuseion",
