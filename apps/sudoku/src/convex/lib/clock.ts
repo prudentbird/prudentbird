@@ -22,6 +22,8 @@ export type Clock = {
    * lift it, so it outlives a reload rather than restarting under them.
    */
   pausedByPlayer?: boolean;
+  /** A hint walkthrough freezes play until it closes. */
+  hintPaused?: boolean;
 };
 
 export type ClockPatch = {
@@ -29,6 +31,7 @@ export type ClockPatch = {
   runningSince: number | undefined;
   lastActiveAt: number;
   pausedByPlayer: boolean;
+  hintPaused: boolean;
 };
 
 /** How often a clock with a pinger records that its tab is still alive. */
@@ -69,18 +72,34 @@ export function pauseClock(
     runningSince: undefined,
     lastActiveAt: at,
     pausedByPlayer: byPlayer || (clock.pausedByPlayer ?? false),
+    hintPaused: clock.hintPaused ?? false,
   };
 }
 
 /** Opens a stretch, clearing any hold the player put on it. */
 export function resumeClock(clock: Clock, at: number): ClockPatch {
+  if (clock.hintPaused) return pauseClock(clock, at);
   const { activeMs, runningSince } = normalize(clock);
   return {
     activeMs,
     runningSince: runningSince ?? at,
     lastActiveAt: at,
     pausedByPlayer: false,
+    hintPaused: false,
   };
+}
+
+/** Enter a walkthrough without turning it into a manual pause. */
+export function pauseForHint(clock: Clock, at: number): ClockPatch {
+  return { ...pauseClock(clock, at), hintPaused: true };
+}
+
+/** Closing a walkthrough resumes play, preserving a separate manual hold. */
+export function finishHintClock(clock: Clock, at: number): ClockPatch {
+  const released = { ...clock, hintPaused: false };
+  return released.pausedByPlayer
+    ? pauseClock(released, at)
+    : resumeClock(released, at);
 }
 
 /**
@@ -121,6 +140,7 @@ export function wakeClock(clock: Clock, at: number): ClockPatch {
  * before this shipped the moment the game is next opened.
  */
 export function reopenClock(clock: Clock, at: number): ClockPatch {
+  // A local walkthrough does not survive a new browser session.
   const { activeMs, runningSince } = normalize(clock);
   const held = clock.pausedByPlayer ?? false;
   const legacy =
@@ -128,7 +148,13 @@ export function reopenClock(clock: Clock, at: number): ClockPatch {
     clock.runningSince === undefined &&
     clock.lastActiveAt === undefined;
   if (legacy) {
-    return { activeMs, runningSince, lastActiveAt: at, pausedByPlayer: held };
+    return {
+      activeMs,
+      runningSince,
+      lastActiveAt: at,
+      pausedByPlayer: held,
+      hintPaused: false,
+    };
   }
   if (runningSince === undefined) {
     return {
@@ -136,6 +162,7 @@ export function reopenClock(clock: Clock, at: number): ClockPatch {
       runningSince: held ? undefined : at,
       lastActiveAt: at,
       pausedByPlayer: held,
+      hintPaused: false,
     };
   }
   const billedUntil = Math.min(at, clock.lastActiveAt ?? runningSince);
@@ -144,6 +171,7 @@ export function reopenClock(clock: Clock, at: number): ClockPatch {
     runningSince: held ? undefined : at,
     lastActiveAt: at,
     pausedByPlayer: held,
+    hintPaused: false,
   };
 }
 
@@ -167,12 +195,16 @@ export function applyClock(
 
 /** True when applying `patch` would leave the clock exactly as it is. */
 export function clockUnchanged(
-  clock: Pick<Clock, "activeMs" | "runningSince" | "pausedByPlayer">,
+  clock: Pick<
+    Clock,
+    "activeMs" | "runningSince" | "pausedByPlayer" | "hintPaused"
+  >,
   patch: ClockPatch,
 ): boolean {
   return (
     patch.activeMs === (clock.activeMs ?? 0) &&
     patch.runningSince === clock.runningSince &&
-    patch.pausedByPlayer === (clock.pausedByPlayer ?? false)
+    patch.pausedByPlayer === (clock.pausedByPlayer ?? false) &&
+    patch.hintPaused === (clock.hintPaused ?? false)
   );
 }

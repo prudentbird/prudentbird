@@ -85,6 +85,10 @@ function startClock(now: number) {
     runningSince: now,
     lastActiveAt: now,
     pausedByPlayer: false,
+    hintPaused: false,
+    hintPlayerId: undefined,
+    candidateEliminations: undefined,
+    pendingHint: undefined,
   };
 }
 
@@ -447,6 +451,9 @@ export const get = query({
         activeMs: room.activeMs,
         runningSince: room.runningSince,
         pausedByPlayer: room.pausedByPlayer,
+        hintPaused: room.hintPaused,
+        hintPlayerId: room.hintPlayerId,
+        candidateEliminations: room.candidateEliminations,
         winnerPlayerId: room.winnerPlayerId,
         round: room.round,
         hints: room.hints ?? 0,

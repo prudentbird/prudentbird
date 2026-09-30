@@ -140,6 +140,6 @@ export function useGameClock({
     elapsedMs,
     paused,
     pausedByPlayer: held,
-    toggle: canPause ? toggle : undefined,
+    toggle: canPause && !clock?.hintPaused ? toggle : undefined,
   };
 }

@@ -40,11 +40,25 @@ export default defineSchema({
     createdAt: v.number(),
     startedAt: v.optional(v.number()),
     finishedAt: v.optional(v.number()),
-    /** Play clock; see convex/lib/clock.ts. Only solo rooms can pause. */
+    /** Play clock; see convex/lib/clock.ts. Solo rooms can pause; shared rooms pause during hints. */
     activeMs: v.optional(v.number()),
     runningSince: v.optional(v.number()),
     lastActiveAt: v.optional(v.number()),
     pausedByPlayer: v.optional(v.boolean()),
+    hintPaused: v.optional(v.boolean()),
+    /** Proven candidate exclusions, reset whenever the board changes. */
+    candidateEliminations: v.optional(v.array(v.number())),
+    /** Only the current walkthrough can apply these server-generated changes. */
+    pendingHint: v.optional(
+      v.object({
+        board: v.string(),
+        changes: v.array(
+          v.object({ cell: v.number(), digits: v.array(v.number()) }),
+        ),
+      }),
+    ),
+    /** Player currently guiding the shared room through a hint. */
+    hintPlayerId: v.optional(v.id("players")),
     winnerPlayerId: v.optional(v.id("players")),
     /** Increments on every rematch so clients can reset local state. */
     round: v.number(),
@@ -113,6 +127,18 @@ export default defineSchema({
     runningSince: v.optional(v.number()),
     lastActiveAt: v.optional(v.number()),
     pausedByPlayer: v.optional(v.boolean()),
+    hintPaused: v.optional(v.boolean()),
+    /** Proven candidate exclusions, reset whenever the board changes. */
+    candidateEliminations: v.optional(v.array(v.number())),
+    /** Only the current walkthrough can apply these server-generated changes. */
+    pendingHint: v.optional(
+      v.object({
+        board: v.string(),
+        changes: v.array(
+          v.object({ cell: v.number(), digits: v.array(v.number()) }),
+        ),
+      }),
+    ),
     elapsedMs: v.optional(v.number()),
     points: v.optional(v.number()),
   })

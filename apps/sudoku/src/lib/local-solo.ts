@@ -1,3 +1,4 @@
+import type { CandidateChange } from "~/convex/lib/hint_engine";
 import { generatePuzzle, type Difficulty } from "~/convex/lib/sudoku";
 import {
   applyClock,
@@ -15,6 +16,11 @@ export type LocalGame = Clock & {
   board: string;
   mistakes: number;
   hints: number;
+  candidateEliminations?: number[];
+  pendingHint?: {
+    board: string;
+    changes: CandidateChange[];
+  };
 };
 
 const KEY = "sudoku.solo";
