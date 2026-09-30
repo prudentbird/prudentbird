@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:convex": "convex dev",
+    "test:hints": "node --test tests/hint.test.mjs",
     "start": "next start",
     "build": "next build",
     "deploy:convex": "convex deploy",
