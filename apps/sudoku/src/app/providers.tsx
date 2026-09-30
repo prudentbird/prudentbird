@@ -2,15 +2,11 @@
 
 import { env } from "~/env";
 import { type ReactNode } from "react";
-import { authClient } from "~/lib/auth-client";
 import { ConvexReactClient } from "convex/react";
 import { ThemeProvider } from "~/components/theme";
 import { GuestSync } from "~/components/guest-sync";
 import { AnalyticsIdentity } from "~/components/analytics";
-import {
-  ConvexBetterAuthProvider,
-  type AuthClient,
-} from "@convex-dev/better-auth/react";
+import { AuthProvider } from "~/components/auth-provider";
 
 const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
 
@@ -22,14 +18,11 @@ export default function Providers({ children }: { children: ReactNode }) {
       defaultTheme="system"
       disableTransitionOnChange
     >
-      <ConvexBetterAuthProvider
-        client={convex}
-        authClient={authClient as unknown as AuthClient}
-      >
+      <AuthProvider client={convex}>
         <AnalyticsIdentity />
         <GuestSync />
         {children}
-      </ConvexBetterAuthProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
