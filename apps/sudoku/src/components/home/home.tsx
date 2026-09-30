@@ -1,9 +1,11 @@
 "use client";
 
+import { useAuth } from "~/hooks/use-auth";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -25,7 +27,7 @@ type Mode = "solo" | "coop" | "versus";
 const DIFFICULTIES = Object.keys(DIFFICULTY_LABEL) as Difficulty[];
 
 export function Home() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-12 px-4 py-12 sm:py-16">
@@ -46,7 +48,15 @@ export function Home() {
         </p>
       </div>
 
-      {isLoading ? null : isAuthenticated ? <SignedIn /> : <SignedOut />}
+      {isLoading ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Connecting…
+        </p>
+      ) : isAuthenticated ? (
+        <SignedIn />
+      ) : (
+        <SignedOut />
+      )}
     </div>
   );
 }
