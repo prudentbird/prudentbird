@@ -58,8 +58,16 @@ Games played = `game_completed` (or `game_started`) filtered by `mode`; for
 multiplayer rounds count unique `room_id` + `round`, or use `room_finished`.
 
 Puzzles are generated server-side with a unique-solution check. The solution
-never leaves Convex: clients receive the list of wrong cells instead. Hints
-(co-op and daily only) are also resolved server-side.
+never leaves Convex: clients receive the list of wrong cells instead. Signed-in
+hints are resolved server-side; guest solo uses the same pure hint engine locally.
+Hints pause play and try naked singles, hidden singles, locked candidates
+(pointing and claiming), then naked and hidden pairs. A hint can place a number
+or eliminate candidates. Applied eliminations are saved and shared in co-op;
+board edits reset them so erasing an entry cannot leave an invalid deduction.
+Unsupported deductions do not reveal an answer or consume a hint.
+
+Run `pnpm --filter sudoku test:hints` to check the technique detectors,
+walkthrough evidence, candidate progression, and hint clock behavior.
 
 ## Local development
 

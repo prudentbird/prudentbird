@@ -70,7 +70,11 @@ export function HowToPlay({
               <li>Select a cell, then tap a digit to fill it in.</li>
               <li>Notes toggles pencil marks for candidate digits.</li>
               {hasHint ? (
-                <li>Hint reveals a cell and explains the reasoning.</li>
+                <li>
+                  Hint pauses the game and explains a deduction step by step.
+                  Apply it to place a number or remove candidates from pencil
+                  marks, then resume play. Each walkthrough uses one hint.
+                </li>
               ) : null}
               <li>Undo steps back through your moves.</li>
             </ul>
