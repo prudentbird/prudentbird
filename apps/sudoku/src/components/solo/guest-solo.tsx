@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "~/hooks/use-auth";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -10,7 +12,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { useConvexAuth } from "convex/react";
+
 import {
   DIFFICULTIES,
   setCell,
@@ -81,7 +83,7 @@ export function GuestSolo() {
 function GuestSoloInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const isGuest = !isAuthenticated;
   const requested = params.get("new");
   const game = useSyncExternalStore(
@@ -138,7 +140,7 @@ function SoloGame({
   onChange: (game: LocalGame) => void;
   onNew: (difficulty: Difficulty) => void;
 }) {
-  const { isAuthenticated } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const finished = game.finishedAt !== undefined;
   const won = finished && game.board === game.solution;
   const justFinished = useBecame(finished);
@@ -246,7 +248,7 @@ function SoloGame({
           ? ` · ${game.hints} ${game.hints === 1 ? "hint" : "hints"}`
           : ""}
       </p>
-      {!isAuthenticated ? (
+      {!isAuthenticated && !isLoading ? (
         <p className="text-sm text-muted-foreground">
           Playing as a guest. Sign in to keep stats, earn rating points, and
           play with friends.
@@ -319,7 +321,7 @@ function SoloGame({
                     </Button>
                   </div>
                 </div>
-                {!isAuthenticated ? (
+                {!isAuthenticated && !isLoading ? (
                   <div className="flex flex-col gap-3 border-t border-border/50 pt-6">
                     <p className="text-sm text-muted-foreground">
                       Guest games aren&apos;t saved. Sign in to keep stats and
