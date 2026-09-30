@@ -1,8 +1,10 @@
 "use client";
 
+import { useAuth } from "~/hooks/use-auth";
+
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { DailyView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
@@ -22,7 +24,7 @@ import { GoogleButton } from "~/components/google-button";
 import { Narrow, Quiet } from "~/components/room/room";
 
 export function Daily({ date }: { date: string }) {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const view = useQuery(api.daily.get, isAuthenticated ? { date } : "skip");
   const start = useMutation(api.daily.start);
   const starting = useRef(false);

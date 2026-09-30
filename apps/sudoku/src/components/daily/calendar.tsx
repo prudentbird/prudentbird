@@ -1,8 +1,10 @@
 "use client";
 
+import { useAuth } from "~/hooks/use-auth";
+
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import type { DayButton } from "react-day-picker";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "~/convex/_generated/api";
@@ -31,7 +33,7 @@ function toKey(date: Date): string {
 
 export function Calendar() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [month, setMonth] = useState(() => monthOf(todayUtc()));
   const view = useQuery(
     api.daily.calendar,

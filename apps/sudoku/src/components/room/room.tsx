@@ -1,8 +1,10 @@
 "use client";
 
+import { useAuth } from "~/hooks/use-auth";
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { RoomView } from "~/lib/room-view";
 import { GoogleButton } from "~/components/google-button";
@@ -10,7 +12,7 @@ import { Lobby } from "~/components/room/lobby";
 import { Game } from "~/components/room/game";
 
 export function Room({ code }: { code: string }) {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const view = useQuery(api.rooms.get, isAuthenticated ? { code } : "skip");
   const join = useMutation(api.rooms.join);
   const [joinError, setJoinError] = useState<string | null>(null);

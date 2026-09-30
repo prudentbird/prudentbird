@@ -1,7 +1,9 @@
 "use client";
 
+import { useAuth } from "~/hooks/use-auth";
+
 import Link from "next/link";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { Difficulty } from "~/convex/lib/sudoku";
 import { GoogleButton } from "~/components/google-button";
@@ -24,7 +26,7 @@ function n(value: number): string {
 }
 
 export function Stats() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const stats = useQuery(api.stats.me, isAuthenticated ? {} : "skip");
 
   if (isLoading) return <Quiet />;

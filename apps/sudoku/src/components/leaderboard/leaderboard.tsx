@@ -1,7 +1,9 @@
 "use client";
 
+import { useAuth } from "~/hooks/use-auth";
+
 import { useEffect, useMemo, useState } from "react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { Difficulty } from "~/convex/lib/sudoku";
 import type { SolveMode } from "~/convex/ratings";
@@ -58,7 +60,7 @@ function weekStartUtc(now: number): number {
 }
 
 export function Leaderboard() {
-  const { isLoading } = useConvexAuth();
+  const { isLoading } = useAuth();
   const [category, setCategory] = useState<Category>("score");
   const [period, setPeriod] = useState<Period>("week");
   // Ticks so the weekly query re-runs at the Monday 00:00 UTC boundary while
