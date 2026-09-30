@@ -22,6 +22,8 @@ type BoardProps = {
   flash?: number | null;
   /** Cells called out by the current hint step; replaces the usual shading. */
   highlight?: HintHighlight | null;
+  /** Changes on each walkthrough step so its visual explanation replays. */
+  hintStepKey?: number;
   disabled?: boolean;
 };
 
@@ -55,6 +57,7 @@ export const Board = memo(function Board({
   cursors,
   flash,
   highlight,
+  hintStepKey,
   disabled,
 }: BoardProps) {
   const selRow = selected === null ? -1 : Math.floor(selected / 9);
@@ -70,6 +73,8 @@ export const Board = memo(function Board({
       sources: new Set(highlight?.sources ?? []),
       sweeps: new Set(highlight?.sweeps ?? []),
       unit: new Set(highlight?.unit ?? []),
+      eliminations: new Set(highlight?.eliminations ?? []),
+      marks: new Map(highlight?.marks?.map((mark) => [mark.cell, mark]) ?? []),
     }),
     [highlight],
   );
@@ -99,6 +104,7 @@ export const Board = memo(function Board({
         const cellNotes = value === "0" ? (notes.get(i) ?? 0) : 0;
         const isSource = hinted.sources.has(i);
         const isTarget = highlight?.target === i;
+        const hintMark = hinted.marks.get(i);
         const hintRings = highlight
           ? [
               ...unitOutline(i, hinted.unit),
@@ -116,7 +122,7 @@ export const Board = memo(function Board({
             aria-selected={isSelected}
             aria-label={`Row ${r + 1} column ${c + 1}${
               value === "0" ? " empty" : ` ${value}`
-            }`}
+            }${value === "0" && highlight?.digit && hinted.unit.has(i) ? `, ${highlight.digit} ${hinted.sweeps.has(i) ? "ruled out" : "candidate"}` : ""}`}
             title={cellCursors?.map((p) => p.name).join(", ")}
             onClick={() => onSelect(i)}
             className={cn(
@@ -162,10 +168,77 @@ export const Board = memo(function Board({
           >
             {value !== "0" ? (
               <span
-                key={value}
-                className={cn("animate-pop", isError && "animate-shake")}
+                key={`${value}:${isSource ? hintStepKey : "entry"}`}
+                className={cn(
+                  isSource ? "animate-hint-source" : "animate-pop",
+                  isError && "animate-shake",
+                )}
               >
                 {value}
+              </span>
+            ) : hintMark ? (
+              <span className="grid h-full w-full grid-cols-3 grid-rows-3 p-[6%] text-[0.42em] leading-none">
+                {DIGITS.map((digit) => {
+                  const crossed = hintMark.eliminated?.includes(digit);
+                  const emphasized = hintMark.emphasis?.includes(digit);
+                  return (
+                    <span
+                      key={`${digit}:${crossed || emphasized ? hintStepKey : "candidate"}`}
+                      className={cn(
+                        "relative flex items-center justify-center",
+                        isSource
+                          ? "text-hint-foreground/70"
+                          : "text-muted-foreground",
+                        emphasized &&
+                          (isSource
+                            ? "animate-hint-source font-bold text-hint-foreground"
+                            : "animate-hint-source font-bold text-hint"),
+                        crossed &&
+                          "hint-candidate-eliminated text-muted-foreground/45",
+                        crossed &&
+                          hinted.eliminations.has(i) &&
+                          "animate-hint-elimination",
+                      )}
+                    >
+                      {hintMark.digits.includes(digit) ? digit : null}
+                    </span>
+                  );
+                })}
+              </span>
+            ) : highlight?.candidates?.cell === i ? (
+              <span className="grid h-full w-full grid-cols-3 grid-rows-3 p-[6%] text-[0.42em] leading-none">
+                {DIGITS.map((digit) => (
+                  <span
+                    key={`${digit}:${highlight.candidates?.newlyExcluded?.includes(digit) ? hintStepKey : "candidate"}`}
+                    className={cn(
+                      "relative flex items-center justify-center text-entry",
+                      highlight.candidates?.excluded.includes(digit) &&
+                        "hint-candidate-eliminated text-muted-foreground/45",
+                      highlight.candidates?.newlyExcluded?.includes(digit) &&
+                        "animate-hint-elimination",
+                    )}
+                  >
+                    {digit}
+                  </span>
+                ))}
+              </span>
+            ) : highlight?.digit && (hinted.unit.has(i) || isTarget) ? (
+              <span
+                key={
+                  hinted.eliminations.has(i) || isTarget
+                    ? hintStepKey
+                    : "candidate"
+                }
+                className={cn(
+                  "relative text-entry/60",
+                  hinted.sweeps.has(i) &&
+                    "hint-candidate-eliminated text-muted-foreground/50",
+                  hinted.eliminations.has(i) &&
+                    "animate-hint-elimination bg-entry/20 font-medium text-entry",
+                  isTarget && "animate-hint-source font-medium text-hint",
+                )}
+              >
+                {highlight.digit}
               </span>
             ) : cellNotes ? (
               <span className="grid h-full w-full grid-cols-3 grid-rows-3 p-[6%] text-[0.42em] leading-none text-muted-foreground">

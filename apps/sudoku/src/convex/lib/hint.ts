@@ -1,36 +1,45 @@
-/**
- * Walkthroughs for a hinted digit. Each hint is a short sequence of steps the
- * player advances by hand, pairing a sentence with the cells the board should
- * highlight — the "last possible number" (naked single) and "last remaining
- * cell" (hidden single) techniques a human solver reaches for first, with a
- * plain reveal when neither applies.
- */
+/** Hint contracts support logical deductions and older placement responses. */
 import { PEERS } from "./sudoku";
+import type { HintAction } from "./hint_engine";
 
-/** A phrase inside a step. Tinted phrases match the board highlight. */
 export type HintSpan = { text: string; tone?: "source" | "unit" };
-
-/** Which cells the board should call out while a step is on screen. */
 export type HintHighlight = {
-  /** Filled cells whose digits do the eliminating. */
   sources: number[];
-  /** Cells those digits sweep through, plus the units in play. */
   sweeps: number[];
-  /** The row, column or box being narrowed down, drawn as an outline. */
   unit: number[];
-  /** The cell the hint solves, once the step points at it. */
   target: number | null;
+  digit?: number;
+  eliminations?: number[];
+  candidates?: { cell: number; excluded: number[]; newlyExcluded?: number[] };
+  /** Shared candidate display for any technique, including pairs. */
+  marks?: {
+    cell: number;
+    digits: number[];
+    eliminated?: number[];
+    emphasis?: number[];
+  }[];
 };
-
 export type HintStep = { text: HintSpan[]; highlight: HintHighlight };
-
 export type Hint = {
+  /** Cell to focus, which may be a pattern cell rather than a placement. */
   cell: number;
+  /** Older deployments returned a placement value without an action. */
   value: number;
-  /** Name of the technique, shown as the walkthrough's title. */
+  action?: HintAction;
+  board?: string;
+  candidateGrid?: number[][];
   technique: string;
   steps: HintStep[];
 };
+
+export function hintAction(hint: Hint): HintAction | null {
+  return (
+    hint.action ??
+    (hint.value !== undefined
+      ? { kind: "place", cell: hint.cell, value: hint.value }
+      : null)
+  );
+}
 
 const LAST_POSSIBLE = "Last Possible Number";
 const LAST_REMAINING = "Last Remaining Cell";
