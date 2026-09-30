@@ -20,6 +20,7 @@ import {
   type Difficulty,
 } from "~/convex/lib/sudoku";
 import { buildHint } from "~/convex/lib/hint";
+import { applyEliminations } from "~/convex/lib/hint_engine";
 import { MAX_HINTS, MAX_MISTAKES } from "~/convex/lib/rating";
 import {
   dispatchLocalClock,
@@ -29,7 +30,13 @@ import {
   tickLocalClock,
   type LocalGame,
 } from "~/lib/local-solo";
-import { clockElapsed, pauseClock, resumeClock } from "~/convex/lib/clock";
+import {
+  clockElapsed,
+  pauseClock,
+  pauseForHint,
+  finishHintClock,
+  resumeClock,
+} from "~/convex/lib/clock";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
 import { track } from "~/lib/analytics";
 import { useBecame } from "~/hooks/use-became";
@@ -185,6 +192,8 @@ function SoloGame({
         ...game,
         board,
         mistakes,
+        candidateEliminations: undefined,
+        pendingHint: undefined,
         // A move means the player is at the board, so the clock runs again;
         // finishing stops it for good either way.
         ...(solved || lost ? pauseClock(game, now) : resumeClock(game, now)),
@@ -204,8 +213,14 @@ function SoloGame({
           open.push(i);
         }
       }
-      // The digit lands through `onPlace` at the end of the walkthrough.
-      const hint = buildHint(game.board, game.solution, open, cell);
+      // The digit lands through `onPlace` only when the player applies the hint.
+      const hint = buildHint(
+        game.board,
+        game.solution,
+        open,
+        cell,
+        game.candidateEliminations,
+      );
       if (!hint) return null;
       track("hint_used", {
         mode: "solo",
@@ -215,11 +230,42 @@ function SoloGame({
       onChange({
         ...game,
         hints: game.hints + 1,
-        ...resumeClock(game, Date.now()),
+        pendingHint:
+          hint.action?.kind === "eliminate"
+            ? { board: game.board, changes: hint.action.changes }
+            : undefined,
+        ...pauseForHint(game, Date.now()),
       });
       return hint;
     },
     [game, onChange, isAuthenticated],
+  );
+
+  const onHintEnd = useCallback(
+    (apply = false) => {
+      const current = soloStore.get();
+      if (!current || current.id !== game.id || current.finishedAt) return;
+      if (apply) {
+        if (!current.pendingHint) return;
+        if (current.pendingHint.board !== current.board)
+          throw new Error("Hint no longer applies");
+        soloStore.set({
+          ...current,
+          candidateEliminations: applyEliminations(
+            current.candidateEliminations,
+            current.pendingHint.changes,
+          ),
+          pendingHint: undefined,
+        });
+        return;
+      }
+      soloStore.set({
+        ...current,
+        ...finishHintClock(current, Date.now()),
+        pendingHint: undefined,
+      });
+    },
+    [game.id],
   );
 
   const topBar = (
@@ -278,6 +324,9 @@ function SoloGame({
         onResume={clock.pausedByPlayer ? clock.toggle : undefined}
         onPlace={onPlace}
         onHint={onHint}
+        onHintEnd={onHintEnd}
+        hintPaused={game.hintPaused}
+        candidateEliminations={game.candidateEliminations}
         hintsLeft={Math.max(0, MAX_HINTS - game.hints)}
         topBar={topBar}
         aside={aside}

@@ -16,6 +16,8 @@ import type * as game from "../game.js";
 import type * as http from "../http.js";
 import type * as lib_clock from "../lib/clock.js";
 import type * as lib_hint from "../lib/hint.js";
+import type * as lib_hint_engine from "../lib/hint_engine.js";
+import type * as lib_hint_walkthrough from "../lib/hint_walkthrough.js";
 import type * as lib_rating from "../lib/rating.js";
 import type * as lib_sudoku from "../lib/sudoku.js";
 import type * as ratings from "../ratings.js";
@@ -37,6 +39,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/clock": typeof lib_clock;
   "lib/hint": typeof lib_hint;
+  "lib/hint_engine": typeof lib_hint_engine;
+  "lib/hint_walkthrough": typeof lib_hint_walkthrough;
   "lib/rating": typeof lib_rating;
   "lib/sudoku": typeof lib_sudoku;
   ratings: typeof ratings;

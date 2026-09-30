@@ -108,6 +108,7 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
     },
   );
   const hint = useMutation(api.daily.hint);
+  const finishHint = useMutation(api.daily.finishHint);
   const moveClock = useMutation(api.daily.clock);
 
   const dispatchClock = useCallback(
@@ -129,6 +130,14 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
   const onHint = useCallback(
     (cell: number | null) => hint({ date, cell }),
     [hint, date],
+  );
+
+  const onHintEnd = useCallback(
+    (apply = false) => {
+      if (!attempt.hintPaused) return;
+      return finishHint({ date, apply });
+    },
+    [finishHint, date, attempt.hintPaused],
   );
 
   const topBar = (
@@ -186,6 +195,9 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
         onResume={clock.pausedByPlayer ? clock.toggle : undefined}
         onPlace={onPlace}
         onHint={onHint}
+        onHintEnd={onHintEnd}
+        hintPaused={attempt.hintPaused}
+        candidateEliminations={attempt.candidateEliminations}
         hintsLeft={Math.max(0, MAX_HINTS - attempt.hints)}
         topBar={topBar}
         aside={aside}

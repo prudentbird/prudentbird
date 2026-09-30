@@ -9,11 +9,14 @@ import {
 } from "./_generated/server";
 import { awardDaily } from "./ratings";
 import { buildHint } from "./lib/hint";
+import { applyEliminations } from "./lib/hint_engine";
 import {
   CLOCK_ACTIONS,
   applyClock,
   clockUnchanged,
   pauseClock,
+  pauseForHint,
+  finishHintClock,
   wakeClock,
 } from "./lib/clock";
 import { MAX_HINTS, MAX_MISTAKES } from "./lib/rating";
@@ -242,6 +245,8 @@ export const get = query({
             activeMs: mine.activeMs,
             runningSince: mine.runningSince,
             pausedByPlayer: mine.pausedByPlayer,
+            hintPaused: mine.hintPaused,
+            candidateEliminations: mine.candidateEliminations,
             elapsedMs: mine.elapsedMs,
             points: mine.points,
             rank: myRank,
@@ -294,6 +299,8 @@ export const place = mutation({
     await ctx.db.patch(attempt._id, {
       board,
       mistakes,
+      candidateEliminations: undefined,
+      pendingHint: undefined,
       ...clock,
       ...(solved ? { finishedAt: now, elapsedMs: clock.activeMs } : {}),
       ...(lost ? { lostAt: now, elapsedMs: clock.activeMs } : {}),
@@ -324,6 +331,7 @@ export const hint = mutation({
     const attempt = await findAttempt(ctx, daily._id, user._id);
     if (!attempt) throw new Error("Start the daily first");
     if (attempt.finishedAt || attempt.lostAt) return null;
+    if (attempt.hintPaused) return null;
     if (attempt.hints >= MAX_HINTS) return null;
 
     const open: number[] = [];
@@ -334,13 +342,23 @@ export const hint = mutation({
     }
     const preferred =
       args.cell !== null && Number.isInteger(args.cell) ? args.cell : null;
-    // The digit lands through `place` once the walkthrough runs out of steps.
-    const hint = buildHint(attempt.board, daily.solution, open, preferred);
+    // The digit lands through `place` only when the player applies the hint.
+    const hint = buildHint(
+      attempt.board,
+      daily.solution,
+      open,
+      preferred,
+      attempt.candidateEliminations,
+    );
     if (!hint) return null;
 
     await ctx.db.patch(attempt._id, {
       hints: attempt.hints + 1,
-      ...wakeClock(attempt, Date.now()),
+      pendingHint:
+        hint.action?.kind === "eliminate"
+          ? { board: attempt.board, changes: hint.action.changes }
+          : undefined,
+      ...pauseForHint(attempt, Date.now()),
     });
     await track(ctx, {
       distinctId: user._id,
@@ -348,6 +366,34 @@ export const hint = mutation({
       properties: dailyProps(daily),
     });
     return hint;
+  },
+});
+
+export const finishHint = mutation({
+  args: { date: v.string(), apply: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const daily = await findDaily(ctx, args.date);
+    if (!daily) return;
+    const attempt = await findAttempt(ctx, daily._id, user._id);
+    if (!attempt?.hintPaused || attempt.finishedAt || attempt.lostAt) return;
+    if (args.apply) {
+      if (!attempt.pendingHint) return;
+      if (attempt.pendingHint.board !== attempt.board)
+        throw new Error("Hint no longer applies");
+      await ctx.db.patch(attempt._id, {
+        candidateEliminations: applyEliminations(
+          attempt.candidateEliminations,
+          attempt.pendingHint.changes,
+        ),
+        pendingHint: undefined,
+      });
+      return;
+    }
+    await ctx.db.patch(attempt._id, {
+      ...finishHintClock(attempt, Date.now()),
+      pendingHint: undefined,
+    });
   },
 });
 

@@ -66,6 +66,7 @@ export function Game({ view }: { view: RoomView }) {
     },
   );
   const hint = useMutation(api.game.hint);
+  const finishHint = useMutation(api.game.finishHint);
   const setCursor = useMutation(api.game.setCursor);
   const moveClock = useMutation(api.rooms.clock);
 
@@ -93,6 +94,24 @@ export function Game({ view }: { view: RoomView }) {
     (cell: number | null) => hint({ roomId: room._id, cell }),
     [hint, room._id],
   );
+
+  const onHintEnd = useCallback(
+    (apply = false) => {
+      if (!room.hintPaused) return;
+      return finishHint({ roomId: room._id, apply });
+    },
+    [finishHint, room._id, room.hintPaused],
+  );
+  // Recover a pause left by an earlier session, only once on mount. Older
+  // deployments have no hint pause and no finishHint function to call.
+  const abandonedHint = useRef(
+    room.hintPaused && room.hintPlayerId === me.playerId,
+  );
+  useEffect(() => {
+    if (!abandonedHint.current) return;
+    abandonedHint.current = false;
+    void finishHint({ roomId: room._id }).catch(() => {});
+  }, [finishHint, room._id]);
 
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSelect = useCallback(
@@ -206,6 +225,9 @@ export function Game({ view }: { view: RoomView }) {
         onResume={clock.pausedByPlayer ? clock.toggle : undefined}
         onPlace={onPlace}
         onHint={shared ? onHint : undefined}
+        onHintEnd={onHintEnd}
+        hintPaused={room.hintPaused}
+        candidateEliminations={room.candidateEliminations}
         hintsLeft={shared ? Math.max(0, MAX_HINTS - room.hints) : undefined}
         cellColors={cellColors}
         cursors={cursors}

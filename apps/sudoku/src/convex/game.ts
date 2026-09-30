@@ -3,9 +3,16 @@ import { mutation, type MutationCtx } from "./_generated/server";
 import { requireMember } from "./rooms";
 import { setCell } from "./lib/sudoku";
 import { buildHint } from "./lib/hint";
+import { applyEliminations } from "./lib/hint_engine";
 import { MAX_HINTS, MAX_MISTAKES } from "./lib/rating";
 import { awardRoom } from "./ratings";
-import { pauseClock, wakeClock, type Clock } from "./lib/clock";
+import {
+  pauseClock,
+  pauseForHint,
+  finishHintClock,
+  wakeClock,
+  type Clock,
+} from "./lib/clock";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   roomFinishedEvents,
@@ -57,6 +64,9 @@ export const place = mutation({
     const { cell, value } = args;
 
     if (room.status !== "playing") return;
+    if (room.hintPaused && room.hintPlayerId !== player._id) {
+      throw new Error("A hint walkthrough is in progress");
+    }
     if (!Number.isInteger(cell) || cell < 0 || cell > 80) {
       throw new Error("Invalid cell");
     }
@@ -80,6 +90,8 @@ export const place = mutation({
       await ctx.db.patch(room._id, {
         board,
         owners,
+        candidateEliminations: undefined,
+        pendingHint: undefined,
         ...roomClock(room, now, solved || lost),
         ...(solved || lost ? { status: "finished", finishedAt: now } : {}),
       });
@@ -162,13 +174,14 @@ export const place = mutation({
  * Builds the walkthrough for one cell. Not in versus, where it would be a
  * free win. Counts towards the room's shared hint tally, capped at MAX_HINTS
  * for the whole game (not per player). The digit itself is placed through
- * `place` once the player reaches the end of the walkthrough.
+ * `place` when the player chooses to apply the hint.
  */
 export const hint = mutation({
   args: { roomId: v.id("rooms"), cell: v.union(v.number(), v.null()) },
   handler: async (ctx, args) => {
     const { room, player } = await requireMember(ctx, args.roomId);
     if (room.status !== "playing" || room.mode === "versus") return null;
+    if (room.hintPaused) return null;
     if ((room.hints ?? 0) >= MAX_HINTS) return null;
 
     const open: number[] = [];
@@ -179,12 +192,26 @@ export const hint = mutation({
     }
     const preferred =
       args.cell !== null && Number.isInteger(args.cell) ? args.cell : null;
-    const hint = buildHint(room.board, room.solution, open, preferred);
+    const hint = buildHint(
+      room.board,
+      room.solution,
+      open,
+      preferred,
+      room.candidateEliminations,
+    );
     if (!hint) return null;
 
     await ctx.db.patch(room._id, {
       hints: (room.hints ?? 0) + 1,
-      ...roomClock(room, Date.now(), false),
+      ...pauseForHint(
+        { ...room, startedAt: room.startedAt ?? Date.now() },
+        Date.now(),
+      ),
+      hintPlayerId: player._id,
+      pendingHint:
+        hint.action?.kind === "eliminate"
+          ? { board: room.board, changes: hint.action.changes }
+          : undefined,
     });
     await ctx.db.patch(player._id, { hints: (player.hints ?? 0) + 1 });
     await track(ctx, {
@@ -193,6 +220,41 @@ export const hint = mutation({
       properties: roomProps(room),
     });
     return hint;
+  },
+});
+
+/** Releases the shared hint pause when its requester finishes or dismisses it. */
+export const finishHint = mutation({
+  args: { roomId: v.id("rooms"), apply: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    const { room, player } = await requireMember(ctx, args.roomId);
+    if (
+      !room.hintPaused ||
+      room.hintPlayerId !== player._id ||
+      room.status !== "playing"
+    )
+      return;
+    if (args.apply) {
+      if (!room.pendingHint) return;
+      if (room.pendingHint.board !== room.board)
+        throw new Error("Hint no longer applies");
+      await ctx.db.patch(room._id, {
+        candidateEliminations: applyEliminations(
+          room.candidateEliminations,
+          room.pendingHint.changes,
+        ),
+        pendingHint: undefined,
+      });
+      return;
+    }
+    await ctx.db.patch(room._id, {
+      ...finishHintClock(
+        { ...room, startedAt: room.startedAt ?? Date.now() },
+        Date.now(),
+      ),
+      hintPlayerId: undefined,
+      pendingHint: undefined,
+    });
   },
 });
 
@@ -210,7 +272,27 @@ export const setCursor = mutation({
 export const heartbeat = mutation({
   args: { roomId: v.id("rooms") },
   handler: async (ctx, args) => {
-    const { player } = await requireMember(ctx, args.roomId);
-    await ctx.db.patch(player._id, { lastSeen: Date.now() });
+    const { room, player } = await requireMember(ctx, args.roomId);
+    const now = Date.now();
+    await ctx.db.patch(player._id, { lastSeen: now });
+    // A disconnected hint requester must not leave everyone else frozen.
+    if (
+      room.hintPaused &&
+      room.hintPlayerId &&
+      room.hintPlayerId !== player._id &&
+      room.status === "playing"
+    ) {
+      const requester = await ctx.db.get(room.hintPlayerId);
+      if (!requester || now - requester.lastSeen > 30_000) {
+        await ctx.db.patch(room._id, {
+          ...finishHintClock(
+            { ...room, startedAt: room.startedAt ?? now },
+            now,
+          ),
+          hintPlayerId: undefined,
+          pendingHint: undefined,
+        });
+      }
+    }
   },
 });
