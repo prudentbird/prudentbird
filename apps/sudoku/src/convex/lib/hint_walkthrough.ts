@@ -253,7 +253,7 @@ export function walkthrough(
   board: string,
   candidates: number[][],
   deduction: Deduction,
-): Omit<Hint, "value"> & { value?: number } {
+): Hint {
   const action = deduction.action;
   return {
     cell: action.kind === "place" ? action.cell : deduction.sources[0]!,

@@ -24,7 +24,7 @@ export type Hint = {
   /** Cell to focus, which may be a pattern cell rather than a placement. */
   cell: number;
   /** Older deployments returned a placement value without an action. */
-  value: number;
+  value?: number;
   action?: HintAction;
   board?: string;
   candidateGrid?: number[][];
