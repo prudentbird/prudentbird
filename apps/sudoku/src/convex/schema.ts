@@ -120,6 +120,8 @@ export default defineSchema({
      * attempts don't count toward streaks, the leaderboard, or awards. */
     lostAt: v.optional(v.number()),
     hints: v.number(),
+    /** Mid-match restarts used. Capped at MAX_RESTARTS; see convex/lib/rating.ts. */
+    restarts: v.optional(v.number()),
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),
     /** Play clock; see convex/lib/clock.ts. */

@@ -61,6 +61,22 @@ export function clockPaused(clock: Clock): boolean {
   return normalize(clock).runningSince === undefined;
 }
 
+/**
+ * Clock fields for a game that starts now: nothing accrued, running, nothing
+ * held. Spreading this over an existing clock is what a restart does, so the
+ * elapsed time and the manual hold both go.
+ */
+export function startClock(now: number) {
+  return {
+    startedAt: now,
+    activeMs: 0,
+    runningSince: now,
+    lastActiveAt: now,
+    pausedByPlayer: false,
+    hintPaused: false,
+  };
+}
+
 /** Closes the open stretch. Idempotent when already paused. */
 export function pauseClock(
   clock: Clock,

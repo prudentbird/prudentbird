@@ -22,6 +22,8 @@ export const HINT_PENALTY = 0.1;
 export const MAX_HINTS = 3;
 /** Mistakes allowed before a game ends. */
 export const MAX_MISTAKES = 3;
+/** Mid-match restarts a player gets on a single daily attempt. */
+export const MAX_RESTARTS = 3;
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, n));

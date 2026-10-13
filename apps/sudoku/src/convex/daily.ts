@@ -17,9 +17,10 @@ import {
   pauseClock,
   pauseForHint,
   finishHintClock,
+  startClock,
   wakeClock,
 } from "./lib/clock";
-import { MAX_HINTS, MAX_MISTAKES } from "./lib/rating";
+import { MAX_HINTS, MAX_MISTAKES, MAX_RESTARTS } from "./lib/rating";
 import { dailyCompletedEvent, dailyProps, track } from "./analytics";
 import {
   blankCount,
@@ -176,11 +177,7 @@ export const start = mutation({
       board: daily.puzzle,
       mistakes: 0,
       hints: 0,
-      startedAt: now,
-      activeMs: 0,
-      runningSince: now,
-      lastActiveAt: now,
-      pausedByPlayer: false,
+      ...startClock(now),
     });
     await track(ctx, {
       distinctId: user._id,
@@ -239,6 +236,7 @@ export const get = query({
             filled: correctCount(mine.board, daily.puzzle, daily.solution),
             mistakes: mine.mistakes,
             hints: mine.hints,
+            restarts: mine.restarts ?? 0,
             startedAt: mine.startedAt,
             finishedAt: mine.finishedAt,
             lostAt: mine.lostAt,
@@ -263,6 +261,41 @@ export const get = query({
         isMe: a.userId === user._id,
       })),
     };
+  },
+});
+
+/**
+ * Clears the caller's board back to the day's givens and starts the clock
+ * over. Only offered mid-match, so the day's first uninterrupted run — the one
+ * that earns points, rank and streak — can never be undone by a restart.
+ */
+export const restart = mutation({
+  args: { date: v.string() },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const daily = await findDaily(ctx, args.date);
+    if (!daily) throw new Error("Daily not found");
+    const attempt = await findAttempt(ctx, daily._id, user._id);
+    if (!attempt) throw new Error("Start the daily first");
+    if (attempt.finishedAt || attempt.lostAt) return;
+    const restarts = attempt.restarts ?? 0;
+    if (restarts >= MAX_RESTARTS) return;
+
+    const now = Date.now();
+    await ctx.db.patch(attempt._id, {
+      board: daily.puzzle,
+      mistakes: 0,
+      hints: 0,
+      candidateEliminations: undefined,
+      pendingHint: undefined,
+      ...startClock(now),
+      restarts: restarts + 1,
+    });
+    await track(ctx, {
+      distinctId: user._id,
+      event: "game_restarted",
+      properties: { ...dailyProps(daily), restarts: restarts + 1 },
+    });
   },
 });
 

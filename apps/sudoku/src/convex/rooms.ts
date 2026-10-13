@@ -17,7 +17,12 @@ import {
   wrongCells,
 } from "./lib/sudoku";
 import { awardRoom } from "./ratings";
-import { CLOCK_ACTIONS, applyClock, clockUnchanged } from "./lib/clock";
+import {
+  CLOCK_ACTIONS,
+  applyClock,
+  clockUnchanged,
+  startClock,
+} from "./lib/clock";
 import {
   roomAbandonedEvents,
   roomProps,
@@ -77,15 +82,10 @@ export async function requireMember(
   return { room, player };
 }
 
-/** Fields that put a room's play clock on the board and running. */
-function startClock(now: number) {
+/** A room's play clock, plus the shared hint state a fresh round clears. */
+function roomClock(now: number) {
   return {
-    startedAt: now,
-    activeMs: 0,
-    runningSince: now,
-    lastActiveAt: now,
-    pausedByPlayer: false,
-    hintPaused: false,
+    ...startClock(now),
     hintPlayerId: undefined,
     candidateEliminations: undefined,
     pendingHint: undefined,
@@ -151,7 +151,7 @@ export const create = mutation({
       board: puzzle,
       owners: new Array(81).fill(null),
       createdAt: now,
-      ...(solo ? startClock(now) : {}),
+      ...(solo ? roomClock(now) : {}),
       round: 1,
     });
 
@@ -256,7 +256,7 @@ export const start = mutation({
     if (room.status !== "lobby") return;
     await ctx.db.patch(room._id, {
       status: "playing",
-      ...startClock(Date.now()),
+      ...roomClock(Date.now()),
     });
     await track(
       ctx,
@@ -359,7 +359,7 @@ export const rematch = mutation({
       board: puzzle,
       owners: new Array(81).fill(null),
       status: "playing",
-      ...startClock(now),
+      ...roomClock(now),
       finishedAt: undefined,
       winnerPlayerId: undefined,
       round: room.round + 1,

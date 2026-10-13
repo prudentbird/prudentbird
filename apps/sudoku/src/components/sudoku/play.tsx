@@ -28,6 +28,8 @@ export type PlayProps = {
   paused?: boolean;
   /** Lifts a pause the player asked for. Absent while auto-paused. */
   onResume?: () => void;
+  /** A dialog is open over the board: hold every input without pausing it. */
+  inputBlocked?: boolean;
   onPlace: (cell: number, value: number) => Promise<unknown> | void;
   /** When provided, a Hint tool appears. Resolves to the walkthrough. */
   onHint?: (cell: number | null) => Promise<Hint | null | undefined>;
@@ -87,6 +89,7 @@ export function Play({
   locked,
   paused = false,
   onResume,
+  inputBlocked = false,
   onPlace,
   onHint,
   hintsLeft,
@@ -130,8 +133,12 @@ export function Play({
 
   const isEditable = useCallback(
     (cell: number | null): cell is number =>
-      cell !== null && !locked && !paused && puzzle[cell] === "0",
-    [locked, paused, puzzle],
+      cell !== null &&
+      !locked &&
+      !paused &&
+      !inputBlocked &&
+      puzzle[cell] === "0",
+    [locked, paused, inputBlocked, puzzle],
   );
 
   // Ordinary moves update history and pencil marks optimistically.
@@ -204,7 +211,14 @@ export function Play({
   const undo = useCallback(() => {
     // Undo could otherwise pop the hint's own history entry and revert the
     // digit the walkthrough just placed, out from under a still-open guide.
-    if (locked || paused || hintGuide || hintRequestInFlight.current) return;
+    if (
+      locked ||
+      paused ||
+      inputBlocked ||
+      hintGuide ||
+      hintRequestInFlight.current
+    )
+      return;
     const stack = [...historyRef.current];
     // Skip entries another player has since overwritten.
     while (stack.length) {
@@ -217,7 +231,7 @@ export function Play({
     }
     historyRef.current = stack;
     setHistory(stack);
-  }, [locked, paused, hintGuide, onPlace, setSelected]);
+  }, [locked, paused, inputBlocked, hintGuide, onPlace, setSelected]);
 
   const hint = useCallback(async () => {
     if (!onHint || locked || paused) return;
@@ -388,7 +402,7 @@ export function Play({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (guide.open) return;
+      if (guide.open || inputBlocked) return;
       if (paused && !hintGuide) {
         if (e.key === "Escape" || e.key === " " || e.key === "Enter") {
           e.preventDefault();
@@ -478,6 +492,7 @@ export function Play({
     hintGuide,
     closeHint,
     paused,
+    inputBlocked,
     onResume,
   ]);
 
@@ -540,7 +555,7 @@ export function Play({
                 openHintGuide?.hint.steps[openHintGuide.step]?.highlight
               }
               hintStepKey={openHintGuide?.step}
-              disabled={locked || (paused && !openHintGuide)}
+              disabled={locked || inputBlocked || (paused && !openHintGuide)}
             />
             {paused && !openHintGuide && !hintLoading ? (
               <PausedCover onResume={onResume} hintPaused={hintPaused} />
@@ -562,7 +577,11 @@ export function Play({
               // the game is locked: erase/undo could otherwise pull the
               // just-explained digit back out from under a still-open guide.
               disabled={
-                locked || paused || openHintGuide !== null || hintLoading
+                locked ||
+                paused ||
+                inputBlocked ||
+                openHintGuide !== null ||
+                hintLoading
               }
               onDigit={enterDigit}
               onErase={erase}

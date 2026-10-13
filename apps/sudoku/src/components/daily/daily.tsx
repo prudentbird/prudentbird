@@ -8,7 +8,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import type { DailyView } from "~/lib/room-view";
 import { setCell } from "~/convex/lib/sudoku";
-import { MAX_HINTS, MAX_MISTAKES } from "~/convex/lib/rating";
+import { MAX_HINTS, MAX_MISTAKES, MAX_RESTARTS } from "~/convex/lib/rating";
 import { formatDailyDate, todayUtc } from "~/lib/daily";
 import { DIFFICULTY_LABEL, formatDuration } from "~/lib/utils";
 import { track } from "~/lib/analytics";
@@ -88,6 +88,11 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
   const over = solved || lost;
   const justFinished = useBecame(over);
   const [showResults, setShowResults] = useState(true);
+  const [confirmRestart, setConfirmRestart] = useState(false);
+  const restarts = attempt.restarts ?? 0;
+  // Mid-match only: a solved or lost run is the day's first uninterrupted
+  // result, so it isn't the restart's to undo.
+  const canRestart = !over && !attempt.hintPaused && restarts < MAX_RESTARTS;
 
   const place = useMutation(api.daily.place).withOptimisticUpdate(
     (store, args) => {
@@ -110,6 +115,12 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
   const hint = useMutation(api.daily.hint);
   const finishHint = useMutation(api.daily.finishHint);
   const moveClock = useMutation(api.daily.clock);
+  const restart = useMutation(api.daily.restart);
+
+  const onRestart = useCallback(() => {
+    setConfirmRestart(false);
+    void restart({ date }).catch(() => {});
+  }, [restart, date]);
 
   const dispatchClock = useCallback(
     (action: ClockAction) => {
@@ -139,6 +150,30 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
     },
     [finishHint, date, attempt.hintPaused],
   );
+
+  const restartOverlay = confirmRestart ? (
+    <Overlay label="Restart" onDismiss={() => setConfirmRestart(false)}>
+      <div className="flex flex-col gap-8 p-6 sm:p-8">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-2xl font-medium tracking-tight">
+            Start this puzzle over?
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Your board clears back to the givens and the timer starts from zero.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {MAX_RESTARTS - restarts} of {MAX_RESTARTS} restarts left today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={onRestart}>Restart</Button>
+          <Button variant="secondary" onClick={() => setConfirmRestart(false)}>
+            Keep playing
+          </Button>
+        </div>
+      </div>
+    </Overlay>
+  ) : null;
 
   const topBar = (
     <div className="flex items-baseline justify-between gap-4 py-5">
@@ -170,6 +205,15 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
           ? ` · ${attempt.hints} ${attempt.hints === 1 ? "hint" : "hints"}`
           : ""}
       </p>
+      {canRestart ? (
+        <button
+          type="button"
+          onClick={() => setConfirmRestart(true)}
+          className="cursor-pointer self-start text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Restart
+        </button>
+      ) : null}
       <Leaderboard view={view} />
       {over && !showResults ? (
         <button
@@ -187,12 +231,14 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
     <>
       {justFinished && solved ? <Celebration intensity="big" /> : null}
       <Play
+        key={restarts}
         puzzle={daily.puzzle}
         board={attempt.board}
         errors={attempt.errors}
         locked={over}
         paused={clock.paused}
         onResume={clock.pausedByPlayer ? clock.toggle : undefined}
+        inputBlocked={confirmRestart}
         onPlace={onPlace}
         onHint={onHint}
         onHintEnd={onHintEnd}
@@ -208,7 +254,9 @@ function DailyGame({ view, date }: { view: DailyView; date: string }) {
               date={date}
               onViewBoard={() => setShowResults(false)}
             />
-          ) : null
+          ) : (
+            restartOverlay
+          )
         }
       />
     </>
