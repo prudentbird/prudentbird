@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
           {
             key: "Link",
             value:
-              '</sitemap.xml>; rel="sitemap", </index.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"',
+              '</index.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"',
           },
         ],
       },
