@@ -15,6 +15,7 @@
         "SPOTIFY_REFRESH_TOKEN",
         "LASTFM_API_KEY",
         "LASTFM_USERNAME",
+        "YOUTUBE_API_KEY",
         "CONVEX_DEPLOYMENT",
         "CONVEX_DEPLOY_KEY",
         "NEXT_PUBLIC_SITE_URL",
