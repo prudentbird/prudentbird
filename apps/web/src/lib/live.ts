@@ -21,7 +21,6 @@ export function useListeningHistory() {
   return { history: data ?? null, isLoading };
 }
 
-/** Interpolates playback progress locally between Spotify polls. */
 export function useTrackProgress(track: SpotifyTrack | null) {
   const [tick, setTick] = useState<{ key: SpotifyTrack | null; ms: number }>({
     key: null,
