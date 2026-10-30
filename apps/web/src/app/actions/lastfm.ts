@@ -14,6 +14,8 @@ export type DailyActivity = {
 };
 
 const BATCH_SIZE = 5;
+const HISTORY_DAYS = 365;
+const MAX_PAGES = 30;
 
 async function fetchPages(urls: string[]): Promise<unknown[]> {
   const results: unknown[] = [];
@@ -33,7 +35,9 @@ async function fetchPages(urls: string[]): Promise<unknown[]> {
 
 export async function getLastFmHistory(): Promise<DailyActivity[]> {
   const limit = 200;
-  const base = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${env.LASTFM_USERNAME}&api_key=${env.LASTFM_API_KEY}&format=json&limit=${limit}`;
+  const day = 86_400;
+  const from = (Math.floor(Date.now() / 1000 / day) - HISTORY_DAYS) * day;
+  const base = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${env.LASTFM_USERNAME}&api_key=${env.LASTFM_API_KEY}&format=json&limit=${limit}&from=${from}`;
 
   try {
     const firstRes = await fetch(`${base}&page=1`, {
@@ -42,9 +46,9 @@ export async function getLastFmHistory(): Promise<DailyActivity[]> {
     if (!firstRes.ok) return [];
     const firstData = await firstRes.json();
 
-    const totalPages = parseInt(
-      firstData?.recenttracks?.["@attr"]?.totalPages ?? "1",
-      10,
+    const totalPages = Math.min(
+      MAX_PAGES,
+      parseInt(firstData?.recenttracks?.["@attr"]?.totalPages ?? "1", 10),
     );
 
     const remaining =
