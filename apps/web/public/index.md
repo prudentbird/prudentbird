@@ -17,8 +17,8 @@ that users find genuinely useful in their day-to-day lives.
 - **Beakcrypt** — Environment variables, shared without the Slack paste. [https://beakcrypt.com](https://beakcrypt.com) · Source: [https://github.com/prudentbird/beakcrypt](https://github.com/prudentbird/beakcrypt)
 - **Sudoku** — Sudoku with friends, in real time. [https://sudoku.prudentbird.com](https://sudoku.prudentbird.com) · Source: [https://github.com/prudentbird/prudentbird](https://github.com/prudentbird/prudentbird)
 - **FuseIon** — The AI chat app for nerds. [https://fuseion.app](https://fuseion.app) · Source: [https://github.com/prudentbird/fuseion](https://github.com/prudentbird/fuseion)
-- **Retailytics** — Retail store data for business analytics. [https://retailytics.ajared.ng](https://retailytics.ajared.ng) · Source: Private
-- **Family Tree** — Explore and preserve family history. [https://familytree.ajared.ng](https://familytree.ajared.ng) · Source: Private
+- **Retailytics** — Field-collected retail and logistics data for Nigeria. [https://retailytics.ajared.ng](https://retailytics.ajared.ng) · Source: Private
+- **Family Tree** — Build and share your family tree. [https://familytree.ajared.ng](https://familytree.ajared.ng) · Source: Private
 
 ## More
 
