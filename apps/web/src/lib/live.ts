@@ -43,3 +43,9 @@ export function useTrackProgress(track: SpotifyTrack | null) {
   return Math.min(1, (track.progress + elapsed) / track.duration);
 }
 
+export function trackHref(track: SpotifyTrack) {
+  return (
+    track.url ||
+    `https://open.spotify.com/search/${encodeURIComponent(`${track.name} ${track.artist}`)}`
+  );
+}
