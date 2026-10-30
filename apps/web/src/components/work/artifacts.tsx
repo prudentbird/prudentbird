@@ -407,11 +407,12 @@ function FuseIonArtifact({ active }: { active: boolean }) {
             </p>
           );
         return (
-          <div key={i} className="flex max-w-[85%] gap-2.5">
-            <p className="relative rounded-2xl rounded-tl-md bg-zinc-200 px-4 py-2 text-zinc-950 ring-1 ring-inset ring-zinc-300 dark:bg-muted dark:text-foreground dark:ring-white/10">
-              {typed}
-            </p>
-          </div>
+          <p
+            key={i}
+            className="relative max-w-[85%] self-start rounded-2xl rounded-tl-md bg-zinc-200 px-4 py-2 text-zinc-950 ring-1 ring-inset ring-zinc-300 dark:bg-muted dark:text-foreground dark:ring-white/10"
+          >
+            {typed}
+          </p>
         );
       })}
     </div>
