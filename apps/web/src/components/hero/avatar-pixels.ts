@@ -1,0 +1,16 @@
+// Baked from public/pfp.png: a 24×24 pixel grid, "." is the peach background.
+export const AVATAR_PALETTE = [
+  "#0f1a38",
+  "#c5cfcb",
+  "#ebede8",
+  "#69a72b",
+  "#7c9796",
+  "#1b2642",
+  "#f3eee9",
+  "#f24949",
+  "#3585ba",
+  "#e67533",
+  "#1a2c37",
+  "#334950",
+];
+
