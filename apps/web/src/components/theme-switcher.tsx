@@ -82,7 +82,12 @@ export function ThemeSwitcher({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="hidden sm:inline-flex items-center gap-1 rounded-full bg-muted p-0.5 border border-border">
+      <div
+        className={cn(
+          "hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border border-border",
+          sm ? "gap-0.5 border-border/60" : "gap-1",
+        )}
+      >
         <Button
           onClick={() => setTheme("light")}
           variant="ghost"
