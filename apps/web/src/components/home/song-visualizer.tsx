@@ -376,12 +376,9 @@ export function SongVisualizer() {
 
   const listen = async (t: NonNullable<typeof track>) => {
     const s = session.current;
-    const id = await findYouTubeMatch({
-      name: t.name,
-      artist: t.artist,
-      duration: t.duration,
-    });
+    const found = await findYouTubeMatch();
     if (s !== session.current) return;
+    const id = found?.url === t.url ? found.id : null;
     if (!id) {
       setPlayer("missing");
       return;
