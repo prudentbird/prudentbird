@@ -1,4 +1,5 @@
 import { MobilePhotos } from "~/components/hero/mobile-photos";
+import { DESKTOP, OnMedia } from "~/components/on-media";
 import { PhotoStackHero } from "~/components/hero";
 import { SectionHeader } from "./section-header";
 
@@ -33,7 +34,9 @@ export function Photography() {
         </div>
         <MobilePhotos />
         <div className="hidden min-w-0 lg:block lg:col-span-6">
-          <PhotoStackHero className="mx-auto aspect-square w-full max-w-[560px]" />
+          <OnMedia query={DESKTOP}>
+            <PhotoStackHero className="mx-auto aspect-square w-full max-w-[560px]" />
+          </OnMedia>
         </div>
       </div>
     </section>
