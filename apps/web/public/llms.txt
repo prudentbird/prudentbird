@@ -46,7 +46,7 @@ tools people actually use. Core areas of expertise:
 
 ### Voxx
 
-Write markdown and ship content fast.
+A zero-friction CMS for you and your agents.
 
 - Site: [https://voxx.prudentbird.com](https://voxx.prudentbird.com)
 - Source: [https://github.com/prudentbird/voxx](https://github.com/prudentbird/voxx)
