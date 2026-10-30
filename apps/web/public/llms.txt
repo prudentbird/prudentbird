@@ -74,7 +74,7 @@ The AI chat app for nerds.
 
 ### Retailytics
 
-Retail store data for business analytics.
+Field-collected retail and logistics data for Nigeria.
 
 - Site: [https://retailytics.ajared.ng](https://retailytics.ajared.ng)
 - Source: Private
