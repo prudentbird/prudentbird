@@ -16,7 +16,6 @@ export async function findYouTubeMatch(): Promise<{
   url: string;
   id: string | null;
 } | null> {
-  if (!env.YOUTUBE_API_KEY) return null;
   const track = await getSpotifyTrack();
   if (!track) return null;
   const title = track.name.replace(/\s*[([].*?[)\]]/g, "").trim();
@@ -36,7 +35,7 @@ async function match(
 ): Promise<string | null> {
   "use cache";
   cacheLife("weeks");
-  const key = env.YOUTUBE_API_KEY!;
+  const key = env.YOUTUBE_API_KEY;
   const search = new URLSearchParams({
     part: "snippet",
     type: "video",

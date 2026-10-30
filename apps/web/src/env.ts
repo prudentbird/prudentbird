@@ -12,7 +12,7 @@ export const env = createEnv({
     SPOTIFY_CLIENT_ID: z.string(),
     SPOTIFY_CLIENT_SECRET: z.string(),
     SPOTIFY_REFRESH_TOKEN: z.string(),
-    YOUTUBE_API_KEY: z.string().optional(),
+    YOUTUBE_API_KEY: z.string(),
   },
   emptyStringAsUndefined: true,
   experimental__runtimeEnv: true,
