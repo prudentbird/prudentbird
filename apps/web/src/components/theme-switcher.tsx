@@ -57,11 +57,11 @@ export function ThemeSwitcher({
             )}
           >
             {theme === "light" ? (
-              <Sun className="h-4 w-4" />
+              <Sun className={icon} />
             ) : theme === "system" ? (
-              <Monitor className="h-4 w-4" />
+              <Monitor className={icon} />
             ) : (
-              <MoonStar className="h-4 w-4" />
+              <MoonStar className={icon} />
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
