@@ -2,7 +2,7 @@
 
 import { env } from "~/env";
 
-export type DailyActivity = {
+type DailyActivity = {
   date: string;
   count: number;
   tracks: Array<{ artist: string }>;

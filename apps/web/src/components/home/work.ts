@@ -1,4 +1,4 @@
-export type Work = {
+type Work = {
   name: string;
   link: string;
   tagline: string;
