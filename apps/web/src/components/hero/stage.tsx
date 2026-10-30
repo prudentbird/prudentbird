@@ -19,7 +19,7 @@ export function useStageEnv() {
   return { dark: resolvedTheme !== "light", reduce };
 }
 
-export function Studio({ dark }: { dark: boolean }) {
+function Studio({ dark }: { dark: boolean }) {
   return (
     <Environment resolution={256}>
       <color attach="background" args={[dark ? "#0b0b0e" : "#9a9aa3"]} />
@@ -66,13 +66,13 @@ export function Studio({ dark }: { dark: boolean }) {
 export function Stage({
   className,
   children,
-  camera = { position: [0, 0, 12], fov: 30 },
-  bleed = 1,
+  camera,
+  bleed,
 }: {
   className?: string;
   children: ReactNode;
-  camera?: { position: [number, number, number]; fov: number };
-  bleed?: number;
+  camera: { position: [number, number, number]; fov: number };
+  bleed: number;
 }) {
   const { dark } = useStageEnv();
   const wrap = useRef<HTMLDivElement>(null);
