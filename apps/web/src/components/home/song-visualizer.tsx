@@ -456,7 +456,13 @@ export function SongVisualizer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track?.url, player]);
 
-  useEffect(() => () => yt.current?.destroy(), []);
+  useEffect(
+    () => () => {
+      session.current++;
+      yt.current?.destroy();
+    },
+    [],
+  );
 
   const seekTo = (i: number) => {
     if (!listening || !yt.current) return;
