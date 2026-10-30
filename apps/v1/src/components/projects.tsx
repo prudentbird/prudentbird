@@ -1,0 +1,190 @@
+"use client";
+
+import { useState } from "react";
+import { ArrowUpRight, Lock } from "lucide-react";
+
+type Project = {
+  name: string;
+  link: string;
+  github?: string;
+  description: string;
+  private?: boolean;
+};
+
+const projects: Project[] = [
+  {
+    name: "Voxx",
+    link: "https://voxx.prudentbird.com",
+    github: "https://github.com/prudentbird/voxx",
+    description: "Write markdown and ship content fast.",
+  },
+  {
+    name: "Beakcrypt",
+    link: "https://beakcrypt.com",
+    github: "https://github.com/prudentbird/beakcrypt",
+    description: "Encrypted environment variable management for teams.",
+  },
+  {
+    name: "Sudoku",
+    link: "https://sudoku.prudentbird.com",
+    github: "https://github.com/prudentbird/prudentbird",
+    description: "Realtime multiplayer sudoku, play with friends live.",
+  },
+  {
+    name: "FuseIon",
+    link: "https://fuseion.app",
+    github: "https://github.com/prudentbird/fuseion",
+    description: "The AI chat app for nerds.",
+  },
+  {
+    name: "Retailytics",
+    link: "https://retailytics.ajared.ng",
+    description: "Retail store data for business analytics.",
+    private: true,
+  },
+  {
+    name: "Family Tree",
+    link: "https://familytree.ajared.ng",
+    description: "Explore and preserve family history.",
+    private: true,
+  },
+];
+
+type Mode = "preview" | "source";
+
+function formatHost(url: string) {
+  try {
+    const u = new URL(url);
+    return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
+export function Projects() {
+  const [mode, setMode] = useState<Mode>("preview");
+
+  return (
+    <section>
+      <div className="mb-6 sm:mb-8 flex items-baseline justify-between gap-3 sm:gap-4">
+        <h2 className="text-2xl md:text-3xl font-semibold">Projects</h2>
+        <div
+          role="radiogroup"
+          aria-label="Project link target"
+          className="flex items-center gap-1 text-sm text-muted-foreground"
+        >
+          <ToggleOption
+            label="preview"
+            active={mode === "preview"}
+            onClick={() => setMode("preview")}
+          />
+          <span aria-hidden="true" className="text-muted-foreground/40">
+            /
+          </span>
+          <ToggleOption
+            label="source"
+            active={mode === "source"}
+            onClick={() => setMode("source")}
+          />
+        </div>
+      </div>
+
+      <ul className="flex flex-col divide-y divide-border/50">
+        {projects.map((project) => {
+          const isPrivateSource = mode === "source" && project.private;
+          const href =
+            mode === "preview"
+              ? project.link
+              : (project.github ?? project.link);
+
+          if (isPrivateSource) {
+            return (
+              <li key={project.name}>
+                <div className="group flex flex-col gap-1 py-4 sm:py-6 rounded-sm opacity-60 cursor-not-allowed">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-medium text-lg text-foreground">
+                        {project.name}
+                      </span>
+                      <span className="text-xs sm:text-sm text-muted-foreground truncate">
+                        Source is unavailable
+                      </span>
+                    </div>
+                    <Lock
+                      className="size-3.5 sm:size-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-focus-within:opacity-100"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    {project.description}
+                  </p>
+                  <span className="sr-only">(private)</span>
+                </div>
+              </li>
+            );
+          }
+
+          return (
+            <li key={project.name}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col gap-1 py-4 sm:py-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium text-lg text-foreground">
+                      {project.name}
+                    </span>
+                    <span className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors truncate">
+                      {formatHost(href)}
+                    </span>
+                  </div>
+                  <ArrowUpRight
+                    className="size-3.5 sm:size-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:opacity-100"
+                    aria-hidden="true"
+                  />
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  {project.description}
+                </p>
+                <span className="sr-only">
+                  {mode === "preview"
+                    ? " (opens site in new tab)"
+                    : " (opens source on GitHub in new tab)"}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function ToggleOption({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={`rounded-sm px-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
+        active
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
