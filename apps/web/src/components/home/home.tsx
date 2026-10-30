@@ -188,26 +188,12 @@ export function Home() {
             </ul>
 
             <div className="flex w-full items-center justify-between gap-4 text-sm text-muted-foreground lg:w-auto lg:gap-6">
-              <a
-                href={profile.business.href}
-                {...externalProps(true)}
-                className="inline-flex min-h-10 min-w-0 items-center gap-1.5 leading-relaxed hover:underline hover:text-foreground"
-              >
-                <span>
-                  © PrudentBird Services{" "}
-                  <span className="whitespace-nowrap">
-                    · {profile.business.label}{" "}
-                    <ArrowUpRight
-                      className="inline size-3.5 align-[-0.15em] opacity-60"
-                      aria-hidden="true"
-                    />
-                  </span>
+              <p className="min-w-0 leading-relaxed">
+                © PrudentBird Services{" "}
+                <span className="whitespace-nowrap">
+                  · {profile.business.label}
                 </span>
-                <span className="sr-only">
-                  {" "}
-                  (business registration, opens in new tab)
-                </span>
-              </a>
+              </p>
               <div className="flex shrink-0 items-center gap-3">
                 <ThemeSwitcher size="sm" />
               </div>
