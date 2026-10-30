@@ -85,11 +85,6 @@ function PhotoStackGallery({
                 <path d="M0 6 Q10 0 20 6 T40 6 T60 6 T80 6 T100 6 T120 6 T140 6 T160 6 T180 6 T200 6 T220 6 T240 6 V16 H0 Z" />
               </svg>
             </div>
-            {card.caption && (
-              <figcaption className="absolute inset-x-0 bottom-[4%] text-center text-sm text-neutral-600 dark:text-neutral-100 [font-family:'Bradley_Hand','Segoe_Print',cursive]">
-                {card.caption}
-              </figcaption>
-            )}
           </motion.figure>
         );
       })}
