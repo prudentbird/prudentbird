@@ -21,8 +21,6 @@ import { cn } from "~/lib/utils";
 import { Stage, useStageEnv } from "./stage";
 
 const UNIT = 0.2;
-// The camera frames the bird snugly, so the layout box is the bird itself;
-// the canvas bleeds past it for pushed blocks, hops and bursts.
 const CAMERA = { position: [0, 0, 8.6] as [number, number, number], fov: 30 };
 const BLEED = 1.7;
 
@@ -30,12 +28,9 @@ type Voxel = {
   target: Vector3;
   color: string;
   scale: number;
-  /** Part of the #1990 plate: its backing, or the raised glyphs. */
   tag?: "plate" | "glyph";
 };
 
-// A little "#1990" plate pinned to the bird's chest: the avatar is Solana
-// Penguin Business #1990, and clicking the plate opens it on Magic Eden.
 const NFT_HREF =
   "https://magiceden.io/item-details/FWcEzs13GzBCybYHw5wKvT7vo9QJr96mTq5hQsyqQ97x";
 const TAG_ROWS = [
@@ -49,8 +44,6 @@ const TAG_ROWS = [
 ];
 const TAG_UNIT = 0.055;
 const TAG_CENTER = new Vector3(1.05, -1.62, 0.26);
-// The glyphs light up in the cap's green on hover, and a glint of it sweeps
-// across them every so often to hint that the plate does something.
 const TAG_GLYPH = new Color(AVATAR_PALETTE[2]);
 const TAG_LIT = new Color(AVATAR_PALETTE[3]);
 const TAG_LIFT = 0.16;
@@ -100,7 +93,6 @@ function buildVoxels(): Voxel[] {
   return [...bird, ...tag];
 }
 
-// The cursor pushes nearby blocks apart; they spring back once it moves on.
 const PUSH_RADIUS = 0.9;
 const PUSH_BASE = 18;
 const PUSH_PER_SPEED = 9;
@@ -108,7 +100,6 @@ const SPRING = 55;
 const DAMPING = 8;
 const clamp1 = (n: number) => Math.max(-1, Math.min(1, n));
 
-// Every so often the bird does a little trick on its own.
 type Trick = "hop" | "wiggle";
 const TRICKS: Trick[] = ["hop", "wiggle"];
 const TRICK_LENGTH: Record<Trick, number> = {
@@ -117,27 +108,19 @@ const TRICK_LENGTH: Record<Trick, number> = {
 };
 const nextTrickIn = () => 5 + Math.random() * 6;
 
-// Clicking agitates the bird: it jitters harder with each quick click, and
-// enough of them in a row make it burst apart and snap back together.
 const AGITATION_DECAY = 1;
-// How fast the jitter dies away once clicking stops (per second).
 const JITTER_DECAY = 8;
-// The bird's outline in its own space, for telling clicks on it apart from
-// clicks on the empty canvas around it.
 const HIT_X = 1.8;
 const HIT_Y = 2;
 const BURST_AT = 4;
 const BURST_SPEED = 7;
 
-// Dragging spins the bird around its vertical axis; let go and it coasts,
-// then swings back to face front.
 const DRAG_RADIANS_PER_PX = 0.012;
 const DRAG_THRESHOLD = 4;
 const SPIN_SPRING = 14;
 const SPIN_DAMPING = 3.5;
 const FULL_TURN = Math.PI * 2;
 
-/** Applies the trick at progress t (0–1) to the bird's inner group. */
 function applyTrick(g: Group, trick: Trick | null, t: number) {
   g.position.set(0, 0, 0);
   g.rotation.set(0, 0, 0);
@@ -145,7 +128,6 @@ function applyTrick(g: Group, trick: Trick | null, t: number) {
   const fade = 1 - t;
   switch (trick) {
     case "hop":
-      // Two hops, the second smaller.
       g.position.y =
         t < 0.55
           ? Math.sin((t / 0.55) * Math.PI) * 0.45
@@ -211,12 +193,9 @@ function Avatar({ animate }: { animate: boolean }) {
   useEffect(() => {
     const push = pushRef.current;
     const el = renderer.domElement;
-    // Listen on the canvas rather than the blocks: the cursor push clears a
-    // hole right under the pointer, so rapid clicks would land on nothing.
     const hit = new Vector3();
     const ndc = new Vector2();
     const tagPlane = new Plane(new Vector3(0, 0, 1), -TAG_CENTER.z);
-    /** Where the pointer meets the given plane, in the bird's own space. */
     const project = (event: PointerEvent, plane: Plane) => {
       const b = inner.current;
       if (!b) return null;
@@ -241,7 +220,6 @@ function Avatar({ animate }: { animate: boolean }) {
     };
     const drag = { id: -1, x: 0, t: 0, moved: 0 };
     const sp = spin.current;
-    /** Whether the pointer is on the bird, or the bird is already turned. */
     const grabbable = (event: PointerEvent) => {
       if (Math.abs(sp.angle) > 0.3) return true;
       const p = project(event, push.plane);
@@ -291,7 +269,6 @@ function Avatar({ animate }: { animate: boolean }) {
       sp.dragging = false;
       drag.id = -1;
       el.style.cursor = "";
-      // A press that barely moved is a poke, not a spin.
       if (drag.moved > DRAG_THRESHOLD || !animate) return;
       agitation.current += 1;
       jitter.current = Math.min(1, 0.4 + (agitation.current / BURST_AT) * 0.6);
@@ -319,17 +296,11 @@ function Avatar({ animate }: { animate: boolean }) {
     const g = group.current;
     const b = inner.current;
     if (!m || !g || !b) return;
-    // Clamped both ways: a resumed canvas can report a huge or negative delta,
-    // and a negative step would run the springs backwards and blow them up.
     const dt = Math.max(0, Math.min(delta, 1 / 30));
-    // Our own clock: r3f resets clock.elapsedTime to 0 whenever the canvas
-    // pauses and resumes (scrolled away, hidden on resize), which would leave
-    // a trick's end time far in the future and send the wiggle out of range.
     time.current += dt;
     const now = time.current;
     const push = pushRef.current;
 
-    // Idle tricks: pick one at random, play it, then wait a few seconds.
     const tr = trick.current;
     if (animate && now >= tr.at) {
       if (tr.name) {
@@ -347,16 +318,12 @@ function Avatar({ animate }: { animate: boolean }) {
         ? Math.min(1, Math.max(0, 1 - (tr.at - now) / TRICK_LENGTH[tr.name]))
         : 0,
     );
-    // Jitter after a click, on top of whatever trick is playing; it settles
-    // within a fraction of a second once the clicks stop.
     agitation.current = Math.max(0, agitation.current - AGITATION_DECAY * dt);
     jitter.current *= Math.exp(-JITTER_DECAY * dt);
     if (jitter.current > 0.01) {
       b.rotation.z += Math.sin(now * 38) * 0.12 * jitter.current;
       b.position.x += Math.sin(now * 47) * 0.08 * jitter.current;
     }
-    // Drag spin: follow the pointer while held, then coast and settle on the
-    // nearest full turn so the bird ends up facing front again.
     const sp = spin.current;
     if (sp.dragging) {
       sp.velocity *= Math.exp(-12 * dt);
@@ -373,7 +340,6 @@ function Avatar({ animate }: { animate: boolean }) {
     b.rotation.y = sp.angle;
     b.updateMatrixWorld();
 
-    // Where the cursor meets the avatar's plane, in the avatar's own space.
     let speed = 0;
     const pushing =
       animate && hovering.current && !sp.dragging && Math.abs(sp.angle) < 0.2;
@@ -387,13 +353,10 @@ function Avatar({ animate }: { animate: boolean }) {
       }
     }
 
-    // The plate eases forward under the cursor; with reduced motion it only
-    // changes color.
     lift.current +=
       ((hoveringTag.current ? 1 : 0) - lift.current) * Math.min(1, dt * 14);
     const rise = animate ? lift.current : 0;
     const grow = 1 + TAG_GROW * rise;
-    // Glint progress 0–1 while sweeping; it waits off the plate in between.
     let sweep = -1;
     if (animate) {
       if (now >= glint.current + GLINT_LENGTH)
@@ -455,8 +418,6 @@ function Avatar({ animate }: { animate: boolean }) {
     });
     m.instanceMatrix.needsUpdate = true;
     if (recolor && m.instanceColor) m.instanceColor.needsUpdate = true;
-    // Turn toward the cursor, with a little idle sway. The canvas bleeds past
-    // the avatar, so scale the pointer back to the avatar's own box.
     const sway = animate ? Math.sin(now * 0.6) * 0.12 : 0;
     const px = clamp1(pointer.x * BLEED);
     const py = clamp1(pointer.y * BLEED);
@@ -486,7 +447,6 @@ export default function VoxelAvatar({ className }: { className?: string }) {
           <Avatar animate={!reduce} />
         </Float>
       </Stage>
-      {/* The plate is drawn in the canvas; this is its keyboard twin. */}
       <a
         href={NFT_HREF}
         target="_blank"
