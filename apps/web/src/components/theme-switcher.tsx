@@ -106,7 +106,7 @@ export function ThemeSwitcher({
           onClick={() => setTheme("system")}
           variant="ghost"
           size="icon"
-          className={`rounded-full h-8 w-8 transition-colors ${
+          className={`rounded-full ${button} transition-colors ${
             theme === "system"
               ? "bg-background text-foreground hover:bg-background dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
@@ -114,7 +114,7 @@ export function ThemeSwitcher({
           aria-label="System mode"
           aria-pressed={theme === "system"}
         >
-          <Monitor className="h-4 w-4" />
+          <Monitor className={icon} />
         </Button>
         <Button
           onClick={() => setTheme("dark")}
