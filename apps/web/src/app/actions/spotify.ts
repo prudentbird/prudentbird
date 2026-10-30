@@ -2,7 +2,6 @@
 
 import { env } from "~/env";
 import { connection } from "next/server";
-import { revalidateTag } from "next/cache";
 
 export type SpotifyTrack = {
   url: string;
@@ -124,110 +123,5 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
   } catch (error) {
     console.error(error);
     return null;
-  }
-}
-
-export async function revalidateSpotifyCurrent() {
-  revalidateTag("spotify-current", {});
-}
-
-export type SpotifySearchResult = {
-  name: string;
-  artist: string;
-  lastfmUrl: string;
-  spotifyUrl: string | null;
-  albumImage: string | null;
-  playedAt: string;
-};
-
-export async function searchSpotifyTracks(
-  tracks: Array<{
-    name: string;
-    artist: string;
-    url: string;
-    playedAt: string;
-  }>,
-): Promise<SpotifySearchResult[]> {
-  try {
-    const token = await getAccessToken();
-
-    const uniqueKeys = new Map<string, { name: string; artist: string }>();
-    for (const t of tracks) {
-      const key = `${t.name}|||${t.artist}`;
-      if (!uniqueKeys.has(key))
-        uniqueKeys.set(key, { name: t.name, artist: t.artist });
-    }
-
-    const entries = Array.from(uniqueKeys.entries());
-    const results: {
-      key: string;
-      spotifyUrl: string | null;
-      albumImage: string | null;
-      artists: string | null;
-    }[] = [];
-    for (let i = 0; i < entries.length; i += 5) {
-      const batch = entries.slice(i, i + 5);
-      const batchResults = await Promise.all(
-        batch.map(async ([key, { name, artist }]) => {
-          try {
-            const q = encodeURIComponent(`${name} ${artist}`);
-            const res = await fetch(
-              `https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-                next: { revalidate: 86400 },
-              },
-            );
-            if (!res.ok)
-              return { key, spotifyUrl: null, albumImage: null, artists: null };
-            const data = await res.json();
-            const item = data.tracks?.items?.[0];
-            if (!item)
-              return { key, spotifyUrl: null, albumImage: null, artists: null };
-
-            const images: Array<{ url: string }> = item.album?.images ?? [];
-            const albumImage =
-              images[images.length - 1]?.url ?? images[0]?.url ?? null;
-            const artists = (item.artists as Array<{ name: string }>)
-              .map((a) => a.name)
-              .join(", ");
-
-            return {
-              key,
-              spotifyUrl: item.external_urls?.spotify ?? null,
-              albumImage,
-              artists,
-            };
-          } catch {
-            return { key, spotifyUrl: null, albumImage: null, artists: null };
-          }
-        }),
-      );
-      results.push(...batchResults);
-    }
-
-    const resultMap = new Map(results.map((r) => [r.key, r]));
-
-    return tracks.map((t) => {
-      const key = `${t.name}|||${t.artist}`;
-      const result = resultMap.get(key);
-      return {
-        name: t.name,
-        artist: result?.artists ?? t.artist,
-        lastfmUrl: t.url,
-        spotifyUrl: result?.spotifyUrl ?? null,
-        albumImage: result?.albumImage ?? null,
-        playedAt: t.playedAt,
-      };
-    });
-  } catch {
-    return tracks.map((t) => ({
-      name: t.name,
-      artist: t.artist,
-      lastfmUrl: t.url,
-      spotifyUrl: null,
-      albumImage: null,
-      playedAt: t.playedAt,
-    }));
   }
 }
