@@ -2,5 +2,14 @@
   "name": "v1",
   "version": "0.1.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "start": "next start",
+    "build": "next build",
+    "preview": "next build && next start",
+    "lint": "eslint . && echo Lint Checks successfully completed!",
+    "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
+    "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
+  }
 }
