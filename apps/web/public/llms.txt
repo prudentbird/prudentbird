@@ -53,7 +53,7 @@ A zero-friction CMS for you and your agents.
 
 ### Beakcrypt
 
-Encrypted environment variable management for teams.
+Environment variables, shared without the Slack paste.
 
 - Site: [https://beakcrypt.com](https://beakcrypt.com)
 - Source: [https://github.com/prudentbird/beakcrypt](https://github.com/prudentbird/beakcrypt)
