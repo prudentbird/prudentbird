@@ -10,3 +10,12 @@ export const profile = {
   business: { label: "BN 8524538", href: "/cac.pdf" },
 };
 
+export const links = [
+  { label: "GitHub", href: "https://github.com/prudentbird", external: true },
+  { label: "Twitter", href: "https://x.com/prudentbird", external: true },
+  { label: "Resume", href: "/cv.pdf", external: true },
+] as const;
+
+export function externalProps(external: boolean) {
+  return external ? { target: "_blank", rel: "noopener noreferrer" } : {};
+}
