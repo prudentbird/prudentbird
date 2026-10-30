@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import { ThemeSwitcher } from "~/components/theme-switcher";
 import { externalProps, links, profile } from "~/lib/content";
 import { VoxelAvatarHero } from "~/components/hero";
+import { DESKTOP, MOBILE, OnMedia } from "~/components/on-media";
 import { Artifacts } from "~/components/work/artifacts";
 import { CopyButton } from "./copy-button";
 import { Photography } from "./photography";
@@ -19,7 +20,9 @@ export function Home() {
         >
           <div className="relative">
             <div className="absolute top-1/2 right-0 hidden aspect-square w-5/12 -translate-y-1/2 lg:block">
-              <VoxelAvatarHero className="size-full" />
+              <OnMedia query={DESKTOP}>
+                <VoxelAvatarHero className="size-full" />
+              </OnMedia>
             </div>
             <div
               className={`flex items-center gap-[0.15em] max-[440px]:justify-between text-[clamp(3.5rem,12vw,11rem)] lg:block lg:text-[min(10vw,9rem)]`}
@@ -36,7 +39,9 @@ export function Home() {
               </h1>
               <div className="relative h-[0.88em] w-[1.4em] shrink-0 max-[440px]:h-[1.76em] max-[440px]:w-[1.9em] max-[319px]:hidden lg:hidden">
                 <div className="absolute top-1/2 left-0 size-[1.4em] -translate-y-1/2 max-[440px]:size-[1.9em]">
-                  <VoxelAvatarHero className="size-full" />
+                  <OnMedia query={MOBILE}>
+                    <VoxelAvatarHero className="size-full" />
+                  </OnMedia>
                 </div>
               </div>
             </div>
