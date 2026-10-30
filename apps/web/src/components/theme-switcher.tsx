@@ -120,7 +120,7 @@ export function ThemeSwitcher({
           onClick={() => setTheme("dark")}
           variant="ghost"
           size="icon"
-          className={`rounded-full h-8 w-8 transition-colors ${
+          className={`rounded-full ${button} transition-colors ${
             theme === "dark"
               ? "bg-background text-foreground hover:bg-background dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
@@ -128,7 +128,7 @@ export function ThemeSwitcher({
           aria-label="Dark mode"
           aria-pressed={theme === "dark"}
         >
-          <MoonStar className="h-4 w-4" />
+          <MoonStar className={icon} />
         </Button>
       </div>
     </>
