@@ -428,7 +428,13 @@ export function SongVisualizer() {
           setPlayer("on");
         },
         onError: () => {
-          if (s === session.current) setPlayer("missing");
+          if (s !== session.current) return;
+          yt.current?.destroy();
+          yt.current = null;
+          loadedFor.current = null;
+          ytHost.current?.replaceChildren();
+          setPlayback(null);
+          setPlayer("missing");
         },
       },
     });
