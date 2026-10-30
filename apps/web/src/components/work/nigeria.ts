@@ -1,8 +1,3 @@
-// Nigeria's border (lng, lat) from OpenStreetMap (via Nominatim, ODbL; credited
-// with the basemap), simplified; and outlet spots in inland cities, each at
-// least ~0.85° (about 95 km) from the border so none crowd it: Kano, Gusau,
-// Damaturu, Gombe, Bauchi, Jos, Kaduna, Abuja, Minna, Ilorin, Ibadan, Akure,
-// Benin City, Enugu, Makurdi.
 export const NIGERIA_RING: readonly (readonly [number, number])[] = [
   [2.677, 7.882],
   [2.725, 7.804],
