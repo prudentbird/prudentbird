@@ -16,6 +16,14 @@ export const links = [
   { label: "Resume", href: "/cv.pdf", external: true },
 ] as const;
 
+export const NEW_TAB_HINT_ID = "new-tab-hint";
+
 export function externalProps(external: boolean) {
-  return external ? { target: "_blank", rel: "noopener noreferrer" } : {};
+  return external
+    ? {
+        target: "_blank",
+        rel: "noopener noreferrer",
+        "aria-describedby": NEW_TAB_HINT_ID,
+      }
+    : {};
 }

@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { ThemeSwitcher } from "~/components/theme-switcher";
-import { externalProps, links, profile } from "~/lib/content";
+import { NEW_TAB_HINT_ID, externalProps, links, profile } from "~/lib/content";
 import { VoxelAvatarHero } from "~/components/hero";
 import { DESKTOP, MOBILE, OnMedia } from "~/components/on-media";
 import { Artifacts } from "~/components/work/artifacts";
@@ -14,6 +14,9 @@ const container = "mx-auto w-full max-w-[1400px] px-5 sm:px-8 lg:px-12";
 export function Home() {
   return (
     <div id="top" className="min-h-screen overflow-x-clip">
+      <span id={NEW_TAB_HINT_ID} className="sr-only">
+        Opens in a new tab
+      </span>
       <main>
         <section
           className={`${container} relative pt-14 pb-16 sm:pt-20 lg:pt-32`}
@@ -53,8 +56,7 @@ export function Home() {
                 {profile.bio} I currently work with{" "}
                 <a
                   href={profile.affiliations[0]!.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  {...externalProps(true)}
                   className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
                 >
                   Ajared

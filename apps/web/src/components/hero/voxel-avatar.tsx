@@ -18,6 +18,7 @@ import {
 } from "three";
 import { AVATAR_PALETTE, AVATAR_ROWS } from "./avatar-pixels";
 import { cn } from "~/lib/utils";
+import { externalProps } from "~/lib/content";
 import { Stage, useStageEnv } from "./stage";
 
 const UNIT = 0.2;
@@ -447,12 +448,7 @@ export default function VoxelAvatar({ className }: { className?: string }) {
           <Avatar animate={!reduce} />
         </Float>
       </Stage>
-      <a
-        href={NFT_HREF}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="sr-only"
-      >
+      <a href={NFT_HREF} {...externalProps(true)} className="sr-only">
         Solana Penguin Business #1990 on Magic Eden
       </a>
     </div>
