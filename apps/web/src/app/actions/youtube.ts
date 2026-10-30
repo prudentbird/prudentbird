@@ -6,11 +6,6 @@ import { env } from "~/env";
 const REJECT =
   /\b(instrumental|karaoke|sped ?up|slowed|reverb|remix|cover|8d|nightcore|live)\b/i;
 
-/**
- * Finds the YouTube upload that best matches a Spotify track: same song, and a
- * length within a few seconds of Spotify's so playback positions line up.
- * Search costs 100 of 10,000 daily quota units, so matches are cached per track.
- */
 export async function findYouTubeMatch(track: {
   name: string;
   artist: string;
@@ -54,8 +49,6 @@ async function match(
       return ((await response.json()) as SearchResult).items ?? [];
     };
     let items = await searchVideos();
-    // Some full-title queries return no results even though the upload exists.
-    // Broaden only the query; candidates still need the full title and runtime.
     if (!items.length && title.length > 4) {
       const prefix = title.slice(0, Math.max(3, Math.ceil(title.length / 2)));
       search.set("q", `${artist} ${prefix}`);
