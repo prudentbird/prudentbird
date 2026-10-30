@@ -169,11 +169,7 @@ export function Home() {
                     {...externalProps}
                     className="inline-flex h-10 items-center gap-1.5 text-[clamp(0.875rem,4.1vw,1rem)] underline-offset-4 hover:underline sm:text-lg"
                   >
-                    {l.label === "Twitter"
-                      ? "X (Twitter)"
-                      : l.label === "Resume"
-                        ? "Resume"
-                        : l.label}
+                    {l.label}
                     <ArrowUpRight
                       className="size-4 opacity-60"
                       aria-hidden="true"

@@ -9,7 +9,7 @@ export const profile = {
 
 export const links = [
   { label: "GitHub", href: "https://github.com/prudentbird" },
-  { label: "Twitter", href: "https://x.com/prudentbird" },
+  { label: "X (Twitter)", href: "https://x.com/prudentbird" },
   { label: "Resume", href: "/cv.pdf" },
 ] as const;
 
