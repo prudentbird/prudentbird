@@ -6,6 +6,7 @@ import "./src/env";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["trustworthy-guineapig.outray.app"],
   typedRoutes: true,
   reactCompiler: true,
   cacheComponents: true,
