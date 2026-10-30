@@ -58,6 +58,13 @@ Environment variables, shared without the Slack paste.
 - Site: [https://beakcrypt.com](https://beakcrypt.com)
 - Source: [https://github.com/prudentbird/beakcrypt](https://github.com/prudentbird/beakcrypt)
 
+### Sudoku
+
+Sudoku with friends, in real time.
+
+- Site: [https://sudoku.prudentbird.com](https://sudoku.prudentbird.com)
+- Source: [https://github.com/prudentbird/prudentbird](https://github.com/prudentbird/prudentbird)
+
 ### FuseIon
 
 The AI chat app for nerds.
