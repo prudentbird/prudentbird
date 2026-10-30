@@ -473,3 +473,28 @@ function Avatar({ animate }: { animate: boolean }) {
   );
 }
 
+export default function VoxelAvatar({ className }: { className?: string }) {
+  const { reduce } = useStageEnv();
+  return (
+    <div className={cn("relative", className)}>
+      <Stage className="size-full touch-pan-y" camera={CAMERA} bleed={BLEED}>
+        <Float
+          speed={reduce ? 0 : 1.2}
+          rotationIntensity={0}
+          floatIntensity={reduce ? 0 : 0.6}
+        >
+          <Avatar animate={!reduce} />
+        </Float>
+      </Stage>
+      {/* The plate is drawn in the canvas; this is its keyboard twin. */}
+      <a
+        href={NFT_HREF}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="sr-only"
+      >
+        Solana Penguin Business #1990 on Magic Eden
+      </a>
+    </div>
+  );
+}
