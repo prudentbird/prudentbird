@@ -4,11 +4,6 @@ import { cacheLife } from "next/cache";
 import { env } from "~/env";
 import { getSpotifyTrack } from "~/app/actions/spotify";
 
-const VERSION_MARKERS =
-  /\b(instrumental|karaoke|sped ?up|slowed|reverb|remix|cover|8d|nightcore|live)\b/gi;
-
-const markerCount = (s: string) => s.match(VERSION_MARKERS)?.length ?? 0;
-
 /**
  * Finds the YouTube upload that best matches the track Spotify currently
  * reports. Server actions are reachable by direct POST, so this takes no
@@ -92,11 +87,7 @@ async function match(
 
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const scored = items
-    .filter(
-      (i) =>
-        norm(i.snippet.title).includes(norm(title)) &&
-        markerCount(i.snippet.title) <= markerCount(title),
-    )
+    .filter((i) => norm(i.snippet.title).includes(norm(title)))
     .map((i) => {
       const diff = Math.abs((length.get(i.id.videoId) ?? 0) - seconds);
       const official =
