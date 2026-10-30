@@ -58,47 +58,58 @@ async function match(
     if (!response.ok) throw new Error("YouTube search failed");
     return ((await response.json()) as SearchResult).items ?? [];
   };
-  let items = await searchVideos();
-  if (!items.length && title.length > 4) {
-    const prefix = title.slice(0, Math.max(3, Math.ceil(title.length / 2)));
-    search.set("q", `${artist} ${prefix}`);
-    items = await searchVideos();
-  }
-  if (!items.length) return null;
+  const norm = (s: string) =>
+    s
+      .normalize("NFKC")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]/gu, "");
+  const wanted = norm(title);
+  if (!wanted) return null;
 
-  const ids = items.map((i) => i.id.videoId).join(",");
-  const detailsResponse = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${key}`,
-  );
-  if (!detailsResponse.ok) throw new Error("YouTube video lookup failed");
-  const details = (await detailsResponse.json()) as {
-    items?: { id: string; contentDetails: { duration: string } }[];
+  const pick = async (items: Awaited<ReturnType<typeof searchVideos>>) => {
+    const candidates = items.filter((i) =>
+      norm(i.snippet.title).includes(wanted),
+    );
+    if (!candidates.length) return null;
+
+    const ids = candidates.map((i) => i.id.videoId).join(",");
+    const detailsResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${key}`,
+    );
+    if (!detailsResponse.ok) throw new Error("YouTube video lookup failed");
+    const details = (await detailsResponse.json()) as {
+      items?: { id: string; contentDetails: { duration: string } }[];
+    };
+    const length = new Map(
+      (details.items ?? []).map((v) => {
+        const [, h = "0", m = "0", s = "0"] =
+          v.contentDetails.duration.match(
+            /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/,
+          ) ?? [];
+        return [v.id, +h * 3600 + +m * 60 + +s];
+      }),
+    );
+
+    const scored = candidates
+      .map((i) => {
+        const diff = Math.abs((length.get(i.id.videoId) ?? 0) - seconds);
+        const official =
+          /- topic$|vevo$/i.test(i.snippet.channelTitle) ||
+          norm(i.snippet.channelTitle).includes(norm(artist));
+        const lyrics = /lyric/i.test(i.snippet.title);
+        return {
+          id: i.id.videoId,
+          score: diff + (official ? 0 : 4) + (lyrics ? 3 : 0),
+          diff,
+        };
+      })
+      .sort((a, b) => a.score - b.score);
+    return scored.find((s) => s.diff <= 8)?.id ?? null;
   };
-  const length = new Map(
-    (details.items ?? []).map((v) => {
-      const [, h = "0", m = "0", s = "0"] =
-        v.contentDetails.duration.match(
-          /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/,
-        ) ?? [];
-      return [v.id, +h * 3600 + +m * 60 + +s];
-    }),
-  );
 
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const scored = items
-    .filter((i) => norm(i.snippet.title).includes(norm(title)))
-    .map((i) => {
-      const diff = Math.abs((length.get(i.id.videoId) ?? 0) - seconds);
-      const official =
-        /- topic$|vevo$/i.test(i.snippet.channelTitle) ||
-        norm(i.snippet.channelTitle).includes(norm(artist));
-      const lyrics = /lyric/i.test(i.snippet.title);
-      return {
-        id: i.id.videoId,
-        score: diff + (official ? 0 : 4) + (lyrics ? 3 : 0),
-        diff,
-      };
-    })
-    .sort((a, b) => a.score - b.score);
-  return scored.find((s) => s.diff <= 8)?.id ?? null;
+  const found = await pick(await searchVideos());
+  if (found || title.length <= 4) return found;
+  const prefix = title.slice(0, Math.max(3, Math.ceil(title.length / 2)));
+  search.set("q", `${artist} ${prefix}`);
+  return pick(await searchVideos());
 }
