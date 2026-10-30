@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import type { DailyActivity } from "~/app/actions/lastfm";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { getLastFmDay, type DailyActivity } from "~/app/actions/lastfm";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, Music } from "lucide-react";
 import {
   searchSpotifyTracks,
@@ -16,10 +16,10 @@ import {
 
 export function ActivityGraphClient({
   graphData,
-  activities,
+  year,
 }: {
   graphData: ContributionData[];
-  activities: DailyActivity[];
+  year: number;
 }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [enrichedTracks, setEnrichedTracks] = useState<
@@ -28,10 +28,15 @@ export function ActivityGraphClient({
   const graphWrapRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
-  const activityMap = useMemo(
-    () => new Map(activities.map((a) => [a.date, a])),
-    [activities],
+  const dayCache = useRef(
+    new Map<
+      string,
+      { activity: DailyActivity; enriched: SpotifySearchResult[] }
+    >(),
   );
+  const [selectedActivity, setSelectedActivity] =
+    useState<DailyActivity | null>(null);
+  const [dayError, setDayError] = useState(false);
 
   useEffect(() => {
     const wrap = graphWrapRef.current;
@@ -43,7 +48,7 @@ export function ActivityGraphClient({
     const DAY_LABEL_WIDTH = 32;
 
     const today = new Date();
-    const firstSunday = new Date(today.getFullYear(), 0, 1);
+    const firstSunday = new Date(year, 0, 1);
     firstSunday.setDate(firstSunday.getDate() - firstSunday.getDay());
     const todayWeek = Math.floor(
       (today.getTime() - firstSunday.getTime()) / (7 * 24 * 60 * 60 * 1000),
@@ -51,30 +56,58 @@ export function ActivityGraphClient({
 
     const todayX = DAY_LABEL_WIDTH + todayWeek * WEEK_WIDTH;
     inner.scrollLeft = todayX - inner.clientWidth / 2;
-  }, []);
+  }, [selectedDate, year]);
 
   const handleDayClick = async (date: string) => {
-    const activity = activityMap.get(date);
-    if (!activity) return;
     const id = ++requestIdRef.current;
+    const cached = dayCache.current.get(date);
     setSelectedDate(date);
-    setEnrichedTracks(null);
+    setDayError(false);
+    setSelectedActivity(cached?.activity ?? null);
+    setEnrichedTracks(cached?.enriched ?? null);
+    if (cached) return;
     try {
-      const results = await searchSpotifyTracks(activity.tracks);
+      const activity = await getLastFmDay(date);
       if (id !== requestIdRef.current) return;
-      setEnrichedTracks(results);
+      setSelectedActivity(activity);
+      const enriched = await searchSpotifyTracks(activity.tracks);
+      dayCache.current.set(date, { activity, enriched });
+      if (id !== requestIdRef.current) return;
+      setEnrichedTracks(enriched);
     } catch {
       if (id !== requestIdRef.current) return;
-      setEnrichedTracks([]);
+      setDayError(true);
     }
   };
 
   const handleBack = () => {
+    ++requestIdRef.current;
+    setSelectedActivity(null);
     setSelectedDate(null);
     setEnrichedTracks(null);
   };
 
-  const selectedActivity = selectedDate ? activityMap.get(selectedDate) : null;
+  if (selectedDate && (dayError || !selectedActivity))
+    return (
+      <div
+        role="status"
+        className="flex h-full items-center justify-center gap-3 text-sm text-muted-foreground"
+      >
+        {dayError ? "Unable to load this day." : "Loading tracks..."}
+        <button type="button" onClick={handleBack} className="underline">
+          Back to history
+        </button>
+        {dayError && (
+          <button
+            type="button"
+            onClick={() => void handleDayClick(selectedDate)}
+            className="underline"
+          >
+            Try again
+          </button>
+        )}
+      </div>
+    );
 
   if (selectedActivity) {
     return (
@@ -91,7 +124,11 @@ export function ActivityGraphClient({
       ref={graphWrapRef}
       className="h-full [&_.overflow-x-auto]:[mask-image:linear-gradient(to_right,black_96%,transparent)]"
     >
-      <ContributionGraph data={graphData} onDayClick={handleDayClick} />
+      <ContributionGraph
+        year={year}
+        data={graphData}
+        onDayClick={handleDayClick}
+      />
     </div>
   );
 }
@@ -161,10 +198,10 @@ function DayDetail({
             <span>history</span>
           </button>
           <span className="text-muted-foreground/40 text-xs">/</span>
-          <span className="text-sm font-medium">{formattedDate}</span>
+          <span className="text-sm font-medium">{formattedDate} (UTC)</span>
         </div>
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-          {activity.count} scrobbles
+          {activity.count} {activity.count === 1 ? "scrobble" : "scrobbles"}
         </span>
       </div>
 

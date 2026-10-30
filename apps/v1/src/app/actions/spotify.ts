@@ -20,7 +20,22 @@ export type SpotifyTrack = {
   isPlaying: boolean;
 };
 
+let cachedToken: { value: string; expiresAt: number } | undefined;
+let tokenRequest: Promise<string> | undefined;
+
 async function getAccessToken(): Promise<string> {
+  if (cachedToken && Date.now() < cachedToken.expiresAt)
+    return cachedToken.value;
+  if (tokenRequest) return tokenRequest;
+  tokenRequest = refreshAccessToken();
+  try {
+    return await tokenRequest;
+  } finally {
+    tokenRequest = undefined;
+  }
+}
+
+async function refreshAccessToken(): Promise<string> {
   const basic = Buffer.from(
     `${env.SPOTIFY_CLIENT_ID}:${env.SPOTIFY_CLIENT_SECRET}`,
   ).toString("base64");
@@ -44,7 +59,18 @@ async function getAccessToken(): Promise<string> {
     throw new Error("Failed to get Spotify access token");
   }
 
-  return (await response.json()).access_token;
+  const data = await response.json();
+  if (
+    typeof data.access_token !== "string" ||
+    !Number.isFinite(data.expires_in)
+  ) {
+    throw new Error("Invalid Spotify token response");
+  }
+  cachedToken = {
+    value: data.access_token,
+    expiresAt: Date.now() + Math.max(0, data.expires_in - 60) * 1000,
+  };
+  return cachedToken.value;
 }
 
 export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
@@ -153,8 +179,8 @@ export async function searchSpotifyTracks(
 
     const uniqueKeys = new Map<string, { name: string; artist: string }>();
     for (const t of tracks) {
-      const key = `${t.name}|||${t.artist}`;
-      if (!uniqueKeys.has(key))
+      const key = JSON.stringify([t.name, t.artist]);
+      if (uniqueKeys.size < 50 && !uniqueKeys.has(key))
         uniqueKeys.set(key, { name: t.name, artist: t.artist });
     }
 
@@ -170,7 +196,9 @@ export async function searchSpotifyTracks(
       const batchResults = await Promise.all(
         batch.map(async ([key, { name, artist }]) => {
           try {
-            const q = encodeURIComponent(`${name} ${artist}`);
+            const q = encodeURIComponent(
+              `track:"${name.replaceAll('"', " ")}" artist:"${artist.replaceAll('"', " ")}"`,
+            );
             const res = await fetch(
               `https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`,
               {
@@ -178,8 +206,10 @@ export async function searchSpotifyTracks(
                 next: { revalidate: 86400 },
               },
             );
-            if (!res.ok)
+            if (!res.ok) {
+              console.error("Spotify search failed:", res.status);
               return { key, spotifyUrl: null, albumImage: null, artists: null };
+            }
             const data = await res.json();
             const item = data.tracks?.items?.[0];
             if (!item)
@@ -198,7 +228,8 @@ export async function searchSpotifyTracks(
               albumImage,
               artists,
             };
-          } catch {
+          } catch (error) {
+            console.error("Spotify search failed:", error);
             return { key, spotifyUrl: null, albumImage: null, artists: null };
           }
         }),
@@ -209,7 +240,7 @@ export async function searchSpotifyTracks(
     const resultMap = new Map(results.map((r) => [r.key, r]));
 
     return tracks.map((t) => {
-      const key = `${t.name}|||${t.artist}`;
+      const key = JSON.stringify([t.name, t.artist]);
       const result = resultMap.get(key);
       return {
         name: t.name,
@@ -220,7 +251,8 @@ export async function searchSpotifyTracks(
         playedAt: t.playedAt,
       };
     });
-  } catch {
+  } catch (error) {
+    console.error("Spotify search failed:", error);
     return tracks.map((t) => ({
       name: t.name,
       artist: t.artist,

@@ -82,7 +82,7 @@ Explore and preserve family history.
 ## Contact
 
 The best way to reach Prudent Bird is email: me@prudentbird.com. His resume is
-available at [https://prudentbird.com/cv.pdf](https://prudentbird.com/cv.pdf).
+available at [https://v1.prudentbird.com/cv.pdf](https://v1.prudentbird.com/cv.pdf).
 
 ## Notes for AI agents
 
@@ -91,4 +91,4 @@ available at [https://prudentbird.com/cv.pdf](https://prudentbird.com/cv.pdf).
 
 ## More
 
-- Navigation index: [https://prudentbird.com/index.md](https://prudentbird.com/index.md)
+- Navigation index: [https://v1.prudentbird.com/index.md](https://v1.prudentbird.com/index.md)

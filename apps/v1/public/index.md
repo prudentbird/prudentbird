@@ -9,7 +9,7 @@ that users find genuinely useful in their day-to-day lives.
 - GitHub: [https://github.com/prudentbird](https://github.com/prudentbird)
 - X / Twitter: [https://x.com/prudentbird](https://x.com/prudentbird)
 - Email: me@prudentbird.com
-- Resume: [https://prudentbird.com/cv.pdf](https://prudentbird.com/cv.pdf)
+- Resume: [https://v1.prudentbird.com/cv.pdf](https://v1.prudentbird.com/cv.pdf)
 
 ## Projects
 
@@ -21,5 +21,5 @@ that users find genuinely useful in their day-to-day lives.
 
 ## More
 
-- Full machine-readable profile: [https://prudentbird.com/llms-full.txt](https://prudentbird.com/llms-full.txt)
-- Navigation index for agents: [https://prudentbird.com/llms.txt](https://prudentbird.com/llms.txt)
+- Full machine-readable profile: [https://v1.prudentbird.com/llms-full.txt](https://v1.prudentbird.com/llms-full.txt)
+- Navigation index for agents: [https://v1.prudentbird.com/llms.txt](https://v1.prudentbird.com/llms.txt)

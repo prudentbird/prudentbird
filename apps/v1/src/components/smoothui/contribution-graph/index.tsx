@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { weeksInYear } from "~/lib/calendar";
 import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -19,7 +20,6 @@ export interface ContributionGraphProps {
   year?: number;
 }
 
-const WEEKS_IN_YEAR = 53;
 const DAYS_IN_WEEK = 7;
 const JANUARY_MONTH = 0;
 const DECEMBER_MONTH = 11;
@@ -127,7 +127,7 @@ const calculateMonthHeaders = (targetYear: number) => {
   let monthStartWeek = 0;
   let weekCount = 0;
 
-  for (let weekNumber = 0; weekNumber < WEEKS_IN_YEAR; weekNumber++) {
+  for (let weekNumber = 0; weekNumber < weeksInYear(targetYear); weekNumber++) {
     const weekDate = new Date(firstSunday);
     weekDate.setDate(firstSunday.getDate() + weekNumber * DAYS_IN_WEEK);
 
@@ -200,7 +200,7 @@ export function ContributionGraph({
     const firstSunday = new Date(startDate);
     firstSunday.setDate(startDate.getDate() - startDate.getDay());
 
-    for (let weekNum = 0; weekNum < WEEKS_IN_YEAR; weekNum++) {
+    for (let weekNum = 0; weekNum < weeksInYear(year); weekNum++) {
       for (let day = 0; day < DAYS_IN_WEEK; day++) {
         const currentDate = new Date(firstSunday);
         currentDate.setDate(
@@ -289,7 +289,7 @@ export function ContributionGraph({
                   )}
                 </td>
 
-                {Array.from({ length: WEEKS_IN_YEAR }, (_, w) => {
+                {Array.from({ length: weeksInYear(year) }, (_, w) => {
                   const dayData = yearData[w * DAYS_IN_WEEK + dayIndex];
                   const cellKey = `${dayData?.date ?? "empty"}-${w}-${dayIndex}`;
                   if (!dayData?.date) {
@@ -305,27 +305,23 @@ export function ContributionGraph({
                     <td
                       className={`h-2.5 w-2.5 p-0 ${isClickable ? "cursor-pointer" : "cursor-default"}`}
                       key={cellKey}
-                      onClick={
-                        isClickable ? () => onDayClick(dayData.date) : undefined
-                      }
                       onMouseEnter={(e) => handleDayHover(dayData, e)}
                       onMouseLeave={handleDayLeave}
-                      title={
-                        showTooltips
-                          ? `${formatDate(dayData.date)}: ${getContributionText(dayData.count)}`
-                          : undefined
-                      }
                     >
-                      <div
-                        className={`h-2.5 w-2.5 rounded-sm ${
-                          CONTRIBUTION_COLORS[
-                            Math.min(
-                              Math.max(0, dayData.level),
-                              CONTRIBUTION_COLORS.length - 1,
-                            )
-                          ]
-                        } ${isClickable ? "hover:ring-2 hover:ring-background" : ""}`}
-                      />
+                      {isClickable ? (
+                        <button
+                          type="button"
+                          onClick={() => onDayClick?.(dayData.date)}
+                          aria-label={`${formatDate(dayData.date)}: ${getContributionText(dayData.count)}`}
+                          className={`block h-2.5 w-2.5 rounded-sm cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${CONTRIBUTION_COLORS[Math.min(Math.max(0, dayData.level), CONTRIBUTION_COLORS.length - 1)]}`}
+                        />
+                      ) : (
+                        <div
+                          role="img"
+                          aria-label={`${formatDate(dayData.date)}: ${getContributionText(dayData.count)}`}
+                          className={`h-2.5 w-2.5 rounded-sm ${CONTRIBUTION_COLORS[Math.min(Math.max(0, dayData.level), CONTRIBUTION_COLORS.length - 1)]}`}
+                        />
+                      )}
                     </td>
                   );
                 })}

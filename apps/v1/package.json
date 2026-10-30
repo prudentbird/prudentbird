@@ -10,7 +10,8 @@
     "preview": "next build && next start",
     "lint": "eslint . && echo Lint Checks successfully completed!",
     "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
-    "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
+    "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!",
+    "test": "node --experimental-vm-modules --test tests/*.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.24",

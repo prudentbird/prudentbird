@@ -29,6 +29,7 @@ export function SpotifyWidget({
     revalidateOnMount: true,
     revalidateOnReconnect: false,
     fallbackData: initialTrack,
+    refreshInterval: 30_000,
   });
 
   const handleRefresh = useEffectEvent(() => {
@@ -46,7 +47,13 @@ export function SpotifyWidget({
     return () => clearTimeout(timeout);
   }, [track]);
 
-  if (isLoading || !track) return <SpotifySkeleton />;
+  if (isLoading && !track) return <SpotifySkeleton />;
+  if (!track)
+    return (
+      <div className="flex h-32 items-center justify-center rounded-lg border border-border/50 text-sm text-muted-foreground">
+        Listening status is unavailable. Retrying shortly.
+      </div>
+    );
 
   const playerKey = [
     track.url,

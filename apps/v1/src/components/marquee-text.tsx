@@ -37,6 +37,7 @@ export function MarqueeText({
   return (
     <div
       ref={containerRef}
+      title={text}
       className="overflow-hidden w-full"
       style={
         isScrolling
@@ -46,7 +47,7 @@ export function MarqueeText({
     >
       <span
         ref={textRef}
-        className={`${className ?? ""} inline-block whitespace-nowrap [text-box-trim:trim-both] [text-box-edge:cap_alphabetic]`}
+        className={`${className ?? ""} inline-block whitespace-nowrap ${!isScrolling ? "max-w-full overflow-hidden text-ellipsis" : ""} [text-box-trim:trim-both] [text-box-edge:cap_alphabetic]`}
         style={
           isScrolling
             ? {

@@ -15,6 +15,9 @@ function Progress({
   indicatorClassName,
   ...props
 }: ProgressProps) {
+  const max = props.max && props.max > 0 ? props.max : 100;
+  const percentage = Math.min(100, Math.max(0, ((value ?? 0) / max) * 100));
+
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -23,8 +26,8 @@ function Progress({
         className,
       )}
       value={value}
-      max={props.max ?? 100}
       {...props}
+      max={max}
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
@@ -32,7 +35,7 @@ function Progress({
           "bg-primary h-full w-full flex-1 transition-all",
           indicatorClassName,
         )}
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        style={{ transform: `translateX(-${100 - percentage}%)` }}
       />
     </ProgressPrimitive.Root>
   );

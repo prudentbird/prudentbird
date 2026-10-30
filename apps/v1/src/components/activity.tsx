@@ -12,17 +12,7 @@ export function Activity() {
           <Spotify />
         </Suspense>
       }
-      history={
-        <Suspense
-          fallback={
-            <div className="flex h-32 items-center justify-center rounded-lg border border-border/50 bg-muted/20 text-sm text-muted-foreground animate-pulse">
-              Loading history...
-            </div>
-          }
-        >
-          <ActivityHistory />
-        </Suspense>
-      }
+      history={<ActivityHistory />}
     />
   );
 }

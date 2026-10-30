@@ -10,7 +10,7 @@ export function formatTimeAgo(input: Date | string | number): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
 
   if (!isFinite(seconds)) return "";
-  if (seconds < 0) return "just now";
+  if (seconds <= 0) return "just now";
   if (seconds < 60) {
     const n = seconds;
     return `${n} ${n === 1 ? "second" : "seconds"} ago`;
@@ -40,7 +40,7 @@ export function formatTimeAgo(input: Date | string | number): string {
     return `${n} ${n === 1 ? "month" : "months"} ago`;
   }
 
-  const years = Math.floor(days / 365);
+  const years = Math.max(1, Math.floor(days / 365));
   const n = years;
   return `${n} ${n === 1 ? "year" : "years"} ago`;
 }

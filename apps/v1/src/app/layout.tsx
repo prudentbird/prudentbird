@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: baseUrl,
+    url: canonicalUrl,
     siteName: siteName,
     title: siteName,
     description: siteDescription,
@@ -88,7 +88,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} antialiased`}>
+      <body className={`${outfit.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

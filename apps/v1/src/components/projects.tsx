@@ -69,7 +69,7 @@ export function Projects() {
       <div className="mb-6 sm:mb-8 flex items-baseline justify-between gap-3 sm:gap-4">
         <h2 className="text-2xl md:text-3xl font-semibold">Projects</h2>
         <div
-          role="radiogroup"
+          role="group"
           aria-label="Project link target"
           className="flex items-center gap-1 text-sm text-muted-foreground"
         >
@@ -175,8 +175,7 @@ function ToggleOption({
   return (
     <button
       type="button"
-      role="radio"
-      aria-checked={active}
+      aria-pressed={active}
       onClick={onClick}
       className={`rounded-sm px-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
         active
