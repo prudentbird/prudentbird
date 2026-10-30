@@ -515,3 +515,138 @@ function FamilyTreeArtifact({ active }: { active: boolean }) {
   );
 }
 
+const ARTIFACTS: Record<string, (props: { active: boolean }) => ReactNode> = {
+  Voxx: VoxxArtifact,
+  Beakcrypt: BeakcryptArtifact,
+  Sudoku: SudokuArtifact,
+  FuseIon: FuseIonArtifact,
+  Retailytics: RetailyticsState,
+  "Family Tree": FamilyTreeArtifact,
+};
+
+function Row({
+  index,
+  active,
+  onHover,
+}: {
+  index: number;
+  active: boolean;
+  onHover: (index: number | null) => void;
+}) {
+  const project = work[index]!;
+  const Artifact = ARTIFACTS[project.name];
+
+  return (
+    <li
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") onHover(index);
+      }}
+      onPointerLeave={() => onHover(null)}
+      className="group grid gap-8 border-t border-border/70 py-14 first:pt-0 last:pb-0 lg:grid-cols-12 lg:items-center lg:gap-12"
+    >
+      <div className="flex flex-col gap-3 lg:col-span-6">
+        <h3 className="text-[clamp(2.5rem,5.5vw,4.75rem)] leading-[0.95] font-medium tracking-[-0.04em]">
+          <a
+            href={project.link}
+            {...externalProps(true)}
+            className="inline-flex items-start gap-3 decoration-2 underline-offset-[0.15em] hover:underline"
+          >
+            {project.name}
+            <ArrowUpRight
+              className="mt-[0.15em] size-[0.45em] opacity-40 transition-all group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:opacity-100"
+              aria-hidden="true"
+            />
+          </a>
+        </h3>
+        <p className="max-w-md text-xl leading-snug text-muted-foreground sm:text-2xl">
+          {project.tagline}
+        </p>
+      </div>
+      {Artifact && (
+        <div
+          aria-hidden="true"
+          data-work-demo
+          className="mx-auto h-80 w-full max-w-[34rem] lg:col-span-6 lg:col-start-7"
+        >
+          <Artifact
+            key={
+              project.name === "Retailytics"
+                ? "map"
+                : active
+                  ? "playing"
+                  : "finished"
+            }
+            active={active}
+          />
+        </div>
+      )}
+    </li>
+  );
+}
+
+export function Artifacts({ className }: { className?: string }) {
+  const list = useRef<HTMLOListElement>(null);
+  const [focused, setFocused] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const reduce = useReducedMotion();
+
+  useEffect(() => {
+    if (reduce) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const height = window.innerHeight;
+      let closest: number | null = null;
+      let distance = Infinity;
+      if (!document.hidden) {
+        list.current
+          ?.querySelectorAll("[data-work-demo]")
+          .forEach((demo, i) => {
+            const box = demo.getBoundingClientRect();
+            const centre = box.top + box.height / 2;
+            const nextDistance = Math.abs(centre - height / 2);
+            // A demo must occupy the central half of the viewport to play.
+            if (
+              centre >= height * 0.25 &&
+              centre <= height * 0.75 &&
+              nextDistance < distance
+            ) {
+              closest = i;
+              distance = nextDistance;
+            }
+          });
+      }
+      if (document.hidden) setHovered(null);
+      setFocused(closest);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    const observer = new ResizeObserver(schedule);
+    if (list.current) observer.observe(list.current);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    document.addEventListener("visibilitychange", schedule);
+    schedule();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      document.removeEventListener("visibilitychange", schedule);
+    };
+  }, [reduce]);
+
+  return (
+    <ol ref={list} className={className}>
+      {work.map((p, i) => (
+        <Row
+          key={p.name}
+          index={i}
+          active={!reduce && (hovered ?? focused) === i}
+          onHover={setHovered}
+        />
+      ))}
+    </ol>
+  );
+}
