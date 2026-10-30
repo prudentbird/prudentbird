@@ -24,4 +24,10 @@ export const work: Work[] = [
     github: "https://github.com/prudentbird/prudentbird",
     tagline: "Sudoku with friends, in real time.",
   },
+  {
+    name: "FuseIon",
+    link: "https://fuseion.app",
+    github: "https://github.com/prudentbird/fuseion",
+    tagline: "The AI chat app for nerds.",
+  },
 ];
