@@ -33,7 +33,7 @@ export const PHOTOS: Photo[] = [
   },
   {
     src: "/photos/showcase/showcase-07.jpg",
-    alt: "A dark, crowded night event facing a glowing screen that reads “ON THE”",
+    alt: "A dark, crowded night event facing a glowing screen that reads “ON THE ROAD”",
     caption: "",
   },
   {
