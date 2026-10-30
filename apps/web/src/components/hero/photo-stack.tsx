@@ -86,3 +86,32 @@ function PhotoStackGallery({
   );
 }
 
+export function DeferredPhoto({
+  photo,
+  sizes = "(max-width: 639px) 60vw, 340px",
+}: {
+  photo: Photo;
+  sizes?: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <Image
+      src={photo.src}
+      alt={photo.caption || "Photo by Prudent Bird"}
+      fill
+      sizes={sizes}
+      quality={90}
+      loading="lazy"
+      draggable={false}
+      // Already-cached images (e.g. a print lifted out of the stack) skip the fade.
+      ref={(img) => {
+        if (img?.complete && img.naturalWidth) setLoaded(true);
+      }}
+      onLoad={() => setLoaded(true)}
+      className={cn(
+        "object-cover transition-opacity duration-300 motion-reduce:transition-none [-webkit-user-drag:none]",
+        loaded ? "opacity-100" : "opacity-0",
+      )}
+    />
+  );
+}
