@@ -9,25 +9,15 @@ import { PHOTOS, type Photo } from "./photos";
 const TILT = [-7, 5, -3, 8, -5];
 
 export default function PhotoStack({ className }: { className?: string }) {
-  return <PhotoStackGallery photos={PHOTOS} className={className} />;
-}
-
-function PhotoStackGallery({
-  photos,
-  className,
-}: {
-  photos: Photo[];
-  className?: string;
-}) {
   const reduce = useReducedMotion();
-  const [order, setOrder] = useState(() => photos.map((_, i) => i));
+  const [order, setOrder] = useState(() => PHOTOS.map((_, i) => i));
   const [fanned, setFanned] = useState(false);
 
   useEffect(() => {
-    if (reduce || fanned || photos.length < 2) return;
+    if (reduce || fanned) return;
     const id = setInterval(() => setOrder((o) => [...o.slice(1), o[0]!]), 4000);
     return () => clearInterval(id);
-  }, [reduce, fanned, photos.length]);
+  }, [reduce, fanned]);
 
   return (
     <div
@@ -39,14 +29,13 @@ function PhotoStackGallery({
         if (!event.currentTarget.contains(event.relatedTarget))
           setFanned(false);
       }}
-      role={photos.length ? "group" : undefined}
-      aria-label={photos.length ? "A stack of my photos" : undefined}
-      aria-hidden={photos.length ? undefined : true}
+      role="group"
+      aria-label="A stack of my photos"
     >
-      {photos.map((card, i) => {
+      {PHOTOS.map((card, i) => {
         const depth = order.indexOf(i);
-        const n = photos.length;
-        const spread = n > 1 ? depth / (n - 1) - 0.5 : 0;
+        const n = PHOTOS.length;
+        const spread = depth / (n - 1) - 0.5;
         return (
           <motion.figure
             key={i}
