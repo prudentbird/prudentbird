@@ -12,4 +12,10 @@ export const work: Work[] = [
     github: "https://github.com/prudentbird/voxx",
     tagline: "A zero-friction CMS for you and your agents.",
   },
+  {
+    name: "Beakcrypt",
+    link: "https://beakcrypt.com",
+    github: "https://github.com/prudentbird/beakcrypt",
+    tagline: "Environment variables, shared without the Slack paste.",
+  },
 ];
