@@ -27,7 +27,6 @@
       "cache": false,
       "persistent": true,
       "passThroughEnv": [
-        "NODE_ENV",
         "BASE_URL",
         "SITE_URL",
         "SPOTIFY_CLIENT_ID",
