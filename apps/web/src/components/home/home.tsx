@@ -27,9 +27,7 @@ export function Home() {
                 <VoxelAvatarHero className="size-full" />
               </OnMedia>
             </div>
-            <div
-              className={`flex items-center gap-[0.15em] max-[440px]:justify-between text-[clamp(3.5rem,12vw,11rem)] lg:block lg:text-[min(10vw,9rem)]`}
-            >
+            <div className="flex items-center gap-[0.15em] max-[440px]:justify-between text-[clamp(3.5rem,12vw,11rem)] lg:block lg:text-[min(10vw,9rem)]">
               <h1
                 className="relative z-10 font-medium leading-[0.88] tracking-[-0.045em] max-[440px]:w-min"
                 style={{
@@ -49,9 +47,7 @@ export function Home() {
               </div>
             </div>
             <div className="mt-6 grid gap-10 sm:mt-8 lg:mt-12 lg:grid-cols-12">
-              <p
-                className={`relative z-10 max-w-4xl text-xl leading-relaxed text-muted-foreground sm:text-3xl sm:leading-snug lg:col-span-7`}
-              >
+              <p className="relative z-10 max-w-4xl text-xl leading-relaxed text-muted-foreground sm:text-3xl sm:leading-snug lg:col-span-7">
                 <span className="text-foreground">{profile.role}.</span>{" "}
                 {profile.bio} I currently work with{" "}
                 <a
@@ -81,38 +77,34 @@ export function Home() {
           aria-labelledby="about"
           className={`${container} scroll-mt-20 pb-16`}
         >
-          <div className="grid gap-12 lg:grid-cols-12">
-            <div className="lg:col-span-12">
-              <SectionHeader id="about" title="About" />
-              <p className="mt-6 text-xl leading-relaxed text-muted-foreground sm:text-2xl">
-                I&apos;m {profile.realName}, known online as Prudent Bird.
-                I&apos;ve been coding since 2019, and professionally since 2023.
-                I recently got into photography, and I play{" "}
-                <span
-                  className="group relative inline-block underline decoration-dotted underline-offset-4 focus-visible:outline-2"
-                  tabIndex={0}
-                  aria-describedby="about-games"
-                >
-                  games
-                  <span
-                    id="about-games"
-                    role="tooltip"
-                    className="invisible absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-border/60 bg-popover p-3 text-left font-normal leading-snug text-popover-foreground opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100"
-                  >
-                    I&apos;m not much of a football fan; I prefer Sudoku,
-                    Alto&apos;s Adventure, Alto&apos;s Odyssey, and Call of
-                    Duty: Mobile.
-                  </span>
-                </span>{" "}
-                to unwind after work. I often ask myself:{" "}
-                <em>&ldquo;What makes life worth living?&rdquo;</em>
-                {"  "}For me, it comes down to chasing your greatest passion,
-                finding joy even when everything seems difficult, keeping
-                perspective, being patient with the unknown, and making progress
-                at a steady pace.
-              </p>
-            </div>
-          </div>
+          <SectionHeader id="about" title="About" />
+          <p className="mt-6 text-xl leading-relaxed text-muted-foreground sm:text-2xl">
+            I&apos;m {profile.realName}, known online as Prudent Bird. I&apos;ve
+            been coding since 2019, and professionally since 2023. I recently
+            got into photography, and I play{" "}
+            <span
+              className="group relative inline-block underline decoration-dotted underline-offset-4 focus-visible:outline-2"
+              tabIndex={0}
+              aria-describedby="about-games"
+            >
+              games
+              <span
+                id="about-games"
+                role="tooltip"
+                className="invisible absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-border/60 bg-popover p-3 text-left font-normal leading-snug text-popover-foreground opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100"
+              >
+                I&apos;m not much of a football fan; I prefer Sudoku,
+                Alto&apos;s Adventure, Alto&apos;s Odyssey, and Call of Duty:
+                Mobile.
+              </span>
+            </span>{" "}
+            to unwind after work. I often ask myself:{" "}
+            <em>&ldquo;What makes life worth living?&rdquo;</em>
+            {"  "}For me, it comes down to chasing your greatest passion,
+            finding joy even when everything seems difficult, keeping
+            perspective, being patient with the unknown, and making progress at
+            a steady pace.
+          </p>
         </section>
 
         <Photography />
