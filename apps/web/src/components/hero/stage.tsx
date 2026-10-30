@@ -1,7 +1,5 @@
 "use client";
 
-// WebGPU renderer (fiber 10's default); three falls back to its WebGL 2
-// backend on browsers without WebGPU.
 import { Canvas } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei/webgpu";
 import { useTheme } from "next-themes";
@@ -21,7 +19,6 @@ export function useStageEnv() {
   return { dark: resolvedTheme !== "light", reduce };
 }
 
-/** A soft studio: light panels for reflections, so nothing loads from a CDN. */
 export function Studio({ dark }: { dark: boolean }) {
   return (
     <Environment resolution={256}>
@@ -75,11 +72,6 @@ export function Stage({
   className?: string;
   children: ReactNode;
   camera?: { position: [number, number, number]; fov: number };
-  /**
-   * How much larger than the layout box the canvas is, so pieces animating
-   * outside the model aren't cut off. The camera pulls back to match, so the
-   * model keeps its size.
-   */
   bleed?: number;
 }) {
   const { dark } = useStageEnv();
