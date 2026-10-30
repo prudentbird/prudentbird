@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sun, Monitor, MoonStar } from "lucide-react";
+import { cn } from "~/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +13,16 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-export function ThemeSwitcher() {
+export function ThemeSwitcher({
+  size = "default",
+}: {
+  /** "sm" sits beside small print, e.g. a footer's legal line. */
+  size?: "default" | "sm";
+}) {
   const { theme, setTheme } = useTheme();
+  const sm = size === "sm";
+  const button = sm ? "size-6" : "h-8 w-8";
+  const icon = sm ? "size-3.5" : "h-4 w-4";
 
   const mounted = useSyncExternalStore(
     () => () => {},
