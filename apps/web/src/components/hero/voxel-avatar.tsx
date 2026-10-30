@@ -250,7 +250,8 @@ function Avatar({ animate }: { animate: boolean }) {
     };
     const down = (event: PointerEvent) => {
       if (onTag(event)) {
-        window.open(NFT_HREF, "_blank", "noopener,noreferrer");
+        if (event.button === 0)
+          window.open(NFT_HREF, "_blank", "noopener,noreferrer");
         return;
       }
       if (!grabbable(event)) return;
