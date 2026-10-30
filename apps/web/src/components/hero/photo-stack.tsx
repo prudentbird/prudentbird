@@ -4,9 +4,8 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
-import { PHOTOS } from "./photos";
+import { PHOTOS, type Photo } from "./photos";
 
-type Photo = { src: string; caption: string };
 const TILT = [-7, 5, -3, 8, -5];
 
 export default function PhotoStack({ className }: { className?: string }) {
@@ -95,7 +94,7 @@ export function DeferredPhoto({
   return (
     <Image
       src={photo.src}
-      alt={photo.caption || "Photo by Prudent Bird"}
+      alt={photo.alt}
       fill
       sizes={sizes}
       quality={90}

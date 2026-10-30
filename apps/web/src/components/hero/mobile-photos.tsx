@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { DeferredPhoto } from "./photo-stack";
-import { PHOTOS } from "./photos";
+import { PHOTOS, type Photo } from "./photos";
 
 const PAPER = "rounded-[4px] bg-[#fbfaf7] p-4 pb-14 dark:bg-[#292724]";
 const SHADOW =
@@ -206,7 +206,7 @@ export function MobilePhotos() {
   );
 }
 
-function Print({ photo }: { photo: { src: string; caption: string } }) {
+function Print({ photo }: { photo: Photo }) {
   return (
     <div className="relative aspect-[4/5] bg-neutral-200 dark:bg-neutral-900">
       <DeferredPhoto photo={photo} sizes="(max-width: 1023px) 320px, 340px" />
