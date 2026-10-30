@@ -520,6 +520,23 @@ function Row({
 }) {
   const project = work[index]!;
   const Artifact = ARTIFACTS[project.name];
+  const demo = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = demo.current;
+    if (!el || near) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setNear(true);
+        io.disconnect();
+      },
+      { rootMargin: "300px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near, Artifact]);
 
   return (
     <li
@@ -549,20 +566,23 @@ function Row({
       </div>
       {Artifact && (
         <div
+          ref={demo}
           aria-hidden="true"
           data-work-demo
           className="mx-auto h-80 w-full max-w-[34rem] lg:col-span-6 lg:col-start-7"
         >
-          <Artifact
-            key={
-              project.name === "Retailytics"
-                ? "map"
-                : active
-                  ? "playing"
-                  : "finished"
-            }
-            active={active}
-          />
+          {near && (
+            <Artifact
+              key={
+                project.name === "Retailytics"
+                  ? "map"
+                  : active
+                    ? "playing"
+                    : "finished"
+              }
+              active={active}
+            />
+          )}
         </div>
       )}
     </li>
