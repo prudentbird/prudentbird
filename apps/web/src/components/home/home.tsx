@@ -56,7 +56,7 @@ export function Home() {
                 {profile.bio} I currently work with{" "}
                 <a
                   href={profile.affiliations[0]!.href}
-                  {...externalProps(true)}
+                  {...externalProps}
                   className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
                 >
                   Ajared
@@ -166,7 +166,7 @@ export function Home() {
                 <li key={l.label}>
                   <a
                     href={l.href}
-                    {...externalProps(l.external)}
+                    {...externalProps}
                     className="inline-flex h-10 items-center gap-1.5 text-[clamp(0.875rem,4.1vw,1rem)] underline-offset-4 hover:underline sm:text-lg"
                   >
                     {l.label === "Twitter"

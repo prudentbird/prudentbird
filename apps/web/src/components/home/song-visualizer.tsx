@@ -546,7 +546,7 @@ export function SongVisualizer() {
           ) : (
             <a
               href={track ? trackHref(track) : undefined}
-              {...externalProps(true)}
+              {...externalProps}
               tabIndex={player === "on" ? -1 : undefined}
               className="absolute inset-0"
             >

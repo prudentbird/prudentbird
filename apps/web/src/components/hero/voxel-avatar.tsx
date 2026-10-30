@@ -449,7 +449,7 @@ export default function VoxelAvatar({ className }: { className?: string }) {
           <Avatar animate={!reduce} />
         </Float>
       </Stage>
-      <a href={NFT_HREF} {...externalProps(true)} className="sr-only">
+      <a href={NFT_HREF} {...externalProps} className="sr-only">
         Solana Penguin Business #1990 on Magic Eden
       </a>
     </div>

@@ -550,7 +550,7 @@ function Row({
         <h3 className="text-[clamp(2.5rem,5.5vw,4.75rem)] leading-[0.95] font-medium tracking-[-0.04em]">
           <a
             href={project.link}
-            {...externalProps(true)}
+            {...externalProps}
             className="inline-flex items-start gap-3 decoration-2 underline-offset-[0.15em] hover:underline"
           >
             {project.name}

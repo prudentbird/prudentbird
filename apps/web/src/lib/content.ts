@@ -11,19 +11,15 @@ export const profile = {
 };
 
 export const links = [
-  { label: "GitHub", href: "https://github.com/prudentbird", external: true },
-  { label: "Twitter", href: "https://x.com/prudentbird", external: true },
-  { label: "Resume", href: "/cv.pdf", external: true },
+  { label: "GitHub", href: "https://github.com/prudentbird" },
+  { label: "Twitter", href: "https://x.com/prudentbird" },
+  { label: "Resume", href: "/cv.pdf" },
 ] as const;
 
 export const NEW_TAB_HINT_ID = "new-tab-hint";
 
-export function externalProps(external: boolean) {
-  return external
-    ? {
-        target: "_blank",
-        rel: "noopener noreferrer",
-        "aria-describedby": NEW_TAB_HINT_ID,
-      }
-    : {};
-}
+export const externalProps = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+  "aria-describedby": NEW_TAB_HINT_ID,
+};
