@@ -23,7 +23,6 @@ function edgeStyle(i: number, count: number) {
 }
 
 export function MobilePhotos() {
-  const photos = PHOTOS;
   const [selected, setSelected] = useState<number | null>(null);
   const [lifted, setLifted] = useState<{
     index: number;
@@ -75,7 +74,7 @@ export function MobilePhotos() {
         className="pointer-events-none absolute inset-y-0 -right-5 w-20 sm:-right-8 lg:hidden"
         aria-label="Photos tucked along the edge"
       >
-        {photos.map((photo, i) => (
+        {PHOTOS.map((photo, i) => (
           <button
             key={i}
             ref={(node) => {
@@ -111,7 +110,7 @@ export function MobilePhotos() {
             }}
             className={`pointer-events-auto ${EDGE_PRINT} focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${FRAME}`}
             style={{
-              ...edgeStyle(i, photos.length),
+              ...edgeStyle(i, PHOTOS.length),
               opacity: lifted?.index === i ? 0 : 1,
             }}
           >
@@ -174,20 +173,20 @@ export function MobilePhotos() {
                   }
                   onClick={() => setSelected(null)}
                 >
-                  <Print photo={photos[selected]!} />
+                  <Print photo={PHOTOS[selected]!} />
                 </motion.button>
                 <div
                   aria-hidden="true"
                   className="pointer-events-none fixed"
                   style={lifted.edge}
                 >
-                  {photos.map(
+                  {PHOTOS.map(
                     (photo, i) =>
                       i > lifted.index && (
                         <div
                           key={i}
                           className={`${EDGE_PRINT} ${PAPER}`}
-                          style={edgeStyle(i, photos.length)}
+                          style={edgeStyle(i, PHOTOS.length)}
                         >
                           <Print photo={photo} />
                           <motion.div
