@@ -9,7 +9,7 @@ export function useNowPlaying() {
   const { data, isLoading } = useSWR("spotify-current", getSpotifyTrack, {
     keepPreviousData: true,
     revalidateOnFocus: true,
-    refreshInterval: (track) => (track?.isPlaying ? 20_000 : 90_000),
+    refreshInterval: (track) => (track?.isPlaying ? 20_000 : 30_000),
   });
   return { track: data ?? null, isLoading };
 }
