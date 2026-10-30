@@ -7,13 +7,10 @@ export type SpotifyTrack = {
   url: string;
   name: string;
   artist: string;
-  imageUrl: string;
   images: {
     small: string;
     medium: string;
-    large: string;
   };
-  playedAt?: string;
   duration: number;
   progress: number;
   isPlaying: boolean;
@@ -57,7 +54,6 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-        next: { tags: ["spotify-current"] },
       },
     );
 
@@ -75,7 +71,6 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-          next: { tags: ["spotify-recently-played"] },
         },
       );
 
@@ -110,11 +105,9 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
     const track: SpotifyTrack = {
       name: item.name,
       artist: artistsArray.map((artist) => artist.name).join(", "),
-      imageUrl: large,
-      images: { small, medium, large },
+      images: { small, medium },
       url: item?.external_urls?.spotify ?? "",
       isPlaying: fromRecent ? false : Boolean(data?.is_playing),
-      playedAt: fromRecent ? data?.played_at : undefined,
       duration: item?.duration_ms ?? 0,
       progress: fromRecent ? 0 : (data?.progress_ms ?? 0),
     };
