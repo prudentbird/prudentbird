@@ -8,10 +8,6 @@ import { externalProps } from "~/lib/content";
 import { RetailyticsState } from "./retailytics-state";
 import { work } from "~/components/home/work";
 
-/**
- * Calls `step` every `ms` while `active`; the step returns the next delay or
- * nothing. The first call waits `first` ms, so a finished state shows first.
- */
 function useLoop(
   active: boolean,
   ms: number,
@@ -33,7 +29,6 @@ function useLoop(
   }, [active, ms, first]);
 }
 
-/* ── Voxx: edit a passage in the repo and watch the published page update ── */
 const DOC_PASSAGES = [
   { prefix: "# ", versions: ["Hello World", "Hello There"] },
   {
@@ -97,7 +92,6 @@ function VoxxArtifact({ active }: { active: boolean }) {
         setEdit({ ...edit, n: edit.n + 1 });
         return;
       }
-      // Pick another passage without repeating the one just edited.
       const next =
         (edit.passage +
           1 +
@@ -135,7 +129,6 @@ function VoxxArtifact({ active }: { active: boolean }) {
         <p className="border-b border-white/10 px-3 py-2 font-mono sm:px-4 text-[11px] text-white/40">
           content/posts/hello-there.md
         </p>
-        {/* the right padding keeps text clear of the page that overlaps this pane */}
         <pre className="min-h-0 flex-1 overflow-hidden py-2 pr-[14%] pl-3 font-mono sm:py-3 sm:pl-4 text-[10px] leading-[1.6] whitespace-pre-wrap sm:text-[11px]">
           {text.split("\n").map((line, i) => (
             <span
@@ -221,7 +214,6 @@ function VoxxArtifact({ active }: { active: boolean }) {
   );
 }
 
-/* ── Beakcrypt: the CLI pulling a team's secrets, as on beakcrypt.com ── */
 const COMMAND = "npx beakcrypt pull --env production";
 const STEPS = [
   { mark: "→", colour: "#5eead4", text: "Connecting to vault..." },
@@ -230,7 +222,6 @@ const STEPS = [
   { mark: "✓", colour: "#22c55e", text: "Written 18 variables to .env.local" },
 ];
 function BeakcryptArtifact({ active }: { active: boolean }) {
-  // Typed characters of the command, then one tick per output line, then the result.
   const total = COMMAND.length + STEPS.length + 1;
   const [t, setT] = useState(total);
   useLoop(
@@ -292,7 +283,6 @@ function BeakcryptArtifact({ active }: { active: boolean }) {
   );
 }
 
-/* ── Sudoku: two players filling one board at once ── */
 const SOLUTION =
   "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
 const GIVEN = new Set(
@@ -355,7 +345,6 @@ function SudokuArtifact({ active }: { active: boolean }) {
   );
 }
 
-/* ── FuseIon: a conversation streamed in place ── */
 const CHAT = [
   { from: "you", text: "What's a monad, briefly?" },
   {
@@ -369,7 +358,6 @@ const CHAT = [
   },
 ] as const;
 function FuseIonArtifact({ active }: { active: boolean }) {
-  // Which message is arriving, and how many of its words have streamed in.
   const [message, setMessage] = useState<number>(CHAT.length);
   const [words, setWords] = useState(0);
   useLoop(
@@ -421,7 +409,6 @@ function FuseIonArtifact({ active }: { active: boolean }) {
         return (
           <div key={i} className="flex max-w-[85%] gap-2.5">
             <p className="relative rounded-2xl rounded-tl-md bg-zinc-200 px-4 py-2 text-zinc-950 ring-1 ring-inset ring-zinc-300 dark:bg-muted dark:text-foreground dark:ring-white/10">
-              {/* Keep the final wrapping and height throughout the animation. */}
               {typed}
             </p>
           </div>
@@ -431,7 +418,6 @@ function FuseIonArtifact({ active }: { active: boolean }) {
   );
 }
 
-/* ── Family Tree: a lineage drawing itself, generation by generation ── */
 const NODES = [
   [50, 8],
   [28, 32],
@@ -449,7 +435,6 @@ const NODES = [
   [78, 84],
   [90, 84],
 ] as const;
-// root → 2 → 4 → 8
 const EDGES = [
   [0, 1],
   [0, 2],
@@ -605,7 +590,6 @@ export function Artifacts({ className }: { className?: string }) {
             const box = demo.getBoundingClientRect();
             const centre = box.top + box.height / 2;
             const nextDistance = Math.abs(centre - height / 2);
-            // A demo must occupy the central half of the viewport to play.
             if (
               centre >= height * 0.25 &&
               centre <= height * 0.75 &&
