@@ -146,6 +146,8 @@ export function SongVisualizer() {
   const yt = useRef<YTPlayer | null>(null);
   const loadedFor = useRef<string | null>(null);
   const session = useRef(0);
+  const lookup = useRef(0);
+  const pendingFor = useRef<string | null>(null);
   const [player, setPlayer] = useState<Player>("off");
   const [playback, setPlayback] = useState<{
     position: number;
@@ -376,8 +378,11 @@ export function SongVisualizer() {
 
   const listen = async (t: NonNullable<typeof track>) => {
     const s = session.current;
+    const l = ++lookup.current;
+    pendingFor.current = t.url;
+    const stale = () => s !== session.current || l !== lookup.current;
     const found = await findYouTubeMatch();
-    if (s !== session.current) return;
+    if (stale()) return;
     const id = found?.url === t.url ? found.id : null;
     if (!id) {
       setPlayer("missing");
@@ -393,13 +398,13 @@ export function SongVisualizer() {
     try {
       YT = await loadYouTubeApi();
     } catch {
-      if (s === session.current) {
+      if (!stale()) {
         loadedFor.current = null;
         setPlayer("missing");
       }
       return;
     }
-    if (s !== session.current) return;
+    if (stale()) return;
     const host = document.createElement("div");
     ytHost.current?.replaceChildren(host);
     yt.current = new YT.Player(host, {
@@ -451,7 +456,10 @@ export function SongVisualizer() {
   };
 
   useEffect(() => {
-    if (player !== "on" || !track || track.url === loadedFor.current) return;
+    if (!track || track.url === loadedFor.current) return;
+    if (player === "loading") {
+      if (yt.current || track.url === pendingFor.current) return;
+    } else if (player !== "on") return;
     listen(track).catch(() => setPlayer("missing"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track?.url, player]);
