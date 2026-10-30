@@ -51,11 +51,15 @@ export function MobilePhotos() {
       }
     };
     const desktop = window.matchMedia("(min-width: 1024px)");
+    const root = document.documentElement;
+    const overflow = root.style.overflow;
+    root.style.overflow = "hidden";
     document.addEventListener("wheel", hold, { passive: false });
     document.addEventListener("touchmove", hold, { passive: false });
     document.addEventListener("keydown", keyboard);
     desktop.addEventListener("change", dismiss);
     return () => {
+      root.style.overflow = overflow;
       document.removeEventListener("wheel", hold);
       document.removeEventListener("touchmove", hold);
       document.removeEventListener("keydown", keyboard);
