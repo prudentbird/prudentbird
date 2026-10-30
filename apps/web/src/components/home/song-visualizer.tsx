@@ -45,7 +45,6 @@ function rng(seed: number) {
     4294967296;
 }
 
-/** Each track's own bar shape: louder passages over a quieter floor. */
 function fingerprint(count: number, seed: number) {
   const r = rng(seed);
   const bumps = Array.from({ length: 4 }, () => ({
@@ -72,7 +71,6 @@ function fingerprint(count: number, seed: number) {
   };
 }
 
-/** Average of the cover's most saturated pixels, as an OKLCH hue + chroma. */
 function useCoverAccent(src: string | undefined) {
   const [accent, setAccent] = useState<{ h: number; c: number } | null>(null);
   useEffect(() => {
@@ -144,11 +142,9 @@ export function SongVisualizer() {
   const [visibleCount, setCount] = useState(96);
   const [hovered, setHovered] = useState<number | null>(null);
 
-  // YouTube playback state. The player stays visible (YouTube's terms) as the cover tile.
   const ytHost = useRef<HTMLDivElement>(null);
   const yt = useRef<YTPlayer | null>(null);
   const loadedFor = useRef<string | null>(null);
-  // Bumped on stop so an in-flight lookup doesn't resurrect the player.
   const session = useRef(0);
   const [player, setPlayer] = useState<Player>("off");
   const [playback, setPlayback] = useState<{
@@ -190,7 +186,6 @@ export function SongVisualizer() {
     return () => ro.disconnect();
   }, []);
 
-  // A fixed silhouette for the bars while history loads, so they don't jump.
   const skeleton = useMemo(
     () => fingerprint(count, hash("prudentbird")).heights,
     [count],
@@ -220,9 +215,7 @@ export function SongVisualizer() {
   const dayMax = Math.max(1, ...days.map((d) => d.plays));
 
   const playingHere = listening && !playback.isPaused;
-  // No visualizer until someone presses Listen with me: until then the bars are daily history.
 
-  // Read the player's clock a few times a second while it's open.
   useEffect(() => {
     if (player !== "on") return;
     const id = setInterval(() => {
@@ -251,10 +244,6 @@ export function SongVisualizer() {
   const progress = duration ? position / duration : 0;
   const moving = !reduce && (listening ? playingHere : !!track?.isPlaying);
 
-  // Spectrum-analyser style motion (after VLC/Winamp): log-spaced bands with a
-  // bass-heavy tilt, kick/snare/hat transients on the beat, instant attack, slow
-  // decay and falling peak caps. Time is the song position, so it pauses, seeks
-  // and resumes with playback.
   const levels = useRef<number[]>([]);
   const peaks = useRef<number[]>([]);
   const second = Math.floor(position / 1000);
@@ -334,7 +323,6 @@ export function SongVisualizer() {
     lv.length = pk.length = count;
 
     if (!moving) {
-      // A still frame of the analyser at the current position.
       frame(second || 1, progress, target);
       for (let i = 0; i < count; i++)
         lv[i] = pk[i] = Math.min(1, target[i]! ** 0.85);
@@ -386,7 +374,6 @@ export function SongVisualizer() {
     second,
   ]);
 
-  // Find the song on YouTube and play it from where I am in it.
   const listen = async (t: NonNullable<typeof track>) => {
     const s = session.current;
     const id = await findYouTubeMatch({
@@ -457,7 +444,6 @@ export function SongVisualizer() {
     listen(track).catch(() => setPlayer("missing"));
   };
 
-  // Follow along when I change songs while someone is listening.
   useEffect(() => {
     if (player !== "on" || !track || track.url === loadedFor.current) return;
     listen(track).catch(() => setPlayer("missing"));
@@ -523,8 +509,6 @@ export function SongVisualizer() {
       style={{ "--tint": `oklch(0.7 ${chroma} ${hue})` } as CSSProperties}
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-5 md:gap-x-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-8">
-        {/* The cover and the YouTube player share one fixed tile, so starting or
-            stopping playback never moves anything. */}
         <div className="relative size-28 shrink-0 self-center overflow-hidden rounded-2xl bg-muted shadow-lg md:row-span-2 md:size-32 md:self-end lg:row-span-1">
           {resolving ? (
             <Skeleton className="absolute inset-0 grid place-items-center rounded-none">
@@ -600,8 +584,6 @@ export function SongVisualizer() {
         </div>
 
         <div className="col-span-2 md:col-span-1 md:col-start-2 lg:col-start-3">
-          {/* Fixed-width pill: the stop segment appears inside it, not beside it.
-              Full width on mobile, where Pause and Stop split it in half. */}
           <div
             className={cn(
               "flex h-11 w-full shrink-0 overflow-hidden rounded-full text-white shadow-sm transition-transform md:w-48",
@@ -659,8 +641,6 @@ export function SongVisualizer() {
         </div>
       </div>
 
-      {/* Reserve paint space for the reflection inside the scroll clip, then
-          offset that space so the original chart and caption spacing stays intact. */}
       <div
         ref={viewport}
         className="-mb-[196px] mt-8 overflow-x-auto overscroll-x-contain pt-4 pb-[196px] [scrollbar-width:none] sm:-mb-[228px] sm:pb-[228px] [&::-webkit-scrollbar]:hidden"
@@ -748,7 +728,6 @@ export function SongVisualizer() {
                     : {}),
                 }}
               />
-              {/* falling peak cap */}
               <span
                 ref={(el) => {
                   caps.current[i] = el;
@@ -771,8 +750,6 @@ export function SongVisualizer() {
         </div>
       </div>
 
-      {/* Every caption shares one grid cell, so swapping between them never
-          changes the height. */}
       <div
         className="mt-6 grid text-sm text-muted-foreground"
         aria-live="polite"
