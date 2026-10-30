@@ -35,4 +35,9 @@ export const work: Work[] = [
     link: "https://retailytics.ajared.ng",
     tagline: "Field-collected retail and logistics data for Nigeria.",
   },
+  {
+    name: "Family Tree",
+    link: "https://familytree.ajared.ng",
+    tagline: "Build and share your family tree.",
+  },
 ];
