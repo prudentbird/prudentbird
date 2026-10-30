@@ -16,7 +16,6 @@ import {
 export function ThemeSwitcher({
   size = "default",
 }: {
-  /** "sm" sits beside small print, e.g. a footer's legal line. */
   size?: "default" | "sm";
 }) {
   const { theme, setTheme } = useTheme();
