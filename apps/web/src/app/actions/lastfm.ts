@@ -5,12 +5,7 @@ import { env } from "~/env";
 export type DailyActivity = {
   date: string;
   count: number;
-  tracks: Array<{
-    name: string;
-    artist: string;
-    url: string;
-    playedAt: string;
-  }>;
+  tracks: Array<{ artist: string }>;
 };
 
 const BATCH_SIZE = 5;
@@ -86,15 +81,8 @@ export async function getLastFmHistory(): Promise<DailyActivity[]> {
         const dayData = activityMap.get(dateStr)!;
         dayData.count += 1;
         dayData.tracks.push({
-          name: track.name,
           artist:
             track.artist?.["#text"] || track.artist?.name || "Unknown Artist",
-          url: track.url,
-          playedAt: dateObj.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          }),
         });
       }
     }
