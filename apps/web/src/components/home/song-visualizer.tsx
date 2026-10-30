@@ -389,7 +389,16 @@ export function SongVisualizer() {
       yt.current.loadVideoById({ videoId: id, startSeconds: startAt });
       return;
     }
-    const YT = await loadYouTubeApi();
+    let YT;
+    try {
+      YT = await loadYouTubeApi();
+    } catch {
+      if (s === session.current) {
+        loadedFor.current = null;
+        setPlayer("missing");
+      }
+      return;
+    }
     if (s !== session.current) return;
     const host = document.createElement("div");
     ytHost.current?.replaceChildren(host);

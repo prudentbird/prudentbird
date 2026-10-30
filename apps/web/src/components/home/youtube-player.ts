@@ -38,13 +38,20 @@ declare global {
 let api: Promise<YTNamespace> | null = null;
 
 export function loadYouTubeApi() {
-  api ??= new Promise((resolve) => {
+  api ??= new Promise<YTNamespace>((resolve, reject) => {
     if (window.YT?.Player) return resolve(window.YT);
     window.onYouTubeIframeAPIReady = () => resolve(window.YT!);
     const script = document.createElement("script");
     script.src = "https://www.youtube.com/iframe_api";
     script.async = true;
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("YouTube iframe API failed to load"));
+    };
     document.body.appendChild(script);
+  }).catch((error) => {
+    api = null;
+    throw error;
   });
   return api;
 }
