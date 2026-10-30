@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   creator: "Prudent Bird",
   publisher: "Prudent Bird",
   robots: {
-    index: true,
+    index: false,
     follow: true,
     googleBot: {
       index: true,
