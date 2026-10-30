@@ -36,3 +36,18 @@ declare global {
   }
 }
 
+let api: Promise<YTNamespace> | null = null;
+
+export function loadYouTubeApi() {
+  api ??= new Promise((resolve) => {
+    if (window.YT?.Player) return resolve(window.YT);
+    window.onYouTubeIframeAPIReady = () => resolve(window.YT!);
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    document.body.appendChild(script);
+  });
+  return api;
+}
+
+export const PLAYING = 1;
