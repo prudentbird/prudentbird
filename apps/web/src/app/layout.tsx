@@ -28,6 +28,9 @@ const keywords = [
   "Next.js",
   "TypeScript",
   "Portfolio",
+  "Voxx",
+  "Beakcrypt",
+  "Sudoku",
   "FuseIon",
   "Retailytics",
 ];
