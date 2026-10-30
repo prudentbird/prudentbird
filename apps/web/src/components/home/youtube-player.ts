@@ -21,7 +21,6 @@ type YTNamespace = {
       playerVars?: Record<string, number | string>;
       events?: {
         onReady?: () => void;
-        onStateChange?: (e: { data: number }) => void;
         onError?: (e: { data: number }) => void;
       };
     },
