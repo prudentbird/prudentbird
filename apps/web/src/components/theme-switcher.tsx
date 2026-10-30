@@ -33,8 +33,13 @@ export function ThemeSwitcher({
   if (!mounted) {
     return (
       <>
-        <Skeleton className="h-10 w-10 sm:hidden" />
-        <Skeleton className="hidden sm:inline-flex h-9 w-28 rounded-full" />
+        <Skeleton className={cn("sm:hidden", sm ? "size-8" : "h-10 w-10")} />
+        <Skeleton
+          className={cn(
+            "hidden sm:inline-flex rounded-full",
+            sm ? "h-[1.875rem] w-[5.25rem]" : "h-9 w-28",
+          )}
+        />
       </>
     );
   }
