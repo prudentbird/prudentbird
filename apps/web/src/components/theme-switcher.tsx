@@ -5,7 +5,6 @@ import { useSyncExternalStore } from "react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sun, Monitor, MoonStar } from "lucide-react";
-import { cn } from "~/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,15 +12,11 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-export function ThemeSwitcher({
-  size = "default",
-}: {
-  size?: "default" | "sm";
-}) {
+const button = "size-6";
+const icon = "size-3.5";
+
+export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
-  const sm = size === "sm";
-  const button = sm ? "size-6" : "h-8 w-8";
-  const icon = sm ? "size-3.5" : "h-4 w-4";
 
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -32,13 +27,8 @@ export function ThemeSwitcher({
   if (!mounted) {
     return (
       <>
-        <Skeleton className={cn("sm:hidden", sm ? "size-8" : "h-10 w-10")} />
-        <Skeleton
-          className={cn(
-            "hidden sm:inline-flex rounded-full",
-            sm ? "h-[1.875rem] w-[5.25rem]" : "h-9 w-28",
-          )}
-        />
+        <Skeleton className="size-8 sm:hidden" />
+        <Skeleton className="hidden h-[1.875rem] w-[5.25rem] rounded-full sm:inline-flex" />
       </>
     );
   }
@@ -50,10 +40,7 @@ export function ThemeSwitcher({
           <Button
             variant="outline"
             size="icon"
-            className={cn(
-              "sm:hidden",
-              sm && "size-8 rounded-full border-border/60",
-            )}
+            className="size-8 rounded-full border-border/60 sm:hidden"
           >
             {theme === "light" ? (
               <Sun className={icon} />
@@ -81,12 +68,7 @@ export function ThemeSwitcher({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div
-        className={cn(
-          "hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border border-border",
-          sm ? "gap-0.5 border-border/60" : "gap-1",
-        )}
-      >
+      <div className="hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border gap-0.5 border-border/60">
         <Button
           onClick={() => setTheme("light")}
           variant="ghost"

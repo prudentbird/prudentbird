@@ -187,7 +187,7 @@ export function Home() {
                 </span>
               </p>
               <div className="flex shrink-0 items-center gap-3">
-                <ThemeSwitcher size="sm" />
+                <ThemeSwitcher />
               </div>
             </div>
           </div>
