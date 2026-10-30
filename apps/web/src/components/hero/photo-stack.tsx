@@ -34,6 +34,12 @@ function PhotoStackGallery({
       className={cn("relative grid place-items-center select-none", className)}
       onPointerEnter={() => setFanned(true)}
       onPointerLeave={() => setFanned(false)}
+      onFocus={() => setFanned(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setFanned(false);
+      }}
+      role={photos.length ? "group" : undefined}
       aria-label={photos.length ? "A stack of my photos" : undefined}
       aria-hidden={photos.length ? undefined : true}
     >
@@ -45,7 +51,15 @@ function PhotoStackGallery({
           <motion.figure
             key={i}
             initial={false}
+            role="button"
+            tabIndex={0}
+            aria-label={`Bring photo ${i + 1} of ${n} forward`}
             onClick={() => setOrder((o) => [i, ...o.filter((x) => x !== i)])}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              setOrder((o) => [i, ...o.filter((x) => x !== i)]);
+            }}
             animate={{
               x: fanned ? `${spread * 45}%` : "0%",
               y: fanned ? Math.abs(spread) * 16 : Math.min(depth, 4) * -6,
@@ -58,7 +72,7 @@ function PhotoStackGallery({
                 ? { duration: 0 }
                 : { type: "spring", stiffness: 210, damping: 24 }
             }
-            className="absolute w-[60%] cursor-pointer rounded-[4px] bg-[#fbfaf7] p-[4%] pb-[16%] shadow-[0_18px_40px_-12px_rgba(0,0,0,0.35),0_2px_6px_rgba(0,0,0,0.12)] dark:bg-[#292724] dark:ring-1 dark:ring-white/25 dark:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.8),0_2px_8px_rgba(0,0,0,0.5)]"
+            className="absolute w-[60%] cursor-pointer rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring bg-[#fbfaf7] p-[4%] pb-[16%] shadow-[0_18px_40px_-12px_rgba(0,0,0,0.35),0_2px_6px_rgba(0,0,0,0.12)] dark:bg-[#292724] dark:ring-1 dark:ring-white/25 dark:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.8),0_2px_8px_rgba(0,0,0,0.5)]"
           >
             <div className="relative aspect-[4/5] bg-neutral-200 dark:bg-neutral-900">
               <DeferredPhoto photo={card} />
