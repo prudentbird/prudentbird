@@ -15,6 +15,7 @@ const outfit = Outfit({
 });
 
 const baseUrl = env.BASE_URL;
+const canonicalUrl = "https://prudentbird.com";
 const siteName = "Prudent Bird";
 const siteDescription =
   "Prudent Bird - AI & Software Engineer. Building innovative products from concept to reality.";
@@ -76,7 +77,7 @@ export const metadata: Metadata = {
     description: siteDescription,
   },
   alternates: {
-    canonical: baseUrl,
+    canonical: canonicalUrl,
   },
   category: "technology",
 };
