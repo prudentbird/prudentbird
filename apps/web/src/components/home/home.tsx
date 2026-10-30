@@ -14,12 +14,10 @@ export function Home() {
   return (
     <div id="top" className="min-h-screen overflow-x-clip">
       <main>
-        {/* Hero */}
         <section
           className={`${container} relative pt-14 pb-16 sm:pt-20 lg:pt-32`}
         >
           <div className="relative">
-            {/* The right five columns; the bird fills its box. */}
             <div className="absolute top-1/2 right-0 hidden aspect-square w-5/12 -translate-y-1/2 lg:block">
               <VoxelAvatarHero className="size-full" />
             </div>
@@ -36,11 +34,6 @@ export function Home() {
               >
                 Prudent Bird
               </h1>
-              {/* Right after the name below lg, sized in ems so it tracks the
-                heading, and spanning both lines on phones where the name
-                wraps; hidden on very narrow screens. The box only takes the heading's height, so the bird
-                can be taller without pushing the text down; it's
-                server-rendered so the name doesn't reflow on load. */}
               <div className="relative h-[0.88em] w-[1.4em] shrink-0 max-[440px]:h-[1.76em] max-[440px]:w-[1.9em] max-[319px]:hidden lg:hidden">
                 <div className="absolute top-1/2 left-0 size-[1.4em] -translate-y-1/2 max-[440px]:size-[1.9em]">
                   <VoxelAvatarHero className="size-full" />
@@ -67,7 +60,6 @@ export function Home() {
           </div>
         </section>
 
-        {/* Work */}
         <section
           aria-labelledby="work"
           className={`${container} scroll-mt-20 pb-16`}
@@ -78,7 +70,6 @@ export function Home() {
           </div>
         </section>
 
-        {/* About */}
         <section
           aria-labelledby="about"
           className={`${container} scroll-mt-20 pb-16`}
@@ -119,7 +110,6 @@ export function Home() {
 
         <Photography />
 
-        {/* Listening */}
         <section
           aria-labelledby="listening"
           className={`${container} scroll-mt-20 pb-16`}
@@ -131,7 +121,6 @@ export function Home() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer
         aria-labelledby="contact"
         className="border-t border-border/70 bg-muted/30"
