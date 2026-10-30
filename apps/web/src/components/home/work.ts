@@ -6,4 +6,10 @@ export type Work = {
 };
 
 export const work: Work[] = [
+  {
+    name: "Voxx",
+    link: "https://voxx.prudentbird.com",
+    github: "https://github.com/prudentbird/voxx",
+    tagline: "A zero-friction CMS for you and your agents.",
+  },
 ];
