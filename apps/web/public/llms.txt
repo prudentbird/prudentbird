@@ -81,7 +81,7 @@ Field-collected retail and logistics data for Nigeria.
 
 ### Family Tree
 
-Explore and preserve family history.
+Build and share your family tree.
 
 - Site: [https://familytree.ajared.ng](https://familytree.ajared.ng)
 - Source: Private
