@@ -39,7 +39,7 @@ export default function Page() {
               {
                 "@type": "Organization",
                 name: "Ajared Research Inc",
-                url: "https://ajared.ng",
+                url: "https://ajared.ca",
               },
               {
                 "@type": "Organization",
@@ -50,7 +50,7 @@ export default function Page() {
             alumniOf: {
               "@type": "EducationalOrganization",
               name: "National Institute of Technology, PH",
-              url: "https://niitph.com",
+              url: "https://niit-ph.com",
             },
             mainEntityOfPage: {
               "@type": "WebPage",
