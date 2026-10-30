@@ -66,3 +66,61 @@ export function Studio({ dark }: { dark: boolean }) {
   );
 }
 
+export function Stage({
+  className,
+  children,
+  camera = { position: [0, 0, 12], fov: 30 },
+  bleed = 1,
+}: {
+  className?: string;
+  children: ReactNode;
+  camera?: { position: [number, number, number]; fov: number };
+  /**
+   * How much larger than the layout box the canvas is, so pieces animating
+   * outside the model aren't cut off. The camera pulls back to match, so the
+   * model keeps its size.
+   */
+  bleed?: number;
+}) {
+  const { dark } = useStageEnv();
+  const wrap = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) =>
+      setVisible(!!e?.isIntersecting),
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div ref={wrap} className={cn("relative", className)} aria-hidden="true">
+      <div
+        className="absolute"
+        style={{ inset: `${((1 - bleed) / 2) * 100}%` }}
+      >
+        <Canvas
+          dpr={[1, 2]}
+          camera={{
+            ...camera,
+            position: [
+              camera.position[0],
+              camera.position[1],
+              camera.position[2] * bleed,
+            ],
+          }}
+          renderer={{ antialias: true, alpha: true }}
+          frameloop={visible ? "always" : "never"}
+        >
+          <ambientLight intensity={dark ? 0.25 : 0.6} />
+          <directionalLight position={[4, 6, 5]} intensity={dark ? 1.4 : 1.8} />
+          {children}
+          <Studio dark={dark} />
+        </Canvas>
+      </div>
+    </div>
+  );
+}
