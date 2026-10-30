@@ -48,7 +48,14 @@ export function ThemeSwitcher({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="sm:hidden">
+          <Button
+            variant="outline"
+            size="icon"
+            className={cn(
+              "sm:hidden",
+              sm && "size-8 rounded-full border-border/60",
+            )}
+          >
             {theme === "light" ? (
               <Sun className="h-4 w-4" />
             ) : theme === "system" ? (
