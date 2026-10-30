@@ -8,11 +8,6 @@ import { useEffect, useRef, useState } from "react";
 import { NIGERIA_RING, NIGERIA_SPOTS } from "./nigeria";
 
 const EVERY_MS = 650;
-/**
- * The map renders at this multiple of its box and is scaled down to fit, so
- * MapLibre loads tiles a zoom level or two deeper: at country scale that is
- * the difference between a few trunk roads and the whole road network.
- */
 const OVERSAMPLE = 3;
 const PADDING = 8 * OVERSAMPLE;
 const HOLD_MS = 2600;
@@ -33,7 +28,6 @@ const BOUNDS: [[number, number], [number, number]] = [
   ],
 ];
 
-/** `clip` is in the oversampled map's pixels; `outline` and `spots` in the box's. */
 type Shape = {
   clip: string;
   outline: string;
@@ -41,11 +35,6 @@ type Shape = {
   offset: [number, number];
 };
 
-/**
- * Redraws the basemap as line art in the site's own ink: no place names, every
- * road and boundary one even hairline (after the scale-down), water a faint
- * tint, so the network reads as a texture inside the border.
- */
 function lineArt(map: MapLibreMap, dark: boolean) {
   const ink = dark ? "rgba(255,255,255," : "rgba(0,0,0,";
   for (const layer of map.getStyle().layers ?? []) {
@@ -79,18 +68,12 @@ function lineArt(map: MapLibreMap, dark: boolean) {
   }
 }
 
-/**
- * Retailytics, shown as what it is: field teams surveying a state by hand.
- * Nigeria alone, cut out of the map along its border, with newly recorded
- * outlets popping up inside it until the survey starts over.
- */
 export function RetailyticsState({ active }: { active: boolean }) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
   const { resolvedTheme } = useTheme();
   const theme: keyof typeof STYLE = resolvedTheme === "dark" ? "dark" : "light";
   const themeRef = useRef(theme);
-  // The border and spots in screen pixels, from the map's own projection.
   const [shape, setShape] = useState<Shape | null>(null);
   const [count, setCount] = useState(NIGERIA_SPOTS.length);
 
@@ -106,8 +89,6 @@ export function RetailyticsState({ active }: { active: boolean }) {
     let observer: ResizeObserver | undefined;
     void import("maplibre-gl").then(({ Map, setWorkerUrl }) => {
       if (disposed) return;
-      // MapLibre looks for its worker beside its own (bundled) URL, which no
-      // longer exists after bundling; point it at the shipped worker file.
       setWorkerUrl(
         new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url)
           .href,
@@ -121,7 +102,6 @@ export function RetailyticsState({ active }: { active: boolean }) {
         attributionControl: false,
       });
       map.current = current;
-      // OpenFreeMap's styles name a few fill patterns they don't ship.
       current.setMissingStyleImageResolver((id) => {
         if (!current.hasImage(id))
           current.addImage(id, {
@@ -137,7 +117,6 @@ export function RetailyticsState({ active }: { active: boolean }) {
         const points = NIGERIA_RING.map((p) => current.project([p[0], p[1]]));
         const path = (k: number) =>
           `M${points.map((p) => `${(p.x / k).toFixed(1)} ${(p.y / k).toFixed(1)}`).join(" L")} Z`;
-        // Centre the visible border itself, including after its flex box resizes.
         const xs = points.map((p) => p.x);
         const ys = points.map((p) => p.y);
         const offset: [number, number] = [
@@ -183,7 +162,6 @@ export function RetailyticsState({ active }: { active: boolean }) {
         next >= NIGERIA_SPOTS.length ? HOLD_MS : EVERY_MS,
       );
     };
-    // Show the finished survey first, then start again.
     timer = setTimeout(() => step(NIGERIA_SPOTS.length), HOLD_MS);
     return () => clearTimeout(timer);
   }, [active]);
@@ -191,8 +169,6 @@ export function RetailyticsState({ active }: { active: boolean }) {
   return (
     <div className="flex h-full w-full flex-col gap-2">
       <div className="relative min-h-0 w-full flex-1 overflow-hidden">
-        {/* MapLibre makes this `position: relative`, so it needs a real size:
-            OVERSAMPLE times the box, scaled back down to fit it. */}
         <div
           ref={container}
           className="origin-top-left transition-opacity duration-700"
