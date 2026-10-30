@@ -22,7 +22,7 @@ export function CopyButton({
         try {
           await navigator.clipboard.writeText(value);
         } catch {
-          return; // clipboard blocked: leave the icon as is
+          return;
         }
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
