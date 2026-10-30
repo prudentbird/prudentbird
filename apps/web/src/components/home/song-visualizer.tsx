@@ -124,7 +124,7 @@ const mmss = (ms: number) => {
 type Player = "off" | "loading" | "on" | "missing";
 
 export function SongVisualizer() {
-  const { track, isLoading: trackLoading } = useNowPlaying();
+  const { track, isLoading: resolving } = useNowPlaying();
   const { history, isLoading: historyLoading } = useListeningHistory();
   const myProgress = useTrackProgress(track);
   const reduce = useReducedMotion();
@@ -525,7 +525,6 @@ export function SongVisualizer() {
           ? "day"
           : "history"
         : "listening";
-  const resolving = trackLoading;
   const hue = accent?.h ?? 55;
   const chroma = accent?.c ?? 0.17;
 
