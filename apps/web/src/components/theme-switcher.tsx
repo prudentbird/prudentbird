@@ -92,7 +92,7 @@ export function ThemeSwitcher({
           onClick={() => setTheme("light")}
           variant="ghost"
           size="icon"
-          className={`rounded-full h-8 w-8 transition-colors ${
+          className={`rounded-full ${button} transition-colors ${
             theme === "light"
               ? "bg-accent-foreground/60 text-background/80 hover:text-background/80 hover:bg-accent-foreground/60 dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
@@ -100,7 +100,7 @@ export function ThemeSwitcher({
           aria-label="Light mode"
           aria-pressed={theme === "light"}
         >
-          <Sun className="h-4 w-4" />
+          <Sun className={icon} />
         </Button>
         <Button
           onClick={() => setTheme("system")}
