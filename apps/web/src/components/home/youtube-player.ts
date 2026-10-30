@@ -1,6 +1,5 @@
 "use client";
 
-// Minimal typing for the YouTube IFrame Player API.
 export type YTPlayer = {
   playVideo: () => void;
   pauseVideo: () => void;
