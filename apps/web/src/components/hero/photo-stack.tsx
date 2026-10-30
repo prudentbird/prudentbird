@@ -24,7 +24,6 @@ function PhotoStackGallery({
   const [order, setOrder] = useState(() => photos.map((_, i) => i));
   const [fanned, setFanned] = useState(false);
 
-  // Every few seconds the top print slides off and tucks in at the back.
   useEffect(() => {
     if (reduce || fanned || photos.length < 2) return;
     const id = setInterval(() => setOrder((o) => [...o.slice(1), o[0]!]), 4000);
@@ -42,7 +41,6 @@ function PhotoStackGallery({
       {photos.map((card, i) => {
         const depth = order.indexOf(i);
         const n = photos.length;
-        // Keep the fan centred; percentage offsets scale with the prints on mobile.
         const spread = n > 1 ? depth / (n - 1) - 0.5 : 0;
         return (
           <motion.figure
@@ -103,7 +101,6 @@ export function DeferredPhoto({
       quality={90}
       loading="lazy"
       draggable={false}
-      // Already-cached images (e.g. a print lifted out of the stack) skip the fade.
       ref={(img) => {
         if (img?.complete && img.naturalWidth) setLoaded(true);
       }}
