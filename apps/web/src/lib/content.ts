@@ -7,7 +7,7 @@ export const profile = {
     { name: "Ajared Research Inc", href: "https://ajared.ca" },
     { name: "PrudentBird Services", href: "https://prudentbird.com" },
   ],
-  business: { label: "BN 8524538", href: "/cac.pdf" },
+  business: { label: "BN 8524538" },
 };
 
 export const links = [
