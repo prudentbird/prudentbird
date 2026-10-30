@@ -9,8 +9,6 @@ import { PHOTOS } from "./photos";
 const PAPER = "rounded-[4px] bg-[#fbfaf7] p-4 pb-14 dark:bg-[#292724]";
 const SHADOW =
   "shadow-[0_18px_40px_-12px_rgba(0,0,0,0.35),0_2px_6px_rgba(0,0,0,0.12)]";
-// Solid equivalent of white/25 over the dark page, so prints behind never
-// show through the edge.
 const RING = "dark:ring-1 dark:ring-[#474747]";
 const FRAME = `${PAPER} ${SHADOW} ${RING}`;
 const ANGLES = [-45, -43, -46, -44, -45, -42, -44, -46];
@@ -27,8 +25,6 @@ function edgeStyle(i: number, count: number) {
 export function MobilePhotos() {
   const photos = PHOTOS;
   const [selected, setSelected] = useState<number | null>(null);
-  // Where the tapped print sits, so the enlarged copy lifts out of (and
-  // returns to) that exact spot. Cleared once the copy has landed back.
   const [lifted, setLifted] = useState<{
     index: number;
     x: number;
@@ -47,8 +43,6 @@ export function MobilePhotos() {
     const trigger = triggers.current[selected];
     closeButton.current?.focus({ preventScroll: true });
     const dismiss = () => setSelected(null);
-    // The page stays put while a print is out, so it always has a spot to
-    // return to. Tap to put it back.
     const hold = (event: Event) => event.preventDefault();
     const keyboard = (event: KeyboardEvent) => {
       if (event.key === "Escape" || event.key === "Tab") {
@@ -90,8 +84,6 @@ export function MobilePhotos() {
             onClick={(event) => {
               const rect = event.currentTarget.getBoundingClientRect();
               const bounds = edge.current!.getBoundingClientRect();
-              // Open just left of the edge prints so the lifted print never
-              // has to cross over them: it stays beneath them the whole way.
               const room = bounds.left - 12 - 24;
               const width = Math.min(
                 320,
@@ -137,7 +129,6 @@ export function MobilePhotos() {
                   if (event.target === event.currentTarget) setSelected(null);
                 }}
               >
-                {/* The backdrop fades on its own so the print stays opaque in flight. */}
                 <motion.div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-black/65"
@@ -150,8 +141,6 @@ export function MobilePhotos() {
                   ref={closeButton}
                   type="button"
                   aria-label="Put photo back"
-                  // Same size as the print in the stack, scaled up when open, so
-                  // frame and crop match exactly where it leaves and lands.
                   className={`relative w-56 select-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white ${FRAME}`}
                   initial={{
                     x: lifted.x,
@@ -170,8 +159,6 @@ export function MobilePhotos() {
                     y: lifted.y,
                     rotate: ANGLES[selected],
                     scale: 1,
-                    // A tween ends exactly on landing, so the print in the
-                    // stack reappears without waiting out a spring's tail.
                     transition: reduce
                       ? { duration: 0 }
                       : { duration: 0.38, ease: [0.32, 0.72, 0, 1] },
@@ -185,10 +172,6 @@ export function MobilePhotos() {
                 >
                   <Print photo={photos[selected]!} />
                 </motion.button>
-                {/* Stand-ins for the prints stacked above the lifted one, so it
-                    slides out from (and tucks back) underneath them. They sit
-                    exactly over the real prints and dim in step with the
-                    backdrop, so they're indistinguishable from them. */}
                 <div
                   aria-hidden="true"
                   className="pointer-events-none fixed"
