@@ -55,7 +55,7 @@ export function Home() {
                 <span className="text-foreground">{profile.role}.</span>{" "}
                 {profile.bio} I currently work with{" "}
                 <a
-                  href={profile.affiliations[0]!.href}
+                  href={profile.employerUrl}
                   {...externalProps}
                   className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
                 >
