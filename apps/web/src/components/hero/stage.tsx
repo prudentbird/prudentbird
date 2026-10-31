@@ -77,6 +77,7 @@ export function Stage({
   const { dark } = useStageEnv();
   const wrap = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const el = wrap.current;
@@ -89,9 +90,14 @@ export function Stage({
   }, []);
 
   return (
-    <div ref={wrap} className={cn("relative", className)} aria-hidden="true">
+    <div
+      ref={wrap}
+      className={cn("relative", className)}
+      aria-hidden="true"
+      data-ready={ready || undefined}
+    >
       <div
-        className="absolute"
+        className={cn("absolute", !ready && "opacity-0")}
         style={{ inset: `${((1 - bleed) / 2) * 100}%` }}
       >
         <Canvas
@@ -106,6 +112,11 @@ export function Stage({
           }}
           renderer={{ antialias: true, alpha: true }}
           frameloop={visible ? "always" : "never"}
+          onCreated={() =>
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => setReady(true)),
+            )
+          }
         >
           <ambientLight intensity={dark ? 0.25 : 0.6} />
           <directionalLight position={[4, 6, 5]} intensity={dark ? 1.4 : 1.8} />

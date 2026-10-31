@@ -2,6 +2,10 @@ import { ArrowUpRight } from "lucide-react";
 import { ThemeSwitcher } from "~/components/theme-switcher";
 import { NEW_TAB_HINT_ID, externalProps, links, profile } from "~/lib/content";
 import { VoxelAvatarHero } from "~/components/hero";
+import {
+  AvatarSprite,
+  AvatarSpriteDefs,
+} from "~/components/hero/avatar-sprite";
 import { DESKTOP, MOBILE, OnMedia } from "~/components/on-media";
 import { Artifacts } from "~/components/work/artifacts";
 import { CopyButton } from "./copy-button";
@@ -10,10 +14,13 @@ import { SectionHeader } from "./section-header";
 import { SongVisualizer } from "./song-visualizer";
 
 const container = "mx-auto w-full max-w-[1400px] px-5 sm:px-8 lg:px-12";
+const sprite =
+  "absolute inset-0 size-full group-has-[[data-ready]]/avatar:invisible";
 
 export function Home() {
   return (
     <div id="top" className="min-h-screen overflow-x-clip">
+      <AvatarSpriteDefs />
       <span id={NEW_TAB_HINT_ID} className="sr-only">
         Opens in a new tab
       </span>
@@ -22,7 +29,8 @@ export function Home() {
           className={`${container} relative pt-14 pb-8 sm:pt-20 sm:pb-16 lg:pt-32`}
         >
           <div className="relative">
-            <div className="absolute top-1/2 right-0 hidden aspect-square w-5/12 -translate-y-1/2 lg:block">
+            <div className="group/avatar absolute top-1/2 right-0 hidden aspect-square w-5/12 -translate-y-1/2 lg:block">
+              <AvatarSprite className={sprite} />
               <OnMedia query={DESKTOP}>
                 <VoxelAvatarHero className="size-full" />
               </OnMedia>
@@ -39,7 +47,8 @@ export function Home() {
                 Prudent Bird
               </h1>
               <div className="relative h-[0.88em] w-[1.4em] shrink-0 max-[440px]:h-[1.76em] max-[440px]:w-[1.9em] max-[319px]:hidden lg:hidden">
-                <div className="absolute top-1/2 left-0 size-[1.4em] -translate-y-1/2 max-[440px]:size-[1.9em]">
+                <div className="group/avatar absolute top-1/2 left-0 size-[1.4em] -translate-y-1/2 max-[440px]:size-[1.9em]">
+                  <AvatarSprite className={sprite} />
                   <OnMedia query={MOBILE}>
                     <VoxelAvatarHero className="size-full" />
                   </OnMedia>
