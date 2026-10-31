@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "motion/react";
 
 export function MarqueeText({
   text,
@@ -13,7 +12,6 @@ export function MarqueeText({
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const [overflow, setOverflow] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -31,7 +29,7 @@ export function MarqueeText({
     return () => observer.disconnect();
   }, [text, className]);
 
-  const isScrolling = overflow > 0 && !prefersReducedMotion;
+  const isScrolling = overflow > 0;
   const duration = Math.max(6, overflow / 10);
 
   return (
@@ -41,20 +39,20 @@ export function MarqueeText({
       className="overflow-hidden w-full"
       style={
         isScrolling
-          ? ({ "--marquee-offset": `-${overflow}px` } as React.CSSProperties)
+          ? ({
+              "--marquee-offset": `-${overflow}px`,
+              "--marquee-duration": `${duration}s`,
+            } as React.CSSProperties)
           : undefined
       }
     >
       <span
         ref={textRef}
-        className={`${className ?? ""} inline-block whitespace-nowrap ${!isScrolling ? "max-w-full overflow-hidden text-ellipsis" : ""} [text-box-trim:trim-both] [text-box-edge:cap_alphabetic]`}
-        style={
+        className={`${className ?? ""} inline-block whitespace-nowrap ${!isScrolling ? "max-w-full overflow-hidden text-ellipsis" : ""} [text-box-trim:trim-both] [text-box-edge:cap_alphabetic] ${
           isScrolling
-            ? {
-                animation: `marquee-scroll ${duration}s ease-in-out infinite alternate`,
-              }
-            : undefined
-        }
+            ? "motion-safe:animate-[marquee-scroll_var(--marquee-duration)_ease-in-out_infinite_alternate] motion-reduce:max-w-full motion-reduce:overflow-hidden motion-reduce:text-ellipsis"
+            : ""
+        }`}
       >
         {text}
       </span>

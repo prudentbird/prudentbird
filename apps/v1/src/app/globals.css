@@ -114,6 +114,17 @@
   --text-gradient: linear-gradient(180deg, #fff 0%, #adadad 100%);
 }
 
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @keyframes marquee-scroll {
   0%,
   15% {
