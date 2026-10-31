@@ -3,7 +3,6 @@
 import type React from "react";
 import { weeksInYear } from "~/lib/calendar";
 import { useMemo, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
 
 export interface ContributionData {
   count: number;
@@ -190,7 +189,6 @@ export function ContributionGraph({
 }: ContributionGraphProps) {
   const [hoveredDay, setHoveredDay] = useState<ContributionData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const shouldReduceMotion = useReducedMotion();
 
   const yearData = useMemo(() => {
     const startDate = new Date(year, JANUARY_MONTH, DAY_1);
@@ -332,24 +330,12 @@ export function ContributionGraph({
       </div>
 
       {showTooltips && hoveredDay && (
-        <motion.div
-          animate={
-            shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }
-          }
-          className="pointer-events-none fixed z-50 rounded-lg border bg-popover px-3 py-2 text-popover-foreground text-sm shadow-lg"
-          exit={
-            shouldReduceMotion
-              ? { opacity: 0, transition: { duration: 0 } }
-              : { opacity: 0, scale: 0.8 }
-          }
-          initial={
-            shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.8 }
-          }
+        <div
+          className="pointer-events-none fixed z-50 rounded-lg border bg-popover px-3 py-2 text-popover-foreground text-sm shadow-lg motion-safe:animate-[tooltip-in_200ms_ease-out]"
           style={{
             left: tooltipPosition.x + TOOLTIP_OFFSET_X,
             top: tooltipPosition.y - TOOLTIP_OFFSET_Y,
           }}
-          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.2 }}
         >
           <div className="font-semibold">
             {getContributionText(hoveredDay.count)}
@@ -357,7 +343,7 @@ export function ContributionGraph({
           <div className="text-popover-foreground/70">
             {formatDate(hoveredDay.date)}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {showLegend && (
