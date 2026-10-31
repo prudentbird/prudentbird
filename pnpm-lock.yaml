@@ -19,10 +19,10 @@ importers:
     dependencies:
       '@convex-dev/better-auth':
         specifier: ^0.12.4
-        version: 0.12.5(@standard-schema/spec@1.1.0)(better-auth@1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)
+        version: 0.12.5(@standard-schema/spec@1.1.0)(better-auth@1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)
       '@posthog/next':
         specifier: ^0.9.0
-        version: 0.9.0(@types/react@19.2.18)(next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 0.9.0(@types/react@19.2.18)(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.24
         version: 2.1.24(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -31,16 +31,16 @@ importers:
         version: 1.3.3(@types/react@19.2.18)(react@19.2.8)
       '@t3-oss/env-nextjs':
         specifier: ^0.13.11
-        version: 0.13.11(typescript@6.0.2)(zod@4.4.3)
+        version: 0.13.11(typescript@6.0.2)(zod@4.5.4)
       '@vercel/analytics':
         specifier: ^2.0.1
-        version: 2.0.1(next@16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        version: 2.0.1(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@vercel/speed-insights':
         specifier: ^2.0.0
-        version: 2.0.0(next@16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        version: 2.0.0(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       better-auth:
         specifier: ~1.6.19
-        version: 1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
@@ -54,11 +54,11 @@ importers:
         specifier: ^1.41.0
         version: 1.45.0(react@19.2.8)
       lucide-react:
-        specifier: ^1.34.0
-        version: 1.34.0(react@19.2.8)
+        specifier: ^1.37.0
+        version: 1.37.0(react@19.2.8)
       next:
         specifier: 16.3.3
-        version: 16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -78,8 +78,8 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.5.4
+        version: 4.5.4
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.3.3
@@ -88,8 +88,8 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0
       '@types/node':
-        specifier: ^26.3.0
-        version: 26.3.0
+        specifier: ^26.4.0
+        version: 26.4.0
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18
@@ -146,7 +146,7 @@ importers:
         version: 1.34.0(react@19.2.8)
       next:
         specifier: 16.3.3
-        version: 16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -216,13 +216,13 @@ importers:
         version: 10.0.0-alpha.6(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(three@0.186.1)
       '@t3-oss/env-nextjs':
         specifier: ^0.13.11
-        version: 0.13.11(typescript@6.0.2)(zod@4.4.3)
+        version: 0.13.11(typescript@6.0.2)(zod@4.5.4)
       '@vercel/analytics':
         specifier: ^2.0.1
-        version: 2.0.1(next@16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        version: 2.0.1(next@16.3.3(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@vercel/speed-insights':
         specifier: ^2.0.0
-        version: 2.0.0(next@16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        version: 2.0.0(next@16.3.3(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -230,8 +230,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       lucide-react:
-        specifier: ^1.34.0
-        version: 1.34.0(react@19.2.8)
+        specifier: ^1.37.0
+        version: 1.37.0(react@19.2.8)
       maplibre-gl:
         specifier: ^6.16.0
         version: 6.16.0
@@ -240,7 +240,7 @@ importers:
         version: 13.1.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       next:
         specifier: 16.3.3
-        version: 16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -260,8 +260,8 @@ importers:
         specifier: ^0.186.1
         version: 0.186.1
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.5.4
+        version: 4.5.4
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.6
@@ -270,8 +270,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       '@types/node':
-        specifier: ^26.3.0
-        version: 26.3.0
+        specifier: ^26.4.0
+        version: 26.4.0
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18
@@ -1695,6 +1695,9 @@ packages:
   '@types/node@26.3.0':
     resolution: {integrity: sha512-L3fgrnchriRC2ExBflb8j4uZZURHZfQsmQeyVzhjcHW4kkwVyo8/0h1B2MVzMTrYUJYu6G7EWs14hW/L9putqw==}
 
+  '@types/node@26.4.0':
+    resolution: {integrity: sha512-faiGnoIrLH/V8cibOMEAZ8pMw6oXqSukl29ra4mN8GdaB2ZewzeaLj+INpV5N+Z1eKWzY+IzaIZH2EIR6YZRNQ==}
+
   '@types/react-dom@19.2.5':
     resolution: {integrity: sha512-fMPwH9v7r/pp43yUd2/Mbiex5KouJwwR3dzHkhLREUC6764VyDsqxhAxv6OFEYR1RhjOyD1naqba8ECDBe7ZQg==}
     peerDependencies:
@@ -3040,6 +3043,11 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  lucide-react@1.37.0:
+    resolution: {integrity: sha512-LPsB4rD1TD6wZu1djKOf9vUnS1jTNaHbolXebXDgiTdb6jeA1agIJhJsIybCmjKmQClcOaal1o1OaiYahEftyQ==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   maath@0.10.8:
     resolution: {integrity: sha512-tRvbDF0Pgqz+9XUa4jjfgAQ8/aPKmQdWXilFu2tMy4GWj4NOsx99HlULO4IeREfbO3a0sA145DZYyvXPkybm0g==}
     peerDependencies:
@@ -3788,6 +3796,9 @@ packages:
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
+  zod@4.5.4:
+    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
+
   zustand@4.5.7:
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
     engines: {node: '>=12.7.0'}
@@ -3927,48 +3938,48 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)':
+  '@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)':
     dependencies:
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@opentelemetry/semantic-conventions': 1.43.0
       '@standard-schema/spec': 1.1.0
-      better-call: 1.4.0(zod@4.4.3)
+      better-call: 1.4.0(zod@4.5.4)
       jose: 6.2.10
       kysely: 0.29.5
       nanostores: 1.5.2
-      zod: 4.4.3
+      zod: 4.5.4
 
-  '@better-auth/drizzle-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
+  '@better-auth/drizzle-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
+      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/kysely-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)':
+  '@better-auth/kysely-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)':
     dependencies:
-      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
+      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
       '@better-auth/utils': 0.4.2
     optionalDependencies:
       kysely: 0.29.5
 
-  '@better-auth/memory-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
+  '@better-auth/memory-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
+      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/mongo-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
+  '@better-auth/mongo-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
+      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/prisma-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
+  '@better-auth/prisma-adapter@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
+      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/telemetry@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
+  '@better-auth/telemetry@1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
     dependencies:
-      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
+      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
 
@@ -3982,19 +3993,19 @@ snapshots:
 
   '@better-fetch/fetch@1.3.1': {}
 
-  '@convex-dev/better-auth@0.12.5(@standard-schema/spec@1.1.0)(better-auth@1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)':
+  '@convex-dev/better-auth@0.12.5(@standard-schema/spec@1.1.0)(better-auth@1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)':
     dependencies:
       '@better-fetch/fetch': 1.3.1
-      better-auth: 1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      better-auth: 1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       common-tags: 1.8.2
       convex: 1.45.0(react@19.2.8)
-      convex-helpers: 0.1.123(@standard-schema/spec@1.1.0)(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)(zod@4.4.3)
+      convex-helpers: 0.1.123(@standard-schema/spec@1.1.0)(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)(zod@4.5.4)
       jose: 6.2.10
       react: 19.2.8
       remeda: 2.45.0
       semver: 7.8.5
       type-fest: 5.9.0
-      zod: 4.4.3
+      zod: 4.5.4
     transitivePeerDependencies:
       - '@standard-schema/spec'
       - hono
@@ -4509,11 +4520,11 @@ snapshots:
     dependencies:
       '@posthog/types': 1.408.0
 
-  '@posthog/next@0.9.0(@types/react@19.2.18)(next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@posthog/next@0.9.0(@types/react@19.2.18)(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@posthog/core': 1.50.2
       '@posthog/react': 1.10.5(@types/react@19.2.18)(posthog-js@1.425.1(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
-      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       posthog-js: 1.425.1(@types/react@19.2.18)(react@19.2.8)
       posthog-node: 5.51.6
       react: 19.2.8
@@ -4847,12 +4858,24 @@ snapshots:
       typescript: 6.0.2
       zod: 4.4.3
 
+  '@t3-oss/env-core@0.13.11(typescript@6.0.2)(zod@4.5.4)':
+    optionalDependencies:
+      typescript: 6.0.2
+      zod: 4.5.4
+
   '@t3-oss/env-nextjs@0.13.11(typescript@6.0.2)(zod@4.4.3)':
     dependencies:
       '@t3-oss/env-core': 0.13.11(typescript@6.0.2)(zod@4.4.3)
     optionalDependencies:
       typescript: 6.0.2
       zod: 4.4.3
+
+  '@t3-oss/env-nextjs@0.13.11(typescript@6.0.2)(zod@4.5.4)':
+    dependencies:
+      '@t3-oss/env-core': 0.13.11(typescript@6.0.2)(zod@4.5.4)
+    optionalDependencies:
+      typescript: 6.0.2
+      zod: 4.5.4
 
   '@tailwindcss/node@4.3.3':
     dependencies:
@@ -4959,6 +4982,10 @@ snapshots:
   '@types/json5@0.0.29': {}
 
   '@types/node@26.3.0':
+    dependencies:
+      undici-types: 8.3.0
+
+  '@types/node@26.4.0':
     dependencies:
       undici-types: 8.3.0
 
@@ -5189,14 +5216,34 @@ snapshots:
       '@use-gesture/core': 10.3.1
       react: 19.2.8
 
+  '@vercel/analytics@2.0.1(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+    optionalDependencies:
+      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react: 19.2.8
+
   '@vercel/analytics@2.0.1(next@16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
     optionalDependencies:
-      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react: 19.2.8
+
+  '@vercel/analytics@2.0.1(next@16.3.3(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+    optionalDependencies:
+      next: 16.3.3(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react: 19.2.8
+
+  '@vercel/speed-insights@2.0.0(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+    optionalDependencies:
+      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
 
   '@vercel/speed-insights@2.0.0(next@16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
     optionalDependencies:
-      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react: 19.2.8
+
+  '@vercel/speed-insights@2.0.0(next@16.3.3(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+    optionalDependencies:
+      next: 16.3.3(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
 
   acorn-jsx@5.3.2(acorn@8.18.0):
@@ -5313,41 +5360,41 @@ snapshots:
 
   baseline-browser-mapping@2.11.19: {}
 
-  better-auth@1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  better-auth@1.6.30(next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
-      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
-      '@better-auth/drizzle-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
-      '@better-auth/kysely-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)
-      '@better-auth/memory-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
-      '@better-auth/mongo-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
-      '@better-auth/prisma-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
-      '@better-auth/telemetry': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
+      '@better-auth/core': 1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2)
+      '@better-auth/drizzle-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
+      '@better-auth/kysely-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(kysely@0.29.5)
+      '@better-auth/memory-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
+      '@better-auth/mongo-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
+      '@better-auth/prisma-adapter': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)
+      '@better-auth/telemetry': 1.6.30(@better-auth/core@1.6.30(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.2.10)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@noble/ciphers': 2.4.0
       '@noble/hashes': 2.4.0
-      better-call: 1.4.0(zod@4.4.3)
+      better-call: 1.4.0(zod@4.5.4)
       defu: 6.1.7
       jose: 6.2.10
       kysely: 0.29.5
       nanostores: 1.5.2
-      zod: 4.4.3
+      zod: 4.5.4
     optionalDependencies:
-      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
       - '@opentelemetry/api'
 
-  better-call@1.4.0(zod@4.4.3):
+  better-call@1.4.0(zod@4.5.4):
     dependencies:
       '@better-auth/utils': 0.5.0
       '@better-fetch/fetch': 1.3.1
       rou3: 0.9.2
       set-cookie-parser: 3.1.2
     optionalDependencies:
-      zod: 4.4.3
+      zod: 4.5.4
 
   bidi-js@1.1.0:
     dependencies:
@@ -5426,14 +5473,14 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  convex-helpers@0.1.123(@standard-schema/spec@1.1.0)(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)(zod@4.4.3):
+  convex-helpers@0.1.123(@standard-schema/spec@1.1.0)(convex@1.45.0(react@19.2.8))(react@19.2.8)(typescript@6.0.2)(zod@4.5.4):
     dependencies:
       convex: 1.45.0(react@19.2.8)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
       react: 19.2.8
       typescript: 6.0.2
-      zod: 4.4.3
+      zod: 4.5.4
 
   convex@1.45.0(react@19.2.8):
     dependencies:
@@ -5869,8 +5916,8 @@ snapshots:
       '@babel/parser': 7.29.8
       eslint: 9.39.5(jiti@2.7.0)
       hermes-parser: 0.25.1
-      zod: 4.4.3
-      zod-validation-error: 4.0.2(zod@4.4.3)
+      zod: 4.5.4
+      zod-validation-error: 4.0.2(zod@4.5.4)
     transitivePeerDependencies:
       - supports-color
 
@@ -6413,6 +6460,10 @@ snapshots:
     dependencies:
       react: 19.2.8
 
+  lucide-react@1.37.0(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+
   maath@0.10.8(@types/three@0.186.0)(three@0.186.1):
     dependencies:
       '@types/three': 0.186.0
@@ -6495,7 +6546,33 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  next@16.3.3(@babel/core@7.29.7)(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  next@16.3.3(@babel/core@7.29.7)(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      '@next/env': 16.3.3
+      '@swc/helpers': 0.5.23
+      baseline-browser-mapping: 2.11.19
+      caniuse-lite: 1.0.30001810
+      postcss: 8.5.23
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+      styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.2.8)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.3.3
+      '@next/swc-darwin-x64': 16.3.3
+      '@next/swc-linux-arm64-gnu': 16.3.3
+      '@next/swc-linux-arm64-musl': 16.3.3
+      '@next/swc-linux-x64-gnu': 16.3.3
+      '@next/swc-linux-x64-musl': 16.3.3
+      '@next/swc-win32-arm64-msvc': 16.3.3
+      '@next/swc-win32-x64-msvc': 16.3.3
+      babel-plugin-react-compiler: 1.0.0
+      sharp: 0.35.3(@types/node@26.4.0)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
+
+  next@16.3.3(@types/node@26.3.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       '@next/env': 16.3.3
       '@swc/helpers': 0.5.23
@@ -6520,6 +6597,33 @@ snapshots:
       - '@babel/core'
       - '@types/node'
       - babel-plugin-macros
+
+  next@16.3.3(@types/node@26.4.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      '@next/env': 16.3.3
+      '@swc/helpers': 0.5.23
+      baseline-browser-mapping: 2.11.19
+      caniuse-lite: 1.0.30001810
+      postcss: 8.5.23
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+      styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.2.8)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.3.3
+      '@next/swc-darwin-x64': 16.3.3
+      '@next/swc-linux-arm64-gnu': 16.3.3
+      '@next/swc-linux-arm64-musl': 16.3.3
+      '@next/swc-linux-x64-gnu': 16.3.3
+      '@next/swc-linux-x64-musl': 16.3.3
+      '@next/swc-win32-arm64-msvc': 16.3.3
+      '@next/swc-win32-x64-msvc': 16.3.3
+      babel-plugin-react-compiler: 1.0.0
+      sharp: 0.35.3(@types/node@26.4.0)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
+    optional: true
 
   node-exports-info@1.6.2:
     dependencies:
@@ -6865,6 +6969,40 @@ snapshots:
       '@img/sharp-win32-ia32': 0.35.3
       '@img/sharp-win32-x64': 0.35.3
       '@types/node': 26.3.0
+    optional: true
+
+  sharp@0.35.3(@types/node@26.4.0):
+    dependencies:
+      '@img/colour': 1.1.0
+      detect-libc: 2.1.2
+      semver: 7.8.5
+    optionalDependencies:
+      '@img/sharp-darwin-arm64': 0.35.3
+      '@img/sharp-darwin-x64': 0.35.3
+      '@img/sharp-freebsd-wasm32': 0.35.3
+      '@img/sharp-libvips-darwin-arm64': 1.3.2
+      '@img/sharp-libvips-darwin-x64': 1.3.2
+      '@img/sharp-libvips-linux-arm': 1.3.2
+      '@img/sharp-libvips-linux-arm64': 1.3.2
+      '@img/sharp-libvips-linux-ppc64': 1.3.2
+      '@img/sharp-libvips-linux-riscv64': 1.3.2
+      '@img/sharp-libvips-linux-s390x': 1.3.2
+      '@img/sharp-libvips-linux-x64': 1.3.2
+      '@img/sharp-libvips-linuxmusl-arm64': 1.3.2
+      '@img/sharp-libvips-linuxmusl-x64': 1.3.2
+      '@img/sharp-linux-arm': 0.35.3
+      '@img/sharp-linux-arm64': 0.35.3
+      '@img/sharp-linux-ppc64': 0.35.3
+      '@img/sharp-linux-riscv64': 0.35.3
+      '@img/sharp-linux-s390x': 0.35.3
+      '@img/sharp-linux-x64': 0.35.3
+      '@img/sharp-linuxmusl-arm64': 0.35.3
+      '@img/sharp-linuxmusl-x64': 0.35.3
+      '@img/sharp-webcontainers-wasm32': 0.35.3
+      '@img/sharp-win32-arm64': 0.35.3
+      '@img/sharp-win32-ia32': 0.35.3
+      '@img/sharp-win32-x64': 0.35.3
+      '@types/node': 26.4.0
     optional: true
 
   shebang-command@2.0.0:
@@ -7251,11 +7389,13 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-validation-error@4.0.2(zod@4.4.3):
+  zod-validation-error@4.0.2(zod@4.5.4):
     dependencies:
-      zod: 4.4.3
+      zod: 4.5.4
 
   zod@4.4.3: {}
+
+  zod@4.5.4: {}
 
   zustand@4.5.7(@types/react@19.2.18)(react@19.2.8):
     dependencies:

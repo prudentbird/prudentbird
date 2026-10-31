@@ -9,3 +9,12 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # eslint-config-next's React/import/a11y plugins do not support ESLint 10.
+      # Revisit when the plugins support the removed ESLint context APIs.
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      # @convex-dev/better-auth 0.12.5 requires better-auth >=1.6.11 <1.7.0.
+      # Upgrade the adapter before accepting Better Auth 1.7 or later.
+      - dependency-name: "better-auth"
+        versions: [">=1.7.0"]
