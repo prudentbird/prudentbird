@@ -16,13 +16,22 @@ import {
   Vector2,
   Vector3,
 } from "three";
-import { AVATAR_PALETTE, AVATAR_ROWS } from "./avatar-pixels";
+import {
+  AVATAR_CAMERA,
+  AVATAR_DEPTH,
+  AVATAR_PALETTE,
+  AVATAR_ROWS,
+  AVATAR_UNIT,
+  TAG_CENTER_XYZ,
+  TAG_ROWS,
+  TAG_UNIT,
+} from "./avatar-pixels";
 import { cn } from "~/lib/utils";
 import { externalProps } from "~/lib/content";
 import { Stage, useStageEnv } from "./stage";
 
-const UNIT = 0.2;
-const CAMERA = { position: [0, 0, 8.6] as [number, number, number], fov: 30 };
+const UNIT = AVATAR_UNIT;
+const CAMERA = AVATAR_CAMERA;
 const BLEED = 1.7;
 
 type Voxel = {
@@ -34,17 +43,7 @@ type Voxel = {
 
 const NFT_HREF =
   "https://magiceden.io/item-details/FWcEzs13GzBCybYHw5wKvT7vo9QJr96mTq5hQsyqQ97x";
-const TAG_ROWS = [
-  ".............................",
-  "..#.#...#..###.###.###...###.",
-  ".#####.##..#.#.#.#.#.#....##.",
-  "..#.#...#..###.###.#.#...#.#.",
-  ".#####..#....#...#.#.#..#....",
-  "..#.#..###.###.###.###.#.....",
-  ".............................",
-];
-const TAG_UNIT = 0.055;
-const TAG_CENTER = new Vector3(1.05, -1.62, 0.26);
+const TAG_CENTER = new Vector3(...TAG_CENTER_XYZ);
 const TAG_GLYPH = new Color(AVATAR_PALETTE[2]);
 const TAG_LIT = new Color(AVATAR_PALETTE[3]);
 const TAG_LIFT = 0.16;
@@ -168,7 +167,7 @@ function Avatar({ animate }: { animate: boolean }) {
   const [voxels] = useState(buildVoxels);
   const dummy = useRef(new Object3D());
   const [geometry] = useState(
-    () => new BoxGeometry(UNIT * 0.94, UNIT * 0.94, UNIT * 1.6),
+    () => new BoxGeometry(UNIT * 0.94, UNIT * 0.94, AVATAR_DEPTH),
   );
   const [material] = useState(
     () => new MeshStandardMaterial({ roughness: 0.42, metalness: 0.05 }),
