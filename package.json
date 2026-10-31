@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=web",
+    "dev:v1": "turbo run dev --filter=v1",
     "dev:sudoku": "turbo run dev dev:convex --filter=sudoku",
     "build": "turbo run build",
     "build:web": "turbo run build --filter=web",
+    "build:v1": "turbo run build --filter=v1",
     "build:sudoku": "turbo run build --filter=sudoku",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",

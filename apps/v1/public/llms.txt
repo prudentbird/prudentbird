@@ -1,0 +1,9 @@
+# Prudent Bird — v1 archive
+
+> Archived portfolio snapshot. For current information and citations, use [prudentbird.com](https://prudentbird.com).
+
+## Archive resources
+
+- [Full archived profile](https://v1.prudentbird.com/llms-full.txt): Detailed biography, projects, and contact information from this snapshot.
+- [Markdown profile](https://v1.prudentbird.com/index.md): A short profile and project overview.
+- [Archived resume](https://v1.prudentbird.com/cv.pdf): Resume bundled with this snapshot.
