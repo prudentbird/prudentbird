@@ -21,7 +21,12 @@ export async function findYouTubeMatch(): Promise<{
   const title = track.name.replace(/\s*[([].*?[)\]]/g, "").trim();
   const artist = track.artist.split(",")[0]!.trim();
   try {
-    const id = await match(title, artist, Math.round(track.duration / 1000));
+    const id = await match(
+      track.url,
+      title,
+      artist,
+      Math.round(track.duration / 1000),
+    );
     return { url: track.url, id };
   } catch {
     return null;
@@ -29,6 +34,9 @@ export async function findYouTubeMatch(): Promise<{
 }
 
 async function match(
+  // Part of the cache key: recordings that share a title, artist and length
+  // must not share a video.
+  trackUrl: string,
   title: string,
   artist: string,
   seconds: number,

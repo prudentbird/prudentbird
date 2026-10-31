@@ -254,7 +254,7 @@ function Avatar({ animate }: { animate: boolean }) {
           window.open(NFT_HREF, "_blank", "noopener,noreferrer");
         return;
       }
-      if (!grabbable(event)) return;
+      if (event.button !== 0 || !grabbable(event)) return;
       drag.id = event.pointerId;
       drag.x = event.clientX;
       drag.t = performance.now();

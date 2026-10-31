@@ -414,6 +414,7 @@ export function SongVisualizer() {
       width: "100%",
       height: "100%",
       playerVars: {
+        origin: window.location.origin,
         autoplay: 1,
         start: Math.floor(startAt),
         controls: 0,
