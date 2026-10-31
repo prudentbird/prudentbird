@@ -1,97 +1,110 @@
 "use server";
 
+import { cacheLife } from "next/cache";
 import { env } from "~/env";
+import { bucketScrobbles, type DayActivity } from "~/lib/listening/activity";
+import { dayKey, LISTENING_TIME_ZONE, shiftDayKey } from "~/lib/listening/time";
 
-type DailyActivity = {
-  date: string;
-  count: number;
-  tracks: Array<{ artist: string }>;
+export type { DayActivity };
+
+const PAGE_SIZE = 200;
+/** How many days the chart can scroll back. */
+const HISTORY_DAYS = 180;
+/** Upstream cap per refresh; days older than what fits are dropped, not guessed. */
+const MAX_PAGES = 15;
+const BATCH_SIZE = 5;
+
+type RecentTracks = {
+  error?: number;
+  message?: string;
+  recenttracks?: {
+    "@attr"?: { totalPages?: string };
+    track?: RawScrobble | RawScrobble[];
+  };
 };
 
-const BATCH_SIZE = 5;
-const HISTORY_DAYS = 365;
-const MAX_PAGES = 30;
+type RawScrobble = {
+  date?: { uts: string };
+  artist?: { "#text"?: string; name?: string };
+};
 
-async function fetchPages(urls: string[]): Promise<unknown[]> {
-  const results: unknown[] = [];
-  for (let i = 0; i < urls.length; i += BATCH_SIZE) {
-    const batch = urls.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.all(
-      batch.map((url) =>
-        fetch(url, { next: { revalidate: 3600 } }).then((r) =>
-          r.ok ? r.json() : null,
-        ),
-      ),
-    );
-    results.push(...batchResults);
+async function fetchPage(url: string): Promise<RecentTracks> {
+  // A failed page throws rather than returning partial data, so an outage is
+  // never cached as a quiet stretch of listening.
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(url);
+    if (response.ok) {
+      const data = (await response.json()) as RecentTracks;
+      if (data.error !== undefined || !data.recenttracks)
+        throw new Error(
+          `Last.fm API failed (${data.error ?? "invalid response"})`,
+        );
+      return data;
+    }
+    if (attempt >= 1)
+      throw new Error(`Last.fm request failed (${response.status})`);
   }
-  return results;
 }
 
-export async function getLastFmHistory(): Promise<DailyActivity[]> {
-  const limit = 200;
-  const day = 86_400;
-  const from = (Math.floor(Date.now() / 1000 / day) - HISTORY_DAYS) * day;
-  const base = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${env.LASTFM_USERNAME}&api_key=${env.LASTFM_API_KEY}&format=json&limit=${limit}&from=${from}`;
+/**
+ * Plays per day (in Lagos time) over the last HISTORY_DAYS days, oldest first,
+ * with each day's top artist. Cached as one small snapshot so visitors share a
+ * single upstream sweep; throws if Last.fm can't be read.
+ */
+export async function getLastFmHistory(): Promise<DayActivity[]> {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 600, expire: 3600 });
 
-  try {
-    const firstRes = await fetch(`${base}&page=1`, {
-      next: { revalidate: 3600 },
-    });
-    if (!firstRes.ok) return [];
-    const firstData = await firstRes.json();
+  const now = Date.now();
+  const windowStart = shiftDayKey(dayKey(now), -(HISTORY_DAYS - 1));
+  // One extra day of slack: the window is a Lagos calendar day, `from` is UTC.
+  const from = Math.floor(now / 1000) - (HISTORY_DAYS + 1) * 86_400;
+  const params = new URLSearchParams({
+    method: "user.getrecenttracks",
+    user: env.LASTFM_USERNAME,
+    api_key: env.LASTFM_API_KEY,
+    format: "json",
+    limit: String(PAGE_SIZE),
+    from: String(from),
+    to: String(Math.floor(now / 1000)),
+  });
+  const url = (page: number) =>
+    `https://ws.audioscrobbler.com/2.0/?${params}&page=${page}`;
 
-    const totalPages = Math.min(
-      MAX_PAGES,
-      parseInt(firstData?.recenttracks?.["@attr"]?.totalPages ?? "1", 10),
+  const first = await fetchPage(url(1));
+  const totalPages =
+    Number(first.recenttracks?.["@attr"]?.totalPages ?? 1) || 1;
+  const pages = [first];
+  const last = Math.min(MAX_PAGES, totalPages);
+  for (let page = 2; page <= last; page += BATCH_SIZE) {
+    const batch = Array.from(
+      { length: Math.min(BATCH_SIZE, last - page + 1) },
+      (_, i) => fetchPage(url(page + i)),
     );
-
-    const remaining =
-      totalPages > 1
-        ? await fetchPages(
-            Array.from(
-              { length: totalPages - 1 },
-              (_, i) => `${base}&page=${i + 2}`,
-            ),
-          )
-        : [];
-
-    const allPages = [firstData, ...remaining];
-    const activityMap = new Map<string, DailyActivity>();
-
-    for (const data of allPages) {
-      if (!data?.recenttracks?.track) continue;
-
-      const tracks = Array.isArray(data.recenttracks.track)
-        ? data.recenttracks.track
-        : [data.recenttracks.track];
-
-      for (const track of tracks) {
-        if (!track.date?.uts) continue;
-        const dateObj = new Date(parseInt(track.date.uts, 10) * 1000);
-        const y = dateObj.getFullYear();
-        const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-        const d = String(dateObj.getDate()).padStart(2, "0");
-        const dateStr = `${y}-${m}-${d}`;
-
-        if (!activityMap.has(dateStr)) {
-          activityMap.set(dateStr, { date: dateStr, count: 0, tracks: [] });
-        }
-
-        const dayData = activityMap.get(dateStr)!;
-        dayData.count += 1;
-        dayData.tracks.push({
-          artist:
-            track.artist?.["#text"] || track.artist?.name || "Unknown Artist",
-        });
-      }
-    }
-
-    return Array.from(activityMap.values()).sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-  } catch (error) {
-    console.error("Failed to fetch Last.fm history:", error);
-    return [];
+    pages.push(...(await Promise.all(batch)));
   }
+
+  const scrobbles = pages.flatMap((data) => {
+    const track = data.recenttracks?.track ?? [];
+    return (Array.isArray(track) ? track : [track]).flatMap((t) =>
+      t.date?.uts
+        ? [
+            {
+              uts: Number(t.date.uts),
+              artist: t.artist?.["#text"] || t.artist?.name || "Unknown Artist",
+            },
+          ]
+        : [],
+    );
+  });
+
+  let minDate = windowStart;
+  if (totalPages > MAX_PAGES && scrobbles.length) {
+    // Newest scrobbles come first, so the page cap cuts off the oldest day
+    // partway through. Drop it rather than chart an undercount.
+    const oldest = dayKey(Math.min(...scrobbles.map((s) => s.uts)) * 1000);
+    const firstFullDay = shiftDayKey(oldest, 1);
+    if (firstFullDay > minDate) minDate = firstFullDay;
+  }
+  return bucketScrobbles(scrobbles, { minDate, timeZone: LISTENING_TIME_ZONE });
 }

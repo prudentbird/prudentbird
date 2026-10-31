@@ -3,6 +3,16 @@
 import { cacheLife } from "next/cache";
 import { env } from "~/env";
 import { getSpotifyTrack } from "~/app/actions/spotify";
+import {
+  choose,
+  normalize,
+  parseDuration,
+  searchTitle,
+  shortlist,
+  splitArtists,
+  type Candidate,
+  type Wanted,
+} from "~/lib/listening/youtube-match";
 
 /**
  * Finds the YouTube upload that best matches the track Spotify currently
@@ -11,113 +21,134 @@ import { getSpotifyTrack } from "~/app/actions/spotify";
  * else. Search costs 100 of 10,000 daily quota units, so matches are cached per
  * track. Returns the track's Spotify URL so callers can discard a result for a
  * track that has since changed.
+ *
+ * Without YOUTUBE_API_KEY matching is switched off: no Spotify or YouTube calls
+ * are made and the result is null.
  */
 export async function findYouTubeMatch(): Promise<{
   url: string;
   id: string | null;
 } | null> {
-  const track = await getSpotifyTrack();
-  if (!track) return null;
-  const title = track.name.replace(/\s*[([].*?[)\]]/g, "").trim();
-  const artist = track.artist.split(",")[0]!.trim();
+  if (!env.YOUTUBE_API_KEY) return null;
+  let track;
   try {
-    const id = await match(
-      track.url,
-      title,
-      artist,
-      Math.round(track.duration / 1000),
-    );
-    return { url: track.url, id };
+    track = await getSpotifyTrack();
   } catch {
+    return null;
+  }
+  if (!track) return null;
+
+  const title = searchTitle(track.name);
+  const artists = splitArtists(track.artist);
+  const seconds = Math.round(track.duration / 1000);
+  // Nothing to compare against, so any search would be a guess that gets cached.
+  if (!seconds || !normalize(title)) return { url: track.url, id: null };
+
+  try {
+    const id = await match(track.url, title, artists, seconds);
+    return { url: track.url, id };
+  } catch (error) {
+    // Transient (quota, network): the cache function threw, so nothing was
+    // stored and the next request tries again.
+    console.error(error);
     return null;
   }
 }
 
-async function match(
-  // Part of the cache key: recordings that share a title, artist and length
-  // must not share a video.
-  trackUrl: string,
-  title: string,
-  artist: string,
-  seconds: number,
-): Promise<string | null> {
-  "use cache";
-  cacheLife("weeks");
-  const key = env.YOUTUBE_API_KEY;
-  const search = new URLSearchParams({
+type SearchResult = {
+  items?: {
+    id: { videoId: string };
+    snippet: { title: string; channelTitle: string };
+  }[];
+};
+
+async function search(query: string, key: string): Promise<Candidate[]> {
+  const params = new URLSearchParams({
     part: "snippet",
     type: "video",
     maxResults: "10",
     videoEmbeddable: "true",
     safeSearch: "none",
-    q: `${artist} ${title}`,
+    q: query,
     key,
   });
-  type SearchResult = {
-    items?: {
-      id: { videoId: string };
-      snippet: { title: string; channelTitle: string };
-    }[];
+  const response = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?${params}`,
+  );
+  if (!response.ok)
+    throw new Error(`YouTube search failed (${response.status})`);
+  return (((await response.json()) as SearchResult).items ?? []).map(
+    (item) => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+    }),
+  );
+}
+
+async function lengths(ids: string[], key: string) {
+  const params = new URLSearchParams({
+    part: "contentDetails",
+    id: ids.join(","),
+    key,
+  });
+  const response = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?${params}`,
+  );
+  if (!response.ok)
+    throw new Error(`YouTube video lookup failed (${response.status})`);
+  const details = (await response.json()) as {
+    items?: { id: string; contentDetails: { duration: string } }[];
   };
-  const searchVideos = async () => {
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?${search}`,
-    );
-    if (!response.ok) throw new Error("YouTube search failed");
-    return ((await response.json()) as SearchResult).items ?? [];
-  };
-  const norm = (s: string) =>
-    s
-      .normalize("NFKC")
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}]/gu, "");
-  const wanted = norm(title);
-  if (!wanted) return null;
+  return new Map(
+    (details.items ?? []).map((v) => [
+      v.id,
+      parseDuration(v.contentDetails.duration),
+    ]),
+  );
+}
 
-  const pick = async (items: Awaited<ReturnType<typeof searchVideos>>) => {
-    const candidates = items.filter((i) =>
-      norm(i.snippet.title).includes(wanted),
-    );
-    if (!candidates.length) return null;
+async function findVideo(wanted: Wanted, key: string) {
+  const artist = wanted.artists[0] ?? "";
+  const prefix = wanted.title.slice(
+    0,
+    Math.max(3, Math.ceil(wanted.title.length / 2)),
+  );
+  // The second query loosens the wording in case the full title is why the
+  // first one found nothing usable.
+  const queries = [`${artist} ${wanted.title}`];
+  if (wanted.title.length > 4) queries.push(`${artist} ${prefix}`);
 
-    const ids = candidates.map((i) => i.id.videoId).join(",");
-    const detailsResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${key}`,
+  for (const query of queries) {
+    const usable = shortlist(wanted, await search(query, key));
+    if (!usable.length) continue;
+    const id = choose(
+      wanted,
+      usable,
+      await lengths(
+        usable.map((item) => item.id),
+        key,
+      ),
     );
-    if (!detailsResponse.ok) throw new Error("YouTube video lookup failed");
-    const details = (await detailsResponse.json()) as {
-      items?: { id: string; contentDetails: { duration: string } }[];
-    };
-    const length = new Map(
-      (details.items ?? []).map((v) => {
-        const [, h = "0", m = "0", s = "0"] =
-          v.contentDetails.duration.match(
-            /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/,
-          ) ?? [];
-        return [v.id, +h * 3600 + +m * 60 + +s];
-      }),
-    );
+    if (id) return id;
+  }
+  return null;
+}
 
-    const scored = candidates
-      .map((i) => {
-        const diff = Math.abs((length.get(i.id.videoId) ?? 0) - seconds);
-        const official =
-          /- topic$|vevo$/i.test(i.snippet.channelTitle) ||
-          norm(i.snippet.channelTitle).includes(norm(artist));
-        const lyrics = /lyric/i.test(i.snippet.title);
-        return {
-          id: i.id.videoId,
-          score: diff + (official ? 0 : 4) + (lyrics ? 3 : 0),
-          diff,
-        };
-      })
-      .sort((a, b) => a.score - b.score);
-    return scored.find((s) => s.diff <= 8)?.id ?? null;
-  };
-
-  const found = await pick(await searchVideos());
-  if (found || title.length <= 4) return found;
-  const prefix = title.slice(0, Math.max(3, Math.ceil(title.length / 2)));
-  search.set("q", `${artist} ${prefix}`);
-  return pick(await searchVideos());
+async function match(
+  // Keep distinct Spotify recordings in separate cache entries.
+  trackUrl: string,
+  title: string,
+  artists: string[],
+  seconds: number,
+): Promise<string | null> {
+  "use cache";
+  const key = env.YOUTUBE_API_KEY;
+  if (!key) throw new Error("YOUTUBE_API_KEY is not set");
+  // Any failure above throws before this point, so only real answers are
+  // cached. Hits are stable; misses expire sooner in case an upload appears.
+  const id = await findVideo({ title, artists, seconds }, key);
+  if (id) cacheLife("weeks");
+  else cacheLife("days");
+  return id;
 }

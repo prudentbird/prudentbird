@@ -22,7 +22,10 @@ import {
   useTrackProgress,
 } from "~/lib/live";
 import { findYouTubeMatch } from "~/app/actions/youtube";
-import { PLAYING, type YTPlayer, loadYouTubeApi } from "./youtube-player";
+import { estimateProgressMs } from "~/lib/listening/progress";
+import { dayKey, shiftDayKey } from "~/lib/listening/time";
+import { ListenAlong, type ListenStatus } from "./listen-along";
+import { PLAYING, loadYouTubeApi } from "./youtube-player";
 
 const BAR = 10;
 const GAP = 3;
@@ -113,26 +116,23 @@ function useCoverAccent(src: string | undefined) {
   return accent;
 }
 
-const dayKey = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const noop = () => () => {};
+const todayKey = () => dayKey(Date.now());
+// Re-read once a minute so a page left open rolls over at Lagos midnight.
+const subscribeToDay = (onChange: () => void) => {
+  const id = setInterval(onChange, 60_000);
+  return () => clearInterval(id);
+};
 const mmss = (ms: number) => {
   const s = Math.max(0, Math.round(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-type Player = "off" | "loading" | "on" | "missing";
-
 export function SongVisualizer() {
-  const { track, isLoading: resolving } = useNowPlaying();
+  const { track, receivedAt, isLoading: resolving } = useNowPlaying();
   const { history, isLoading: historyLoading } = useListeningHistory();
-  const myProgress = useTrackProgress(track);
+  const myProgress = useTrackProgress(track, receivedAt);
   const reduce = useReducedMotion();
-  const today = useSyncExternalStore(
-    noop,
-    () => dayKey(new Date()),
-    () => null,
-  );
+  const today = useSyncExternalStore(subscribeToDay, todayKey, () => null);
   const accent = useCoverAccent(track?.images.small);
 
   const viewport = useRef<HTMLDivElement>(null);
@@ -143,14 +143,9 @@ export function SongVisualizer() {
   const [hovered, setHovered] = useState<number | null>(null);
 
   const ytHost = useRef<HTMLDivElement>(null);
-  const yt = useRef<YTPlayer | null>(null);
-  const loadedFor = useRef<string | null>(null);
-  const session = useRef(0);
-  const lookup = useRef(0);
-  const pendingFor = useRef<string | null>(null);
-  const latestTrack = useRef(track);
-  latestTrack.current = track;
-  const [player, setPlayer] = useState<Player>("off");
+  const listenAlong = useRef<ListenAlong | null>(null);
+  const latestTrack = useRef({ track, receivedAt });
+  const [player, setPlayer] = useState<ListenStatus>("off");
   const [playback, setPlayback] = useState<{
     position: number;
     duration: number;
@@ -202,18 +197,10 @@ export function SongVisualizer() {
   const days = useMemo(() => {
     if (!today) return [];
     const map = new Map((history ?? []).map((d) => [d.date, d]));
-    const end = new Date(`${today}T12:00:00`).getTime();
     return Array.from({ length: count }, (_, i) => {
-      const date = new Date(end - (count - 1 - i) * DAY);
-      const d = map.get(dayKey(date));
-      const artists = new Map<string, number>();
-      for (const t of d?.tracks ?? [])
-        artists.set(t.artist, (artists.get(t.artist) ?? 0) + 1);
-      return {
-        date,
-        plays: d?.count ?? 0,
-        top: [...artists.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
-      };
+      const date = shiftDayKey(today, i + 1 - count);
+      const d = map.get(date);
+      return { date, plays: d?.count ?? 0, top: d?.topArtist ?? null };
     });
   }, [history, today, count]);
   const dayMax = Math.max(1, ...days.map((d) => d.plays));
@@ -223,14 +210,9 @@ export function SongVisualizer() {
   useEffect(() => {
     if (player !== "on") return;
     const id = setInterval(() => {
-      const p = yt.current;
-      if (!p?.getDuration) return;
-      setPlayback({
-        position: p.getCurrentTime() * 1000,
-        duration: p.getDuration() * 1000,
-        isPaused: p.getPlayerState() !== PLAYING,
-        at: performance.now(),
-      });
+      const current = listenAlong.current?.playback();
+      if (!current) return;
+      setPlayback({ ...current, at: performance.now() });
       setNow(performance.now());
     }, 250);
     return () => clearInterval(id);
@@ -287,7 +269,9 @@ export function SongVisualizer() {
       return;
     }
 
-    const loudness = (p: number) =>
+    // The bars are a generated animation seeded by the song, not an analysis
+    // of the audio: this only shapes the made-up "intensity" over the track.
+    const sectionLevel = (p: number) =>
       0.55 +
       0.45 * (shape.heights[Math.min(count - 1, Math.floor(p * count))] ?? 0.5);
     const frame = (t: number, p: number, out: number[]) => {
@@ -297,7 +281,7 @@ export function SongVisualizer() {
       const kick = Math.exp(-bp * 7);
       const snare = beatIdx % 2 === 1 ? Math.exp(-bp * 9) : 0;
       const hat = Math.exp(-((t % (beat / 2)) / (beat / 2)) * 14);
-      const section = loudness(p);
+      const section = sectionLevel(p);
       for (let i = 0; i < count; i++) {
         const x = i / Math.max(1, count - 1);
         const m = shape.motion[i]!;
@@ -378,118 +362,71 @@ export function SongVisualizer() {
     second,
   ]);
 
-  const listen = async (t: NonNullable<typeof track>) => {
-    const s = session.current;
-    const l = ++lookup.current;
-    pendingFor.current = t.url;
-    const stale = () => s !== session.current || l !== lookup.current;
-    const found = await findYouTubeMatch();
-    if (stale()) return;
-    const id = found?.url === t.url ? found.id : null;
-    if (!id) {
-      setPlayer("missing");
-      return;
-    }
-    const startAt = t.isPlaying ? (myProgress * t.duration) / 1000 : 0;
-    loadedFor.current = t.url;
-    if (yt.current) {
-      yt.current.loadVideoById({ videoId: id, startSeconds: startAt });
-      return;
-    }
-    let YT;
-    try {
-      YT = await loadYouTubeApi();
-    } catch {
-      if (!stale()) {
-        loadedFor.current = null;
-        setPlayer("missing");
-      }
-      return;
-    }
-    if (stale()) return;
-    const host = document.createElement("div");
-    ytHost.current?.replaceChildren(host);
-    yt.current = new YT.Player(host, {
-      videoId: id,
-      width: "100%",
-      height: "100%",
-      playerVars: {
-        origin: window.location.origin,
-        autoplay: 1,
-        start: Math.floor(startAt),
-        controls: 0,
-        disablekb: 1,
-        playsinline: 1,
-        rel: 0,
-        iv_load_policy: 3,
-        fs: 0,
-      },
-      events: {
-        onReady: () => {
-          if (s !== session.current) return;
-          yt.current?.playVideo();
-          setPlayer("on");
-        },
-        onError: () => {
-          if (s !== session.current) return;
-          const latest = latestTrack.current;
-          const superseded = !!latest && latest.url !== loadedFor.current;
-          yt.current?.destroy();
-          yt.current = null;
-          loadedFor.current = null;
-          ytHost.current?.replaceChildren();
-          setPlayback(null);
-          if (superseded) {
-            listen(latest).catch(() => setPlayer("missing"));
-            return;
-          }
-          setPlayer("missing");
-        },
-      },
-    });
-  };
+  useEffect(() => {
+    latestTrack.current = { track, receivedAt };
+  }, [track, receivedAt]);
 
-  const stop = () => {
-    session.current++;
-    yt.current?.destroy();
-    yt.current = null;
-    loadedFor.current = null;
-    ytHost.current?.replaceChildren();
-    setPlayback(null);
-    setPlayer("off");
-  };
+  useEffect(() => {
+    const controller = new ListenAlong({
+      match: findYouTubeMatch,
+      loadApi: async () => void (await loadYouTubeApi()),
+      // Read when the lookup finishes, not when the button was pressed.
+      startSeconds: () => {
+        const { track, receivedAt } = latestTrack.current;
+        return track?.isPlaying
+          ? estimateProgressMs({ ...track, receivedAt }, Date.now()) / 1000
+          : 0;
+      },
+      createPlayer: (videoId, startSeconds, events) => {
+        const host = document.createElement("div");
+        ytHost.current?.replaceChildren(host);
+        return new window.YT!.Player(host, {
+          videoId,
+          width: "100%",
+          height: "100%",
+          playerVars: {
+            autoplay: 1,
+            start: Math.floor(startSeconds),
+            controls: 0,
+            disablekb: 1,
+            playsinline: 1,
+            rel: 0,
+            iv_load_policy: 3,
+            fs: 0,
+          },
+          events,
+        });
+      },
+      clearHost: () => {
+        ytHost.current?.replaceChildren();
+        setPlayback(null);
+      },
+      onStatus: setPlayer,
+      playingState: PLAYING,
+    });
+    listenAlong.current = controller;
+    return () => {
+      controller.dispose();
+      listenAlong.current = null;
+    };
+  }, []);
+
+  const stop = () => listenAlong.current?.stop();
 
   const toggle = () => {
     if (!track) return;
-    if (player === "on" && yt.current) {
-      if (playback && !playback.isPaused) yt.current.pauseVideo();
-      else yt.current.playVideo();
-      return;
-    }
-    setPlayer("loading");
-    listen(track).catch(() => setPlayer("missing"));
+    if (player === "on") listenAlong.current?.togglePause();
+    else void listenAlong.current?.start(track);
   };
 
+  // Spotify moved to another song while we're listening along.
   useEffect(() => {
-    if (!track || track.url === loadedFor.current) return;
-    if (player === "loading") {
-      if (yt.current || track.url === pendingFor.current) return;
-    } else if (player !== "on") return;
-    listen(track).catch(() => setPlayer("missing"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track?.url, player]);
-
-  useEffect(
-    () => () => {
-      session.current++;
-      yt.current?.destroy();
-    },
-    [],
-  );
+    if (track) void listenAlong.current?.follow(track);
+  }, [track]);
 
   const seekTo = (i: number) => {
-    if (!listening || !yt.current) return;
-    yt.current.seekTo(((i + 0.5) / count) * (playback.duration / 1000), true);
+    if (!listening) return;
+    listenAlong.current?.seek(((i + 0.5) / count) * (playback.duration / 1000));
   };
 
   const played = Math.floor(progress * count);
@@ -509,11 +446,12 @@ export function SongVisualizer() {
     history:
       "One bar per day of listening. Scroll back for earlier days, or pick a bar to see what I played.",
     listening:
-      "Playing the full song from YouTube. Tap the bars to jump around.",
+      "Playing along from YouTube, starting about where I am. The bars are just for show, but tapping one does jump the song.",
   };
   const dayLine = hoveredDay
     ? [
-        hoveredDay.date.toLocaleDateString("en-GB", {
+        new Date(`${hoveredDay.date}T00:00:00Z`).toLocaleDateString("en-GB", {
+          timeZone: "UTC",
           weekday: "short",
           day: "numeric",
           month: "short",
