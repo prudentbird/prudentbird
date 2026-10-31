@@ -1,5 +1,4 @@
 export type Wanted = {
-  /** Cleaned song title, e.g. "Blinding Lights". */
   title: string;
   artists: string[];
   seconds: number;
@@ -11,18 +10,12 @@ export type Candidate = {
   channel: string;
 };
 
-/** How far a video's length may drift from Spotify's before we call it wrong. */
 const MAX_DURATION_DRIFT = 8;
 const UNWANTED =
   /\b(cover|karaoke|remix|reaction|slowed|sped up|nightcore|8d|instrumental|tribute|live)\b/i;
-// Scripts written without spaces, where token matching can't work.
 const UNSPACED =
   /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/u;
 
-/**
- * Lowercased words separated by single spaces. Keeps letters and digits of any
- * script (so "夜に駆ける" survives) and drops apostrophes so "Don't" == "Dont".
- */
 export function normalize(s: string) {
   return s
     .normalize("NFKC")
@@ -32,7 +25,6 @@ export function normalize(s: string) {
     .trim();
 }
 
-/** True when `phrase` appears in `text` as whole words. Empty phrases never match. */
 export function containsPhrase(text: string, phrase: string) {
   const needle = normalize(phrase);
   if (!needle) return false;
@@ -41,11 +33,6 @@ export function containsPhrase(text: string, phrase: string) {
   return ` ${haystack} `.includes(` ${needle} `);
 }
 
-/**
- * The title worth searching for: Spotify's name without bracketed extras
- * ("(feat. X)", "[Remastered]") or a trailing "- Remastered 2011" style suffix.
- * Falls back to the full name if stripping would leave nothing.
- */
 export function searchTitle(name: string) {
   const cleaned = name
     .replace(/\s*[([].*?[)\]]/g, "")
@@ -64,7 +51,6 @@ export function splitArtists(artist: string) {
     .filter((a) => normalize(a));
 }
 
-/** "PT3M20S" -> 200. Unparseable input gives NaN so it can never pass a length check. */
 export function parseDuration(iso: string) {
   const m = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/);
   if (!m || !m.slice(1).some((part) => part !== undefined)) return NaN;
@@ -79,11 +65,6 @@ const sameArtist = (wanted: Wanted, candidate: Candidate) =>
       containsPhrase(candidate.title, artist),
   );
 
-/**
- * Candidates plausible enough to spend a duration lookup on: the title must
- * contain the song's title as whole words, and the video or its channel must
- * mention one of the artists (when we know any).
- */
 export function shortlist(wanted: Wanted, items: Candidate[]) {
   if (!normalize(wanted.title)) return [];
   return items.filter(
@@ -93,7 +74,6 @@ export function shortlist(wanted: Wanted, items: Candidate[]) {
   );
 }
 
-/** Best shortlisted candidate by length and "officialness", or null. */
 export function choose(
   wanted: Wanted,
   items: Candidate[],

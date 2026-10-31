@@ -8,11 +8,6 @@ export type DayActivity = {
   topArtist: string | null;
 };
 
-/**
- * Collapses scrobbles into one entry per day in `timeZone`, oldest first. The
- * client only draws a count and the top artist per day, so that is all we send.
- * Days before `minDate` are dropped (the fetch window starts mid-day).
- */
 export function bucketScrobbles(
   scrobbles: Scrobble[],
   {

@@ -21,11 +21,6 @@ type RawTrack = {
   album?: { images?: Array<{ url: string; width?: number }> };
 };
 
-/**
- * Maps a Spotify "track" object to ours. Returns null for anything that isn't
- * a music track (ads, podcast episodes, missing items) so callers can fall back
- * to the recently played list instead of showing nothing.
- */
 export function toSpotifyTrack(
   item: RawTrack | null | undefined,
   state: { isPlaying: boolean; progress: number },

@@ -14,36 +14,19 @@ export type PlayerLike = {
 type TrackRef = { url: string };
 
 export type ListenAlongDeps = {
-  /** Finds the YouTube video for whatever Spotify is on right now. */
   match: () => Promise<{ url: string; id: string | null } | null>;
   loadApi: () => Promise<void>;
-  /** Seconds into the song Spotify is at *now*; read after every await. */
   startSeconds: () => number;
   createPlayer: (
     videoId: string,
     startSeconds: number,
     events: { onReady: () => void; onError: () => void },
   ) => PlayerLike;
-  /** Removes whatever the player left in the DOM. */
   clearHost: () => void;
   onStatus: (status: ListenStatus) => void;
-  /** YT.PlayerState.PLAYING */
   playingState: number;
 };
 
-/**
- * Listen-along: plays the YouTube upload of Spotify's current song and follows
- * Spotify to the next one until stopped.
- *
- * The sync is deliberately approximate. We start the video near where Spotify
- * is (estimated after the lookup finishes), and from then on the visitor
- * drives it: pausing or seeking on Spotify is not mirrored, only a change of
- * song is.
- *
- * Every request bumps `generation`, so anything still in flight for an earlier
- * request (match lookup, API load) is dropped when it resolves. Player events
- * are scoped by `playerEpoch`, which changes whenever a player is destroyed.
- */
 export class ListenAlong {
   status: ListenStatus = "off";
   private deps: ListenAlongDeps;
@@ -59,13 +42,11 @@ export class ListenAlong {
     this.deps = deps;
   }
 
-  /** Visitor pressed "Listen with me": play `track` and keep following Spotify. */
   start(track: TrackRef) {
     this.following = true;
     return this.load(track);
   }
 
-  /** Spotify moved on. Only acts while listening along. */
   follow(track: TrackRef) {
     if (!this.following || track.url === this.targetUrl) return;
     return this.load(track);
@@ -79,7 +60,6 @@ export class ListenAlong {
     this.setStatus("off");
   }
 
-  /** Terminal: invalidates pending work and silently tears the player down. */
   dispose() {
     this.disposed = true;
     this.generation++;
@@ -113,7 +93,6 @@ export class ListenAlong {
     const generation = ++this.generation;
     const stale = () => generation !== this.generation;
     this.targetUrl = track.url;
-    // The previous song would otherwise keep playing while we look up the next.
     if (this.ready) this.player?.pauseVideo();
     else this.destroyPlayer();
     this.setStatus("loading");
@@ -143,7 +122,6 @@ export class ListenAlong {
       return;
     }
 
-    // Any player still booting belongs to a superseded request.
     this.destroyPlayer();
     const epoch = this.playerEpoch;
     const current = () => epoch === this.playerEpoch && !this.disposed;
@@ -156,8 +134,6 @@ export class ListenAlong {
       },
       onError: () => {
         if (!current()) return;
-        // A ready player erroring while a newer request is loading is just the
-        // old song failing; that request will report its own outcome.
         const superseded = this.ready && this.status === "loading";
         this.destroyPlayer();
         if (!superseded) this.setStatus("missing");
@@ -177,9 +153,7 @@ export class ListenAlong {
     this.ready = false;
     try {
       player?.destroy();
-    } catch {
-      // The iframe may already be gone.
-    }
+    } catch {}
     this.deps.clearHost();
   }
 

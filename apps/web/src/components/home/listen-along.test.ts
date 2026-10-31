@@ -77,7 +77,6 @@ const answer = (id: string, video: string | null) =>
 
 function make() {
   const deps: ListenAlongDeps = {
-    // Mirrors the server action: it answers for whatever is playing *now*.
     match: () => {
       const d = deferred<Match>();
       matches.set(lastTrack, d);
@@ -132,7 +131,7 @@ describe("ListenAlong", () => {
     const la = make();
     seconds = 10;
     const run = request(la, "a");
-    seconds = 42; // time passed while YouTube was being searched
+    seconds = 42;
     answer("a", "vidA");
     await run;
     assert.equal(players[0]!.startSeconds, 42);
@@ -233,7 +232,7 @@ describe("ListenAlong", () => {
     const secondRun = request(la, "b", "start");
     answer("b", "vidB");
     await secondRun;
-    answer("a", "vidA"); // slow, out-of-order reply
+    answer("a", "vidA");
     await first;
     assert.equal(players.length, 1);
     assert.equal(players[0]!.videoId, "vidB");
@@ -252,7 +251,7 @@ describe("ListenAlong", () => {
     assert.equal(booting.destroyed, true);
     assert.equal(players.length, 2);
 
-    booting.events.onReady(); // late event from the superseded player
+    booting.events.onReady();
     assert.equal(la.status, "loading");
     players[1]!.events.onReady();
     assert.equal(la.status, "on");

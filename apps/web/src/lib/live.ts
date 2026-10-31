@@ -10,7 +10,6 @@ import type { SpotifyTrack } from "~/lib/listening/spotify-track";
 const PLAYING_POLL_MS = 15_000;
 const IDLE_POLL_MS = 20_000;
 const HISTORY_POLL_MS = 5 * 60_000;
-/** Re-check this long after the song should have ended, to catch the next one. */
 const SONG_END_GRACE_MS = 1_500;
 
 export function useNowPlaying() {
@@ -22,14 +21,12 @@ export function useNowPlaying() {
       revalidateOnFocus: true,
       refreshInterval: (latest) =>
         latest?.track?.isPlaying ? PLAYING_POLL_MS : IDLE_POLL_MS,
-      // Spotify errors and rate limits keep the last known track on screen.
       errorRetryInterval: 15_000,
     },
   );
   const track = data?.track ?? null;
   const receivedAt = data?.receivedAt ?? 0;
 
-  // Don't wait for the next poll to notice the song changed.
   useEffect(() => {
     if (!track?.isPlaying || !track.duration) return;
     const remaining =

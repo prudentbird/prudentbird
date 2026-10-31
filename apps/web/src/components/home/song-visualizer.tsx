@@ -117,7 +117,6 @@ function useCoverAccent(src: string | undefined) {
 }
 
 const todayKey = () => dayKey(Date.now());
-// Re-read once a minute so a page left open rolls over at Lagos midnight.
 const subscribeToDay = (onChange: () => void) => {
   const id = setInterval(onChange, 60_000);
   return () => clearInterval(id);
@@ -269,8 +268,6 @@ export function SongVisualizer() {
       return;
     }
 
-    // The bars are a generated animation seeded by the song, not an analysis
-    // of the audio: this only shapes the made-up "intensity" over the track.
     const sectionLevel = (p: number) =>
       0.55 +
       0.45 * (shape.heights[Math.min(count - 1, Math.floor(p * count))] ?? 0.5);
@@ -370,7 +367,6 @@ export function SongVisualizer() {
     const controller = new ListenAlong({
       match: findYouTubeMatch,
       loadApi: async () => void (await loadYouTubeApi()),
-      // Read when the lookup finishes, not when the button was pressed.
       startSeconds: () => {
         const { track, receivedAt } = latestTrack.current;
         return track?.isPlaying
@@ -419,7 +415,6 @@ export function SongVisualizer() {
     else void listenAlong.current?.start(track);
   };
 
-  // Spotify moved to another song while we're listening along.
   useEffect(() => {
     if (track) void listenAlong.current?.follow(track);
   }, [track]);

@@ -10,7 +10,6 @@ import {
 export type { SpotifyTrack };
 
 const API = "https://api.spotify.com/v1/me/player";
-/** Visitors share one lookup per window so polling can't multiply upstream calls. */
 const SHARE_MS = 5_000;
 const DEFAULT_BACKOFF_S = 30;
 
@@ -65,11 +64,6 @@ async function getAccessToken(): Promise<string> {
   return token.value;
 }
 
-/**
- * GETs a Spotify player endpoint. 2xx (including 204 "nothing playing") is
- * returned as-is; anything else is an upstream failure and throws, so callers
- * keep showing the last known track instead of mistaking an outage for silence.
- */
 async function spotifyGet(path: string, accessToken: string) {
   const response = await fetch(`${API}/${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -102,8 +96,6 @@ async function lookup(): Promise<SpotifyTrack | null> {
     if (track) return track;
   }
 
-  // Nothing playing (204), or something that isn't a music track: show the
-  // last song instead.
   const recent = await spotifyGet("recently-played?limit=1", accessToken);
   const data = await recent.json();
   return toSpotifyTrack(data?.items?.[0]?.track, {
@@ -112,10 +104,6 @@ async function lookup(): Promise<SpotifyTrack | null> {
   });
 }
 
-/**
- * The track Spotify is on, the last one played when idle, or null if there is
- * no history. Throws when Spotify itself is unreachable or rate limiting.
- */
 export async function getSpotifySnapshot(): Promise<SpotifySnapshot> {
   await connection();
   const now = Date.now();

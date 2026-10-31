@@ -14,17 +14,6 @@ import {
   type Wanted,
 } from "~/lib/listening/youtube-match";
 
-/**
- * Finds the YouTube upload that best matches the track Spotify currently
- * reports. Server actions are reachable by direct POST, so this takes no
- * arguments and reads the track server-side: callers can't search for anything
- * else. Search costs 100 of 10,000 daily quota units, so matches are cached per
- * track. Returns the track's Spotify URL so callers can discard a result for a
- * track that has since changed.
- *
- * Without YOUTUBE_API_KEY matching is switched off: no Spotify or YouTube calls
- * are made and the result is null.
- */
 export async function findYouTubeMatch(): Promise<{
   url: string;
   id: string | null;
@@ -41,15 +30,12 @@ export async function findYouTubeMatch(): Promise<{
   const title = searchTitle(track.name);
   const artists = splitArtists(track.artist);
   const seconds = Math.round(track.duration / 1000);
-  // Nothing to compare against, so any search would be a guess that gets cached.
   if (!seconds || !normalize(title)) return { url: track.url, id: null };
 
   try {
     const id = await match(track.url, title, artists, seconds);
     return { url: track.url, id };
   } catch (error) {
-    // Transient (quota, network): the cache function threw, so nothing was
-    // stored and the next request tries again.
     console.error(error);
     return null;
   }
@@ -114,8 +100,6 @@ async function findVideo(wanted: Wanted, key: string) {
     0,
     Math.max(3, Math.ceil(wanted.title.length / 2)),
   );
-  // The second query loosens the wording in case the full title is why the
-  // first one found nothing usable.
   const queries = [`${artist} ${wanted.title}`];
   if (wanted.title.length > 4) queries.push(`${artist} ${prefix}`);
 
@@ -136,7 +120,6 @@ async function findVideo(wanted: Wanted, key: string) {
 }
 
 async function match(
-  // Keep distinct Spotify recordings in separate cache entries.
   trackUrl: string,
   title: string,
   artists: string[],
@@ -145,8 +128,6 @@ async function match(
   "use cache";
   const key = env.YOUTUBE_API_KEY;
   if (!key) throw new Error("YOUTUBE_API_KEY is not set");
-  // Any failure above throws before this point, so only real answers are
-  // cached. Hits are stable; misses expire sooner in case an upload appears.
   const id = await findVideo({ title, artists, seconds }, key);
   if (id) cacheLife("weeks");
   else cacheLife("days");

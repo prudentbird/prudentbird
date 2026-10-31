@@ -117,7 +117,6 @@ describe("choose", () => {
       video("fan", "Blinding Lights - The Weeknd", "Fan Channel"),
       video("official", "Blinding Lights", "The Weeknd - Topic"),
     ];
-    // The fan upload is closer in length but not official.
     assert.equal(pick(wanted, items, { fan: 199, official: 203 }), "official");
   });
 

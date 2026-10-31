@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 
 const VoxelAvatar = dynamic(() => import("./voxel-avatar"), { ssr: false });
 
-// The 3D scene is heavy; boot it once the page has loaded and gone idle so it
-// never competes with hydration. The server-rendered sprite stands in until then.
 function useIdleAfterLoad() {
   const [idle, setIdle] = useState(false);
   useEffect(() => {

@@ -11,10 +11,6 @@ import {
 const DISTANCE = AVATAR_CAMERA.position[2];
 const VIEW = 2 * DISTANCE * Math.tan(((AVATAR_CAMERA.fov / 2) * Math.PI) / 180);
 
-// AVATAR_PALETTE as the lit 3D scene actually renders it, sampled per theme,
-// so the hand-off from sprite to canvas doesn't shift colour.
-// Set on the outer <svg>: <use> renders the symbol in a shadow tree that
-// theme selectors can't reach, but custom properties inherit into it.
 const LIT = [
   "[--lit-0:#2c324c] dark:[--lit-0:#15192b]",
   "[--lit-1:#dadddc] dark:[--lit-1:#b9bfbc]",
@@ -76,7 +72,6 @@ function buildCells() {
       });
     }),
   );
-  // Painted back to front; one path per depth and colour keeps the markup small.
   const layers = new Map<string, string>();
   for (const cell of cells.sort((a, b) => a.z - b.z)) {
     const key = `${cell.z}|${cell.color}`;
@@ -104,8 +99,6 @@ export function AvatarSpriteDefs() {
   );
 }
 
-// Flat, server-rendered stand-in for the voxel avatar: the scene's first frame,
-// before its voxels extrude, drawn with the same camera framing.
 export function AvatarSprite({ className }: { className?: string }) {
   return (
     <svg
