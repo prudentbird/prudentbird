@@ -12,6 +12,9 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
+const button = "size-6";
+const icon = "size-3.5";
+
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
 
@@ -24,8 +27,8 @@ export function ThemeSwitcher() {
   if (!mounted) {
     return (
       <>
-        <Skeleton className="h-10 w-10 sm:hidden" />
-        <Skeleton className="hidden sm:inline-flex h-9 w-28 rounded-full" />
+        <Skeleton className="size-8 sm:hidden" />
+        <Skeleton className="hidden h-[1.875rem] w-[5.25rem] rounded-full sm:inline-flex" />
       </>
     );
   }
@@ -34,13 +37,17 @@ export function ThemeSwitcher() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="sm:hidden">
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-8 rounded-full border-border/60 sm:hidden"
+          >
             {theme === "light" ? (
-              <Sun className="h-4 w-4" />
+              <Sun className={icon} />
             ) : theme === "system" ? (
-              <Monitor className="h-4 w-4" />
+              <Monitor className={icon} />
             ) : (
-              <MoonStar className="h-4 w-4" />
+              <MoonStar className={icon} />
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
@@ -61,12 +68,12 @@ export function ThemeSwitcher() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="hidden sm:inline-flex items-center gap-1 rounded-full bg-muted p-0.5 border border-border">
+      <div className="hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border gap-0.5 border-border/60">
         <Button
           onClick={() => setTheme("light")}
           variant="ghost"
           size="icon"
-          className={`rounded-full h-8 w-8 transition-colors ${
+          className={`rounded-full ${button} transition-colors ${
             theme === "light"
               ? "bg-accent-foreground/60 text-background/80 hover:text-background/80 hover:bg-accent-foreground/60 dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
@@ -74,13 +81,13 @@ export function ThemeSwitcher() {
           aria-label="Light mode"
           aria-pressed={theme === "light"}
         >
-          <Sun className="h-4 w-4" />
+          <Sun className={icon} />
         </Button>
         <Button
           onClick={() => setTheme("system")}
           variant="ghost"
           size="icon"
-          className={`rounded-full h-8 w-8 transition-colors ${
+          className={`rounded-full ${button} transition-colors ${
             theme === "system"
               ? "bg-background text-foreground hover:bg-background dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
@@ -88,13 +95,13 @@ export function ThemeSwitcher() {
           aria-label="System mode"
           aria-pressed={theme === "system"}
         >
-          <Monitor className="h-4 w-4" />
+          <Monitor className={icon} />
         </Button>
         <Button
           onClick={() => setTheme("dark")}
           variant="ghost"
           size="icon"
-          className={`rounded-full h-8 w-8 transition-colors ${
+          className={`rounded-full ${button} transition-colors ${
             theme === "dark"
               ? "bg-background text-foreground hover:bg-background dark:hover:bg-background"
               : "text-accent-foreground/80 hover:text-accent-foreground hover:bg-muted-foreground/60 dark:hover:bg-background/60"
@@ -102,7 +109,7 @@ export function ThemeSwitcher() {
           aria-label="Dark mode"
           aria-pressed={theme === "dark"}
         >
-          <MoonStar className="h-4 w-4" />
+          <MoonStar className={icon} />
         </Button>
       </div>
     </>

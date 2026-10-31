@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "motion"],
   },
   images: {
+    qualities: [75, 90],
     remotePatterns: [
       {
         protocol: "https",

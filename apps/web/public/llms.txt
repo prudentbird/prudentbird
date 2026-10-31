@@ -46,17 +46,24 @@ tools people actually use. Core areas of expertise:
 
 ### Voxx
 
-Write markdown and ship content fast.
+A zero-friction CMS for you and your agents.
 
 - Site: [https://voxx.prudentbird.com](https://voxx.prudentbird.com)
 - Source: [https://github.com/prudentbird/voxx](https://github.com/prudentbird/voxx)
 
 ### Beakcrypt
 
-Encrypted environment variable management for teams.
+Environment variables, shared without the Slack paste.
 
 - Site: [https://beakcrypt.com](https://beakcrypt.com)
 - Source: [https://github.com/prudentbird/beakcrypt](https://github.com/prudentbird/beakcrypt)
+
+### Sudoku
+
+Sudoku with friends, in real time.
+
+- Site: [https://sudoku.prudentbird.com](https://sudoku.prudentbird.com)
+- Source: [https://github.com/prudentbird/prudentbird](https://github.com/prudentbird/prudentbird)
 
 ### FuseIon
 
@@ -67,14 +74,14 @@ The AI chat app for nerds.
 
 ### Retailytics
 
-Retail store data for business analytics.
+Field-collected retail and logistics data for Nigeria.
 
 - Site: [https://retailytics.ajared.ng](https://retailytics.ajared.ng)
 - Source: Private
 
 ### Family Tree
 
-Explore and preserve family history.
+Build and share your family tree.
 
 - Site: [https://familytree.ajared.ng](https://familytree.ajared.ng)
 - Source: Private

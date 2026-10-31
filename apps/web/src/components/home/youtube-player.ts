@@ -1,0 +1,58 @@
+"use client";
+
+export type YTPlayer = {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  loadVideoById: (o: { videoId: string; startSeconds?: number }) => void;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  getPlayerState: () => number;
+  destroy: () => void;
+};
+
+type YTNamespace = {
+  Player: new (
+    el: HTMLElement,
+    opts: {
+      videoId: string;
+      width?: number | string;
+      height?: number | string;
+      playerVars?: Record<string, number | string>;
+      events?: {
+        onReady?: () => void;
+        onError?: (e: { data: number }) => void;
+      };
+    },
+  ) => YTPlayer;
+};
+
+declare global {
+  interface Window {
+    YT?: YTNamespace;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+let api: Promise<YTNamespace> | null = null;
+
+export function loadYouTubeApi() {
+  api ??= new Promise<YTNamespace>((resolve, reject) => {
+    if (window.YT?.Player) return resolve(window.YT);
+    window.onYouTubeIframeAPIReady = () => resolve(window.YT!);
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("YouTube iframe API failed to load"));
+    };
+    document.body.appendChild(script);
+  }).catch((error) => {
+    api = null;
+    throw error;
+  });
+  return api;
+}
+
+export const PLAYING = 1;

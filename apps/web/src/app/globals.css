@@ -114,22 +114,21 @@
   --text-gradient: linear-gradient(180deg, #fff 0%, #adadad 100%);
 }
 
-@keyframes marquee-scroll {
-  0%,
-  15% {
-    transform: translateX(0);
-  }
-  85%,
-  100% {
-    transform: translateX(var(--marquee-offset, 0px));
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@keyframes voxx-cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }

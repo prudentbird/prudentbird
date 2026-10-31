@@ -1,10 +1,7 @@
 import { env } from "~/env";
-import { Hero } from "~/components/hero";
-import { Footer } from "~/components/footer";
-import { Projects } from "~/components/projects";
-import { Activity } from "~/components/activity";
+import { Home } from "~/components/home/home";
 
-export default function Home() {
+export default function Page() {
   return (
     <>
       <script
@@ -42,7 +39,7 @@ export default function Home() {
               {
                 "@type": "Organization",
                 name: "Ajared Research Inc",
-                url: "https://ajared.ng",
+                url: "https://ajared.ca",
               },
               {
                 "@type": "Organization",
@@ -53,7 +50,7 @@ export default function Home() {
             alumniOf: {
               "@type": "EducationalOrganization",
               name: "National Institute of Technology, PH",
-              url: "https://niitph.com",
+              url: "https://niit-ph.com",
             },
             mainEntityOfPage: {
               "@type": "WebPage",
@@ -81,12 +78,7 @@ export default function Home() {
           }).replace(/</g, "\\u003c"),
         }}
       />
-      <main className="flex flex-col gap-10 sm:gap-12 min-h-screen w-full max-w-3xl mx-auto px-6 mt-20 md:mt-32">
-        <Hero />
-        <Projects />
-        <Activity />
-        <Footer />
-      </main>
+      <Home />
     </>
   );
 }
