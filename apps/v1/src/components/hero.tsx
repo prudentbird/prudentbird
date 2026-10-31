@@ -34,7 +34,7 @@ export function Hero() {
                 WebkitBackgroundClip: "text",
               }}
             >
-              Prudent Bird.
+              Prudent Bird
             </h1>
 
             <nav
