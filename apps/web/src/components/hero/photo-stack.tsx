@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
 import { PHOTOS, type Photo } from "./photos";
@@ -37,7 +38,7 @@ export default function PhotoStack({ className }: { className?: string }) {
         const n = PHOTOS.length;
         const spread = depth / (n - 1) - 0.5;
         return (
-          <motion.figure
+          <m.figure
             key={i}
             initial={false}
             role="button"
@@ -74,7 +75,7 @@ export default function PhotoStack({ className }: { className?: string }) {
                 <path d="M0 6 Q10 0 20 6 T40 6 T60 6 T80 6 T100 6 T120 6 T140 6 T160 6 T180 6 T200 6 T220 6 T240 6 V16 H0 Z" />
               </svg>
             </div>
-          </motion.figure>
+          </m.figure>
         );
       })}
     </div>

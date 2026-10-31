@@ -2,7 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import { NIGERIA_RING, NIGERIA_SPOTS } from "./nigeria";
@@ -197,7 +197,7 @@ export function RetailyticsState({ active }: { active: boolean }) {
               .slice(0, active ? count : NIGERIA_SPOTS.length)
               .map(([x, y], i) => (
                 <g key={i}>
-                  <motion.circle
+                  <m.circle
                     cx={x}
                     cy={y}
                     r={5}
@@ -209,7 +209,7 @@ export function RetailyticsState({ active }: { active: boolean }) {
                     style={{ transformOrigin: `${x}px ${y}px` }}
                   />
                   {active && (
-                    <motion.circle
+                    <m.circle
                       cx={x}
                       cy={y}
                       className="fill-none stroke-[#16a34a] dark:stroke-[#4ade80]"

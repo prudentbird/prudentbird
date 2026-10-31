@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "~/lib/utils";
 import { externalProps } from "~/lib/content";
@@ -162,14 +163,14 @@ function VoxxArtifact({ active }: { active: boolean }) {
       <div className="absolute top-12 right-0 bottom-0 w-[50%] overflow-hidden rounded-xl border border-border/60 bg-card p-3 sm:p-5 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.45)]">
         <div className="mb-3 flex min-h-5 gap-1.5">
           {tags.map((tag) => (
-            <motion.span
+            <m.span
               key={tag}
               initial={active ? { opacity: 0, y: 4 } : false}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-full bg-[#f97316]/12 px-2 py-0.5 text-[10px] text-[#c2410c] dark:text-[#fb923c]"
             >
               {tag}
-            </motion.span>
+            </m.span>
           ))}
         </div>
         {body.map((line, i) => {
@@ -257,25 +258,25 @@ function BeakcryptArtifact({ active }: { active: boolean }) {
           </p>
           <div className="mt-4 space-y-1.5 text-white/50">
             {STEPS.slice(0, shown).map((step) => (
-              <motion.p
+              <m.p
                 key={step.text}
                 initial={active ? { opacity: 0, y: 4 } : false}
                 animate={{ opacity: 1, y: 0 }}
               >
                 <span style={{ color: step.colour }}>{step.mark}</span>{" "}
                 {step.text}
-              </motion.p>
+              </m.p>
             ))}
           </div>
           {shown > STEPS.length && (
-            <motion.p
+            <m.p
               initial={active ? { opacity: 0, y: 4 } : false}
               animate={{ opacity: 1, y: 0 }}
               className="mt-5 rounded border border-[#22c55e]/20 bg-[#22c55e]/5 p-3"
             >
               <span className="text-[#22c55e]">Success!</span>
               <span className="text-white/50"> Environment synced in 1.2s</span>
-            </motion.p>
+            </m.p>
           )}
         </div>
       </div>
@@ -327,7 +328,7 @@ function SudokuArtifact({ active }: { active: boolean }) {
               )}
             >
               {shown && (
-                <motion.span
+                <m.span
                   initial={
                     !active || GIVEN.has(i) ? false : { scale: 0.2, opacity: 0 }
                   }
@@ -335,7 +336,7 @@ function SudokuArtifact({ active }: { active: boolean }) {
                   transition={{ type: "spring", stiffness: 500, damping: 18 }}
                 >
                   {SOLUTION[i]}
-                </motion.span>
+                </m.span>
               )}
             </div>
           );
@@ -465,7 +466,7 @@ function FamilyTreeArtifact({ active }: { active: boolean }) {
         const [x2, y2] = NODES[b]!;
         const mid = (y1 + y2) / 2;
         return (
-          <motion.path
+          <m.path
             key={`${a}-${b}`}
             d={`M${x1} ${y1} C${x1} ${mid} ${x2} ${mid} ${x2} ${y2}`}
             fill="none"
@@ -478,7 +479,7 @@ function FamilyTreeArtifact({ active }: { active: boolean }) {
         );
       })}
       {NODES.map(([x, y], i) => (
-        <motion.circle
+        <m.circle
           key={i}
           cx={x}
           cy={y}
