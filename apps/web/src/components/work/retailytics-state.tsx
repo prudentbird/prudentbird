@@ -1,11 +1,9 @@
 "use client";
 
-import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { NIGERIA_RING, NIGERIA_SPOTS } from "./nigeria";
 
 const EVERY_MS = 650;
 const OVERSAMPLE = 3;
@@ -16,17 +14,6 @@ const STYLE = {
   light: "https://tiles.openfreemap.org/styles/positron",
   dark: "https://tiles.openfreemap.org/styles/dark",
 };
-
-const BOUNDS: [[number, number], [number, number]] = [
-  [
-    Math.min(...NIGERIA_RING.map((p) => p[0])),
-    Math.min(...NIGERIA_RING.map((p) => p[1])),
-  ],
-  [
-    Math.max(...NIGERIA_RING.map((p) => p[0])),
-    Math.max(...NIGERIA_RING.map((p) => p[1])),
-  ],
-];
 
 type Shape = {
   clip: string;
@@ -75,7 +62,8 @@ export function RetailyticsState({ active }: { active: boolean }) {
   const theme: keyof typeof STYLE = resolvedTheme === "dark" ? "dark" : "light";
   const themeRef = useRef(theme);
   const [shape, setShape] = useState<Shape | null>(null);
-  const [count, setCount] = useState(NIGERIA_SPOTS.length);
+  const [count, setCount] = useState(Infinity);
+  const total = shape?.spots.length ?? 0;
 
   useEffect(() => {
     themeRef.current = theme;
@@ -87,8 +75,20 @@ export function RetailyticsState({ active }: { active: boolean }) {
     if (!element) return;
     let disposed = false;
     let observer: ResizeObserver | undefined;
-    void import("maplibre-gl").then(({ Map, setWorkerUrl }) => {
+    void (async () => {
+      const [{ Map, setWorkerUrl }, { NIGERIA_RING, NIGERIA_SPOTS }] =
+        await Promise.all([
+          import("maplibre-gl"),
+          import("./nigeria"),
+          import("maplibre-gl/dist/maplibre-gl.css"),
+        ]);
       if (disposed) return;
+      const xs = NIGERIA_RING.map((p) => p[0]);
+      const ys = NIGERIA_RING.map((p) => p[1]);
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...xs), Math.min(...ys)],
+        [Math.max(...xs), Math.max(...ys)],
+      ];
       setWorkerUrl(
         new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url)
           .href,
@@ -96,7 +96,7 @@ export function RetailyticsState({ active }: { active: boolean }) {
       const current = new Map({
         container: element,
         style: STYLE[themeRef.current],
-        bounds: BOUNDS,
+        bounds,
         fitBoundsOptions: { padding: PADDING },
         interactive: false,
         attributionControl: false,
@@ -139,10 +139,10 @@ export function RetailyticsState({ active }: { active: boolean }) {
       observer = new ResizeObserver(() => current.resize());
       observer.observe(element.parentElement!);
       current.on("resize", () => {
-        current.fitBounds(BOUNDS, { padding: PADDING, duration: 0 });
+        current.fitBounds(bounds, { padding: PADDING, duration: 0 });
         project();
       });
-    });
+    })();
     return () => {
       disposed = true;
       observer?.disconnect();
@@ -152,19 +152,16 @@ export function RetailyticsState({ active }: { active: boolean }) {
   }, []);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || !total) return;
     let timer: ReturnType<typeof setTimeout>;
     const step = (n: number) => {
-      const next = n >= NIGERIA_SPOTS.length ? 0 : n + 1;
+      const next = n >= total ? 0 : n + 1;
       setCount(next);
-      timer = setTimeout(
-        () => step(next),
-        next >= NIGERIA_SPOTS.length ? HOLD_MS : EVERY_MS,
-      );
+      timer = setTimeout(() => step(next), next >= total ? HOLD_MS : EVERY_MS);
     };
-    timer = setTimeout(() => step(NIGERIA_SPOTS.length), HOLD_MS);
+    timer = setTimeout(() => step(total), HOLD_MS);
     return () => clearTimeout(timer);
-  }, [active]);
+  }, [active, total]);
 
   return (
     <div className="flex h-full w-full flex-col gap-2">
@@ -193,34 +190,32 @@ export function RetailyticsState({ active }: { active: boolean }) {
               strokeWidth={1.25}
               strokeLinejoin="round"
             />
-            {shape.spots
-              .slice(0, active ? count : NIGERIA_SPOTS.length)
-              .map(([x, y], i) => (
-                <g key={i}>
-                  <motion.circle
+            {shape.spots.slice(0, active ? count : total).map(([x, y], i) => (
+              <g key={i}>
+                <m.circle
+                  cx={x}
+                  cy={y}
+                  r={5}
+                  className="fill-[#16a34a] stroke-background dark:fill-[#4ade80]"
+                  strokeWidth={2}
+                  initial={active ? { scale: 0 } : false}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 16 }}
+                  style={{ transformOrigin: `${x}px ${y}px` }}
+                />
+                {active && (
+                  <m.circle
                     cx={x}
                     cy={y}
-                    r={5}
-                    className="fill-[#16a34a] stroke-background dark:fill-[#4ade80]"
-                    strokeWidth={2}
-                    initial={active ? { scale: 0 } : false}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 16 }}
-                    style={{ transformOrigin: `${x}px ${y}px` }}
+                    className="fill-none stroke-[#16a34a] dark:stroke-[#4ade80]"
+                    strokeWidth={1.5}
+                    initial={{ r: 5, opacity: 0.9 }}
+                    animate={{ r: 22, opacity: 0 }}
+                    transition={{ duration: 1.1, ease: "easeOut" }}
                   />
-                  {active && (
-                    <motion.circle
-                      cx={x}
-                      cy={y}
-                      className="fill-none stroke-[#16a34a] dark:stroke-[#4ade80]"
-                      strokeWidth={1.5}
-                      initial={{ r: 5, opacity: 0.9 }}
-                      animate={{ r: 22, opacity: 0 }}
-                      transition={{ duration: 1.1, ease: "easeOut" }}
-                    />
-                  )}
-                </g>
-              ))}
+                )}
+              </g>
+            ))}
           </svg>
         )}
       </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Float } from "@react-three/drei/webgpu";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -16,13 +15,22 @@ import {
   Vector2,
   Vector3,
 } from "three";
-import { AVATAR_PALETTE, AVATAR_ROWS } from "./avatar-pixels";
+import {
+  AVATAR_CAMERA,
+  AVATAR_DEPTH,
+  AVATAR_PALETTE,
+  AVATAR_ROWS,
+  AVATAR_UNIT,
+  TAG_CENTER_XYZ,
+  TAG_ROWS,
+  TAG_UNIT,
+} from "./avatar-pixels";
 import { cn } from "~/lib/utils";
 import { externalProps } from "~/lib/content";
 import { Stage, useStageEnv } from "./stage";
 
-const UNIT = 0.2;
-const CAMERA = { position: [0, 0, 8.6] as [number, number, number], fov: 30 };
+const UNIT = AVATAR_UNIT;
+const CAMERA = AVATAR_CAMERA;
 const BLEED = 1.7;
 
 type Voxel = {
@@ -34,17 +42,7 @@ type Voxel = {
 
 const NFT_HREF =
   "https://magiceden.io/item-details/FWcEzs13GzBCybYHw5wKvT7vo9QJr96mTq5hQsyqQ97x";
-const TAG_ROWS = [
-  ".............................",
-  "..#.#...#..###.###.###...###.",
-  ".#####.##..#.#.#.#.#.#....##.",
-  "..#.#...#..###.###.#.#...#.#.",
-  ".#####..#....#...#.#.#..#....",
-  "..#.#..###.###.###.###.#.....",
-  ".............................",
-];
-const TAG_UNIT = 0.055;
-const TAG_CENTER = new Vector3(1.05, -1.62, 0.26);
+const TAG_CENTER = new Vector3(...TAG_CENTER_XYZ);
 const TAG_GLYPH = new Color(AVATAR_PALETTE[2]);
 const TAG_LIT = new Color(AVATAR_PALETTE[3]);
 const TAG_LIFT = 0.16;
@@ -99,6 +97,8 @@ const PUSH_BASE = 18;
 const PUSH_PER_SPEED = 9;
 const SPRING = 55;
 const DAMPING = 8;
+const FLOAT_SPEED = 0.3;
+const FLOAT_HEIGHT = 0.06;
 const clamp1 = (n: number) => Math.max(-1, Math.min(1, n));
 
 type Trick = "hop" | "wiggle";
@@ -108,6 +108,12 @@ const TRICK_LENGTH: Record<Trick, number> = {
   wiggle: 0.9,
 };
 const nextTrickIn = () => 5 + Math.random() * 6;
+
+// The scene takes over from the flat sprite: it starts at zero depth (identical
+// to the sprite), holds a few frames while the swap happens, then extrudes.
+const EXTRUDE_HOLD_FRAMES = 6;
+const EXTRUDE_SECONDS = 0.8;
+const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 
 const AGITATION_DECAY = 1;
 const JITTER_DECAY = 8;
@@ -158,6 +164,8 @@ function Avatar({ animate }: { animate: boolean }) {
   const group = useRef<Group>(null);
   const inner = useRef<Group>(null);
   const time = useRef(0);
+  const frames = useRef(0);
+  const extrude = useRef(animate ? 0 : 1);
   const agitation = useRef(0);
   const jitter = useRef(0);
   const burst = useRef(false);
@@ -168,7 +176,7 @@ function Avatar({ animate }: { animate: boolean }) {
   const [voxels] = useState(buildVoxels);
   const dummy = useRef(new Object3D());
   const [geometry] = useState(
-    () => new BoxGeometry(UNIT * 0.94, UNIT * 0.94, UNIT * 1.6),
+    () => new BoxGeometry(UNIT * 0.94, UNIT * 0.94, AVATAR_DEPTH),
   );
   const [material] = useState(
     () => new MeshStandardMaterial({ roughness: 0.42, metalness: 0.05 }),
@@ -300,6 +308,16 @@ function Avatar({ animate }: { animate: boolean }) {
     if (!m || !g || !b) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     time.current += dt;
+    // Extrusion runs on real elapsed time (physics dt is capped), bounded so a
+    // single stall can't skip it.
+    const elapsed = Math.max(0, Math.min(delta, 0.1));
+    if (!animate) extrude.current = 1;
+    else if (++frames.current > EXTRUDE_HOLD_FRAMES)
+      extrude.current = Math.min(
+        1,
+        extrude.current + elapsed / EXTRUDE_SECONDS,
+      );
+    const depth = Math.max(easeOutCubic(extrude.current), 1e-3);
     const now = time.current;
     const push = pushRef.current;
 
@@ -414,17 +432,20 @@ function Avatar({ animate }: { animate: boolean }) {
         recolor = true;
       }
       d.rotation.set(off.y * 2, -off.x * 2, off.z);
-      d.scale.setScalar(v.tag ? v.scale * grow : v.scale);
+      const size = v.tag ? v.scale * grow : v.scale;
+      d.scale.set(size, size, size * depth);
       d.updateMatrix();
       m.setMatrixAt(i, d.matrix);
     });
     m.instanceMatrix.needsUpdate = true;
     if (recolor && m.instanceColor) m.instanceColor.needsUpdate = true;
     const sway = animate ? Math.sin(now * 0.6) * 0.12 : 0;
+    // Gentle float that starts at rest, so the first frame lines up with the sprite.
+    g.position.y = animate ? Math.sin(now * FLOAT_SPEED) * FLOAT_HEIGHT : 0;
     const px = clamp1(pointer.x * BLEED);
     const py = clamp1(pointer.y * BLEED);
-    g.rotation.y += (px * 0.55 + sway - g.rotation.y) * 0.06;
-    g.rotation.x += (-py * 0.3 - g.rotation.x) * 0.06;
+    g.rotation.y += ((px * 0.55 + sway) * depth - g.rotation.y) * 0.06;
+    g.rotation.x += (-py * 0.3 * depth - g.rotation.x) * 0.06;
   });
 
   return (
@@ -441,13 +462,7 @@ export default function VoxelAvatar({ className }: { className?: string }) {
   return (
     <div className={cn("relative", className)}>
       <Stage className="size-full touch-pan-y" camera={CAMERA} bleed={BLEED}>
-        <Float
-          speed={reduce ? 0 : 1.2}
-          rotationIntensity={0}
-          floatIntensity={reduce ? 0 : 0.6}
-        >
-          <Avatar animate={!reduce} />
-        </Float>
+        <Avatar animate={!reduce} />
       </Stage>
       <a href={NFT_HREF} {...externalProps} className="sr-only">
         Solana Penguin Business #1990 on Magic Eden

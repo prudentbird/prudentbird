@@ -5,12 +5,12 @@ import { useSyncExternalStore } from "react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sun, Monitor, MoonStar } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+import dynamic from "next/dynamic";
+
+const ThemeMenu = dynamic(() => import("./theme-menu"), {
+  ssr: false,
+  loading: () => <Skeleton className="size-8 sm:hidden" />,
+});
 
 const button = "size-6";
 const icon = "size-3.5";
@@ -35,38 +35,7 @@ export function ThemeSwitcher() {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-8 rounded-full border-border/60 sm:hidden"
-          >
-            {theme === "light" ? (
-              <Sun className={icon} />
-            ) : theme === "system" ? (
-              <Monitor className={icon} />
-            ) : (
-              <MoonStar className={icon} />
-            )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setTheme("light")}>
-            <Sun className="h-4 w-4 mr-2" />
-            Light
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("system")}>
-            <Monitor className="h-4 w-4 mr-2" />
-            System
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("dark")}>
-            <MoonStar className="h-4 w-4 mr-2" />
-            Dark
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <ThemeMenu theme={theme} setTheme={setTheme} />
 
       <div className="hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border gap-0.5 border-border/60">
         <Button

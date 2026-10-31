@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { DeferredPhoto } from "./photo-stack";
 import { PHOTOS, type Photo } from "./photos";
 
@@ -122,7 +123,7 @@ export function MobilePhotos() {
         createPortal(
           <AnimatePresence onExitComplete={() => setLifted(null)}>
             {selected !== null && lifted && (
-              <motion.div
+              <m.div
                 key="photo-overlay"
                 role="dialog"
                 aria-modal="true"
@@ -132,7 +133,7 @@ export function MobilePhotos() {
                   if (event.target === event.currentTarget) setSelected(null);
                 }}
               >
-                <motion.div
+                <m.div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-black/65"
                   initial={{ opacity: 0 }}
@@ -140,7 +141,7 @@ export function MobilePhotos() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: reduce ? 0 : 0.2 }}
                 />
-                <motion.button
+                <m.button
                   ref={closeButton}
                   type="button"
                   aria-label="Put photo back"
@@ -174,7 +175,7 @@ export function MobilePhotos() {
                   onClick={() => setSelected(null)}
                 >
                   <Print photo={PHOTOS[selected]!} />
-                </motion.button>
+                </m.button>
                 <div
                   aria-hidden="true"
                   className="pointer-events-none fixed"
@@ -189,7 +190,7 @@ export function MobilePhotos() {
                           style={edgeStyle(i, PHOTOS.length)}
                         >
                           <Print photo={photo} />
-                          <motion.div
+                          <m.div
                             className="absolute inset-0 rounded-[4px] bg-black/65"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -200,7 +201,7 @@ export function MobilePhotos() {
                       ),
                   )}
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>,
           document.body,
