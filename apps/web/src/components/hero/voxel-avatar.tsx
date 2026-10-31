@@ -308,9 +308,15 @@ function Avatar({ animate }: { animate: boolean }) {
     if (!m || !g || !b) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     time.current += dt;
+    // Extrusion runs on real elapsed time (physics dt is capped), bounded so a
+    // single stall can't skip it.
+    const elapsed = Math.max(0, Math.min(delta, 0.1));
     if (!animate) extrude.current = 1;
     else if (++frames.current > EXTRUDE_HOLD_FRAMES)
-      extrude.current = Math.min(1, extrude.current + dt / EXTRUDE_SECONDS);
+      extrude.current = Math.min(
+        1,
+        extrude.current + elapsed / EXTRUDE_SECONDS,
+      );
     const depth = Math.max(easeOutCubic(extrude.current), 1e-3);
     const now = time.current;
     const push = pushRef.current;
