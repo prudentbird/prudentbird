@@ -148,6 +148,8 @@ export function SongVisualizer() {
   const session = useRef(0);
   const lookup = useRef(0);
   const pendingFor = useRef<string | null>(null);
+  const latestTrack = useRef(track);
+  latestTrack.current = track;
   const [player, setPlayer] = useState<Player>("off");
   const [playback, setPlayback] = useState<{
     position: number;
@@ -429,11 +431,17 @@ export function SongVisualizer() {
         },
         onError: () => {
           if (s !== session.current) return;
+          const latest = latestTrack.current;
+          const superseded = !!latest && latest.url !== loadedFor.current;
           yt.current?.destroy();
           yt.current = null;
           loadedFor.current = null;
           ytHost.current?.replaceChildren();
           setPlayback(null);
+          if (superseded) {
+            listen(latest).catch(() => setPlayer("missing"));
+            return;
+          }
           setPlayer("missing");
         },
       },
