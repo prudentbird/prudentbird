@@ -8,7 +8,7 @@
     "start": "next start",
     "build": "next build",
     "preview": "next build && next start",
-    "test": "tsx --test \"src/**/*.test.ts\"",
+    "test": "tsx --test src/components/home/*.test.ts src/lib/listening/*.test.ts",
     "lint": "eslint . && echo Lint Checks successfully completed!",
     "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
     "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
