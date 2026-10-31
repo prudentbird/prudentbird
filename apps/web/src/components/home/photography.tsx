@@ -34,9 +34,11 @@ export function Photography() {
         </div>
         <MobilePhotos />
         <div className="hidden min-w-0 lg:block lg:col-span-6">
-          <OnMedia query={DESKTOP}>
-            <PhotoStackHero className="mx-auto aspect-square w-full max-w-[560px]" />
-          </OnMedia>
+          <div className="mx-auto aspect-square w-full max-w-[560px]">
+            <OnMedia query={DESKTOP}>
+              <PhotoStackHero className="size-full" />
+            </OnMedia>
+          </div>
         </div>
       </div>
     </section>
