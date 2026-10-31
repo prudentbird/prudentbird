@@ -65,7 +65,7 @@ export function Home() {
 
         <section
           aria-labelledby="work"
-          className={`${container} scroll-mt-20 pt-16 pb-16`}
+          className={`${container} scroll-mt-20 pt-8 sm:pt-16 pb-8 sm:pb-16`}
         >
           <SectionHeader id="work" title="Work" />
           <div className="mt-10">
@@ -75,7 +75,7 @@ export function Home() {
 
         <section
           aria-labelledby="about"
-          className={`${container} scroll-mt-20 pt-16 pb-16`}
+          className={`${container} scroll-mt-20 pt-8 sm:pt-16 pb-8 sm:pb-16`}
         >
           <SectionHeader id="about" title="About" />
           <p className="mt-6 text-xl leading-relaxed text-muted-foreground sm:text-2xl">
@@ -111,7 +111,7 @@ export function Home() {
 
         <section
           aria-labelledby="listening"
-          className={`${container} scroll-mt-20 pt-16 pb-16`}
+          className={`${container} scroll-mt-20 pt-8 sm:pt-16 pb-8 sm:pb-16`}
         >
           <SectionHeader id="listening" title="Listening" />
           <div className="pt-10">

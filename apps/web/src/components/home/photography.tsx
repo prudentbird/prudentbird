@@ -9,7 +9,7 @@ export function Photography() {
   return (
     <section
       aria-labelledby="photography"
-      className={`${container} scroll-mt-20 overflow-x-clip pt-16 pb-16`}
+      className={`${container} scroll-mt-20 overflow-x-clip pt-8 sm:pt-16 pb-8 sm:pb-16`}
     >
       <SectionHeader id="photography" title="Photography" />
       <div className="relative mt-10 grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
