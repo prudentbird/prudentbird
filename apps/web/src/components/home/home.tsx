@@ -19,7 +19,7 @@ export function Home() {
       </span>
       <main>
         <section
-          className={`${container} relative pt-14 pb-16 sm:pt-20 lg:pt-32`}
+          className={`${container} relative pt-14 pb-8 sm:pt-20 sm:pb-16 lg:pt-32`}
         >
           <div className="relative">
             <div className="absolute top-1/2 right-0 hidden aspect-square w-5/12 -translate-y-1/2 lg:block">
