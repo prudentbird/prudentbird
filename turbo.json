@@ -37,6 +37,9 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "test": {
+      "dependsOn": ["^test"]
+    },
     "typecheck": {
       "dependsOn": ["^typecheck"],
       "env": ["SKIP_ENV_VALIDATION"]

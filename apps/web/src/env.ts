@@ -12,7 +12,8 @@ export const env = createEnv({
     SPOTIFY_CLIENT_ID: z.string(),
     SPOTIFY_CLIENT_SECRET: z.string(),
     SPOTIFY_REFRESH_TOKEN: z.string(),
-    YOUTUBE_API_KEY: z.string(),
+    // Optional: without it, "Listen with me" quietly reports no match.
+    YOUTUBE_API_KEY: z.string().optional(),
   },
   emptyStringAsUndefined: true,
   experimental__runtimeEnv: true,

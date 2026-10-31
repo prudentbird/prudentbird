@@ -8,6 +8,7 @@
     "start": "next start",
     "build": "next build",
     "preview": "next build && next start",
+    "test": "node --test \"src/**/*.test.ts\"",
     "lint": "eslint . && echo Lint Checks successfully completed!",
     "lint:fix": "eslint --fix . && echo Lint Checks successfully completed!",
     "typecheck": "next typegen && tsgo --pretty --noEmit && echo Type Checks successfuly completed!"
