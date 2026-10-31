@@ -115,6 +115,7 @@ export class ListenAlong {
     this.targetUrl = track.url;
     // The previous song would otherwise keep playing while we look up the next.
     if (this.ready) this.player?.pauseVideo();
+    else this.destroyPlayer();
     this.setStatus("loading");
 
     let found;
@@ -148,7 +149,7 @@ export class ListenAlong {
     const current = () => epoch === this.playerEpoch && !this.disposed;
     this.player = this.deps.createPlayer(id, startAt, {
       onReady: () => {
-        if (!current()) return;
+        if (!current() || stale()) return;
         this.ready = true;
         this.player?.playVideo();
         this.setStatus("on");

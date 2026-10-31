@@ -258,6 +258,24 @@ describe("ListenAlong", () => {
     assert.equal(la.status, "on");
   });
 
+  it("ignores a booting player's callbacks while the next lookup is pending", async () => {
+    const la = make();
+    const first = request(la, "a");
+    answer("a", "vidA");
+    await first;
+    const booting = players[0]!;
+    const next = request(la, "b", "follow");
+    booting.events.onReady();
+    booting.events.onError();
+    assert.equal(booting.destroyed, true);
+    assert.notEqual(booting.state, PLAYING);
+    assert.equal(la.status, "loading");
+    answer("b", "vidB");
+    await next;
+    players[1]!.events.onReady();
+    assert.equal(la.status, "on");
+  });
+
   it("creates no player when disposed (navigated away) while the lookup is pending", async () => {
     const la = make();
     const run = request(la, "a");

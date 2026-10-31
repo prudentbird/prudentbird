@@ -15,6 +15,8 @@ const MAX_PAGES = 15;
 const BATCH_SIZE = 5;
 
 type RecentTracks = {
+  error?: number;
+  message?: string;
   recenttracks?: {
     "@attr"?: { totalPages?: string };
     track?: RawScrobble | RawScrobble[];
@@ -31,7 +33,14 @@ async function fetchPage(url: string): Promise<RecentTracks> {
   // never cached as a quiet stretch of listening.
   for (let attempt = 0; ; attempt++) {
     const response = await fetch(url);
-    if (response.ok) return response.json();
+    if (response.ok) {
+      const data = (await response.json()) as RecentTracks;
+      if (data.error !== undefined || !data.recenttracks)
+        throw new Error(
+          `Last.fm API failed (${data.error ?? "invalid response"})`,
+        );
+      return data;
+    }
     if (attempt >= 1)
       throw new Error(`Last.fm request failed (${response.status})`);
   }
@@ -57,6 +66,7 @@ export async function getLastFmHistory(): Promise<DayActivity[]> {
     format: "json",
     limit: String(PAGE_SIZE),
     from: String(from),
+    to: String(Math.floor(now / 1000)),
   });
   const url = (page: number) =>
     `https://ws.audioscrobbler.com/2.0/?${params}&page=${page}`;

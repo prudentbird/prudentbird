@@ -16,7 +16,16 @@ const DEFAULT_BACKOFF_S = 30;
 
 let token: { value: string; expiresAt: number } | null = null;
 let blockedUntil = 0;
-let latest: { at: number; track: Promise<SpotifyTrack | null> } | null = null;
+type SpotifySnapshot = { track: SpotifyTrack | null; receivedAt: number };
+let latest: { at: number; track: Promise<SpotifySnapshot> } | null = null;
+
+function applyBackoff(response: Response) {
+  if (response.status !== 429) return;
+  const wait = Number(response.headers.get("retry-after"));
+  blockedUntil =
+    Date.now() +
+    (Number.isFinite(wait) && wait > 0 ? wait : DEFAULT_BACKOFF_S) * 1000;
+}
 
 async function getAccessToken(): Promise<string> {
   if (token && Date.now() < token.expiresAt) return token.value;
@@ -40,6 +49,7 @@ async function getAccessToken(): Promise<string> {
     cache: "no-store",
   });
 
+  applyBackoff(response);
   if (!response.ok) {
     throw new Error(`Failed to get Spotify access token (${response.status})`);
   }
@@ -66,12 +76,8 @@ async function spotifyGet(path: string, accessToken: string) {
     cache: "no-store",
   });
 
-  if (response.status === 429) {
-    const wait = Number(response.headers.get("retry-after"));
-    blockedUntil =
-      Date.now() +
-      (Number.isFinite(wait) && wait > 0 ? wait : DEFAULT_BACKOFF_S) * 1000;
-  } else if (response.status === 401) {
+  applyBackoff(response);
+  if (response.status === 401) {
     token = null;
   }
   if (!response.ok) {
@@ -110,11 +116,14 @@ async function lookup(): Promise<SpotifyTrack | null> {
  * The track Spotify is on, the last one played when idle, or null if there is
  * no history. Throws when Spotify itself is unreachable or rate limiting.
  */
-export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
+export async function getSpotifySnapshot(): Promise<SpotifySnapshot> {
   await connection();
   const now = Date.now();
   if (!latest || now - latest.at >= SHARE_MS) {
-    const track = lookup();
+    const track = lookup().then((track) => ({
+      track,
+      receivedAt: (now + Date.now()) / 2,
+    }));
     const entry = { at: now, track };
     latest = entry;
     track.catch((error) => {
@@ -123,4 +132,8 @@ export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
     });
   }
   return latest.track;
+}
+
+export async function getSpotifyTrack(): Promise<SpotifyTrack | null> {
+  return (await getSpotifySnapshot()).track;
 }

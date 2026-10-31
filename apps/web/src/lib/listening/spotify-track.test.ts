@@ -19,6 +19,11 @@ const item = {
 };
 
 describe("toSpotifyTrack", () => {
+  it("rejects unavailable tracks so the caller can fall back to history", () => {
+    assert.equal(toSpotifyTrack({ ...item, is_playable: false }, state), null);
+    assert.ok(toSpotifyTrack({ ...item, is_playable: true }, state));
+  });
+
   it("maps a track", () => {
     assert.deepEqual(toSpotifyTrack(item, state), {
       name: "Song",

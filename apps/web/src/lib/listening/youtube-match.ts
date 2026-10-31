@@ -67,7 +67,7 @@ export function splitArtists(artist: string) {
 /** "PT3M20S" -> 200. Unparseable input gives NaN so it can never pass a length check. */
 export function parseDuration(iso: string) {
   const m = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/);
-  if (!m) return NaN;
+  if (!m || !m.slice(1).some((part) => part !== undefined)) return NaN;
   const [, h = "0", min = "0", s = "0"] = m;
   return +h * 3600 + +min * 60 + +s;
 }

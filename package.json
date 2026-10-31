@@ -15,7 +15,7 @@
     "build:sudoku": "turbo run build --filter=sudoku",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "test": "turbo run test",
+    "test": "turbo run test test:hints",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write . --cache && echo Prettier Format successfully completed!"
   },

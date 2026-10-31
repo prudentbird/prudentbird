@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { useEffect, useState } from "react";
 import { getLastFmHistory } from "~/app/actions/lastfm";
-import { getSpotifyTrack } from "~/app/actions/spotify";
+import { getSpotifySnapshot } from "~/app/actions/spotify";
 import { estimateProgressMs } from "~/lib/listening/progress";
 import type { SpotifyTrack } from "~/lib/listening/spotify-track";
 
@@ -16,12 +16,7 @@ const SONG_END_GRACE_MS = 1_500;
 export function useNowPlaying() {
   const { data, isLoading, mutate } = useSWR(
     "spotify-current",
-    async () => {
-      const sent = Date.now();
-      const track = await getSpotifyTrack();
-      // Spotify's progress was true roughly mid-flight, not when we got it.
-      return { track, receivedAt: (sent + Date.now()) / 2 };
-    },
+    getSpotifySnapshot,
     {
       keepPreviousData: true,
       revalidateOnFocus: true,

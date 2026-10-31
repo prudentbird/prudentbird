@@ -45,7 +45,7 @@ export async function findYouTubeMatch(): Promise<{
   if (!seconds || !normalize(title)) return { url: track.url, id: null };
 
   try {
-    const id = await match(title, artists, seconds);
+    const id = await match(track.url, title, artists, seconds);
     return { url: track.url, id };
   } catch (error) {
     // Transient (quota, network): the cache function threw, so nothing was
@@ -136,6 +136,8 @@ async function findVideo(wanted: Wanted, key: string) {
 }
 
 async function match(
+  // Keep distinct Spotify recordings in separate cache entries.
+  trackUrl: string,
   title: string,
   artists: string[],
   seconds: number,

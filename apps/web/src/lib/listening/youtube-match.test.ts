@@ -82,6 +82,8 @@ describe("parseDuration", () => {
     assert.equal(parseDuration("PT3M20S"), 200);
     assert.equal(parseDuration("PT1H1M1S"), 3661);
     assert.ok(Number.isNaN(parseDuration("P0D")));
+    assert.ok(Number.isNaN(parseDuration("PT")));
+    assert.equal(parseDuration("PT0S"), 0);
   });
 });
 

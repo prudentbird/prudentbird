@@ -12,6 +12,7 @@ export type SpotifyTrack = {
 };
 
 type RawTrack = {
+  is_playable?: boolean;
   type?: string;
   name?: string;
   duration_ms?: number;
@@ -29,7 +30,12 @@ export function toSpotifyTrack(
   item: RawTrack | null | undefined,
   state: { isPlaying: boolean; progress: number },
 ): SpotifyTrack | null {
-  if (!item?.name || (item.type && item.type !== "track")) return null;
+  if (
+    item?.is_playable === false ||
+    !item?.name ||
+    (item.type && item.type !== "track")
+  )
+    return null;
 
   const sorted = [...(item.album?.images ?? [])].sort(
     (a, b) => (b.width ?? 0) - (a.width ?? 0),
