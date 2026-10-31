@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
+import * as nodeModule from "node:module";
 import { test } from "node:test";
 import { createContext, SourceTextModule, SyntheticModule } from "node:vm";
 import { z } from "zod/v4";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+
+// The app supports Node 20.9+, but these tests strip types with a Node 22.13+ API.
+if (typeof nodeModule.stripTypeScriptTypes !== "function") {
+  throw new Error(
+    `pnpm test requires Node 22.13 or newer (running ${process.version})`,
+  );
+}
+const { stripTypeScriptTypes } = nodeModule;
 
 // Run the actual actions with isolated module state and mocked external services.
 async function load(

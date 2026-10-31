@@ -11,6 +11,7 @@ export function ActivityHistory() {
     getLastFmHistory,
     {
       revalidateOnFocus: false,
+      shouldRetryOnError: false,
     },
   );
   if (error)

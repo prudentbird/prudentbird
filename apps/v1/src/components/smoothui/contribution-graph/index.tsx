@@ -313,7 +313,7 @@ export function ContributionGraph({
                           type="button"
                           onClick={() => onDayClick?.(dayData.date)}
                           aria-label={`${formatDate(dayData.date)}: ${getContributionText(dayData.count)}`}
-                          className={`block h-2.5 w-2.5 rounded-sm cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${CONTRIBUTION_COLORS[Math.min(Math.max(0, dayData.level), CONTRIBUTION_COLORS.length - 1)]}`}
+                          className={`block h-2.5 w-2.5 rounded-sm cursor-pointer hover:ring-2 hover:ring-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${CONTRIBUTION_COLORS[Math.min(Math.max(0, dayData.level), CONTRIBUTION_COLORS.length - 1)]}`}
                         />
                       ) : (
                         <div
