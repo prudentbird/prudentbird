@@ -1,5 +1,3 @@
-"use server";
-
 import { cacheLife } from "next/cache";
 import { env } from "~/env";
 import { bucketScrobbles, type DayActivity } from "~/lib/listening/activity";

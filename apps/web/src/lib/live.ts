@@ -2,20 +2,27 @@
 
 import useSWR from "swr";
 import { useEffect, useState } from "react";
-import { getLastFmHistory } from "~/app/actions/lastfm";
-import { getSpotifySnapshot } from "~/app/actions/spotify";
+import type { DayActivity } from "~/lib/listening/activity";
 import { estimateProgressMs } from "~/lib/listening/progress";
 import type { SpotifyTrack } from "~/lib/listening/spotify-track";
 
 const PLAYING_POLL_MS = 15_000;
-const IDLE_POLL_MS = 20_000;
-const HISTORY_POLL_MS = 5 * 60_000;
+const IDLE_POLL_MS = 30_000;
+const HISTORY_POLL_MS = 10 * 60_000;
 const SONG_END_GRACE_MS = 1_500;
+
+type SpotifySnapshot = { track: SpotifyTrack | null; receivedAt: number };
+
+async function getJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${url} failed (${response.status})`);
+  return response.json();
+}
 
 export function useNowPlaying() {
   const { data, isLoading, mutate } = useSWR(
-    "spotify-current",
-    getSpotifySnapshot,
+    "/api/now-playing",
+    getJson<SpotifySnapshot>,
     {
       keepPreviousData: true,
       revalidateOnFocus: true,
@@ -32,7 +39,9 @@ export function useNowPlaying() {
     const remaining =
       track.duration - estimateProgressMs({ ...track, receivedAt }, Date.now());
     const id = setTimeout(
-      () => void mutate(),
+      () => {
+        if (!document.hidden) void mutate();
+      },
       Math.max(1_000, remaining + SONG_END_GRACE_MS),
     );
     return () => clearTimeout(id);
@@ -42,11 +51,15 @@ export function useNowPlaying() {
 }
 
 export function useListeningHistory() {
-  const { data, isLoading } = useSWR("lastfm-history", getLastFmHistory, {
-    revalidateOnFocus: true,
-    refreshInterval: HISTORY_POLL_MS,
-    keepPreviousData: true,
-  });
+  const { data, isLoading } = useSWR(
+    "/api/listening-history",
+    getJson<DayActivity[]>,
+    {
+      revalidateOnFocus: true,
+      refreshInterval: HISTORY_POLL_MS,
+      keepPreviousData: true,
+    },
+  );
   return { history: data ?? null, isLoading };
 }
 
