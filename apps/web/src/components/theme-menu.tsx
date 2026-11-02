@@ -16,7 +16,7 @@ export default function ThemeMenu({
   setTheme,
 }: {
   theme: string | undefined;
-  setTheme: (theme: string) => void;
+  setTheme: (theme: string, x?: number) => void;
 }) {
   return (
     <DropdownMenu>
@@ -36,16 +36,22 @@ export default function ThemeMenu({
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
+      <DropdownMenuContent align="end" data-sound="none">
+        <DropdownMenuItem
+          onClick={(e) => setTheme("light", e.detail ? e.clientX : undefined)}
+        >
           <Sun className="h-4 w-4 mr-2" />
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
+        <DropdownMenuItem
+          onClick={(e) => setTheme("system", e.detail ? e.clientX : undefined)}
+        >
           <Monitor className="h-4 w-4 mr-2" />
           System
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
+        <DropdownMenuItem
+          onClick={(e) => setTheme("dark", e.detail ? e.clientX : undefined)}
+        >
           <MoonStar className="h-4 w-4 mr-2" />
           Dark
         </DropdownMenuItem>

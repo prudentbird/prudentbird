@@ -2,6 +2,7 @@
 
 import { Check, Copy, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { sounds } from "~/lib/sound";
 import { cn } from "~/lib/utils";
 
 export function CopyButton({
@@ -27,13 +28,17 @@ export function CopyButton({
               ? "Copy failed"
               : label
         }
-        onClick={async () => {
+        data-sound="none"
+        onClick={async (event) => {
+          const x = event.detail === 0 ? undefined : event.clientX;
           let next: "copied" | "failed" = "copied";
           try {
             await navigator.clipboard.writeText(value);
           } catch {
             next = "failed";
           }
+          if (next === "copied") sounds.copy(x);
+          else sounds.fail(x);
           clearTimeout(timer.current);
           setStatus(next);
           timer.current = setTimeout(() => setStatus("idle"), 1500);

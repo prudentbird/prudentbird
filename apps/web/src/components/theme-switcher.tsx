@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sun, Monitor, MoonStar } from "lucide-react";
 import dynamic from "next/dynamic";
+import { sounds } from "~/lib/sound";
 
 const ThemeMenu = dynamic(() => import("./theme-menu"), {
   ssr: false,
@@ -16,7 +17,12 @@ const button = "size-6";
 const icon = "size-3.5";
 
 export function ThemeSwitcher() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme: applyTheme } = useTheme();
+  const setTheme = (next: string, x?: number) => {
+    if (next !== theme) sounds.theme(next, x);
+    else sounds.tap(x);
+    applyTheme(next);
+  };
 
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -37,9 +43,12 @@ export function ThemeSwitcher() {
     <>
       <ThemeMenu theme={theme} setTheme={setTheme} />
 
-      <div className="hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border gap-0.5 border-border/60">
+      <div
+        data-sound="none"
+        className="hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border gap-0.5 border-border/60"
+      >
         <Button
-          onClick={() => setTheme("light")}
+          onClick={(e) => setTheme("light", e.detail ? e.clientX : undefined)}
           variant="ghost"
           size="icon"
           className={`rounded-full ${button} transition-colors ${
@@ -53,7 +62,7 @@ export function ThemeSwitcher() {
           <Sun className={icon} />
         </Button>
         <Button
-          onClick={() => setTheme("system")}
+          onClick={(e) => setTheme("system", e.detail ? e.clientX : undefined)}
           variant="ghost"
           size="icon"
           className={`rounded-full ${button} transition-colors ${
@@ -67,7 +76,7 @@ export function ThemeSwitcher() {
           <Monitor className={icon} />
         </Button>
         <Button
-          onClick={() => setTheme("dark")}
+          onClick={(e) => setTheme("dark", e.detail ? e.clientX : undefined)}
           variant="ghost"
           size="icon"
           className={`rounded-full ${button} transition-colors ${

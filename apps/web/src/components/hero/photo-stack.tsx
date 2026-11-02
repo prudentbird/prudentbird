@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useState } from "react";
+import { sounds } from "~/lib/sound";
 import { cn } from "~/lib/utils";
 import { PHOTOS, type Photo } from "./photos";
 
@@ -13,6 +14,15 @@ export default function PhotoStack({ className }: { className?: string }) {
   const reduce = useReducedMotion();
   const [order, setOrder] = useState(() => PHOTOS.map((_, i) => i));
   const [fanned, setFanned] = useState(false);
+  const fan = (open: boolean) => {
+    if (open !== fanned) sounds.fan(open);
+    setFanned(open);
+  };
+  const bringForward = (i: number, x?: number) => {
+    if (order[0] !== i) sounds.photo(x);
+    else sounds.tap(x);
+    setOrder((o) => [i, ...o.filter((x) => x !== i)]);
+  };
 
   useEffect(() => {
     if (reduce || fanned) return;
@@ -23,14 +33,14 @@ export default function PhotoStack({ className }: { className?: string }) {
   return (
     <div
       className={cn("relative grid place-items-center select-none", className)}
-      onPointerEnter={() => setFanned(true)}
-      onPointerLeave={() => setFanned(false)}
-      onFocus={() => setFanned(true)}
+      onPointerEnter={() => fan(true)}
+      onPointerLeave={() => fan(false)}
+      onFocus={() => fan(true)}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget))
-          setFanned(false);
+        if (!event.currentTarget.contains(event.relatedTarget)) fan(false);
       }}
       role="group"
+      data-sound="none"
       aria-label="A stack of my photos"
     >
       {PHOTOS.map((card, i) => {
@@ -43,12 +53,15 @@ export default function PhotoStack({ className }: { className?: string }) {
             initial={false}
             role="button"
             tabIndex={0}
+            data-sound-hover="dial"
             aria-label={`Bring photo ${i + 1} of ${n} forward`}
-            onClick={() => setOrder((o) => [i, ...o.filter((x) => x !== i)])}
+            onClick={(event) =>
+              bringForward(i, event.detail === 0 ? undefined : event.clientX)
+            }
             onKeyDown={(event) => {
               if (event.key !== "Enter" && event.key !== " ") return;
               event.preventDefault();
-              setOrder((o) => [i, ...o.filter((x) => x !== i)]);
+              bringForward(i);
             }}
             animate={{
               x: fanned ? `${spread * 45}%` : "0%",
