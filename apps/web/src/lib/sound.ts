@@ -76,6 +76,9 @@ function createBus(): Bus | null {
     (window as unknown as { webkitAudioContext?: typeof AudioContext })
       .webkitAudioContext;
   if (!AC) return null;
+  const session = (navigator as Navigator & { audioSession?: { type: string } })
+    .audioSession;
+  if (session) session.type = "ambient";
   const ctx = new AC({ latencyHint: "interactive" });
   const compressor = ctx.createDynamicsCompressor();
   compressor.threshold.value = -20;
