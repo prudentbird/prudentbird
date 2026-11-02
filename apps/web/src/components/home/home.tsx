@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { ThemeSwitcher } from "~/components/theme-switcher";
+import { SoundToggle } from "~/components/sound";
 import { NEW_TAB_HINT_ID, externalProps, links, profile } from "~/lib/content";
 import { VoxelAvatarHero } from "~/components/hero";
 import {
@@ -188,6 +189,7 @@ export function Home() {
                 </span>
               </p>
               <div className="flex shrink-0 items-center gap-3">
+                <SoundToggle />
                 <ThemeSwitcher />
               </div>
             </div>

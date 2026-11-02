@@ -1,12 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
-import { sounds, unlockSound } from "~/lib/sound";
+import { Volume2, VolumeOff } from "lucide-react";
+import { useEffect, useSyncExternalStore } from "react";
+import {
+  isSoundEnabled,
+  setSoundEnabled,
+  sounds,
+  subscribeSound,
+  unlockSound,
+} from "~/lib/sound";
+import { cn } from "~/lib/utils";
 
 const INTERACTIVE =
   "a[href], button:not(:disabled), [role='button'], [role='menuitem']";
 
 type ClickSound = "tap" | "send" | "none";
+
+export function useSoundEnabled() {
+  return useSyncExternalStore(subscribeSound, isSoundEnabled, () => true);
+}
 
 export function SoundEffects() {
   useEffect(() => {
@@ -54,4 +66,28 @@ export function SoundEffects() {
     };
   }, []);
   return null;
+}
+
+export function SoundToggle({ className }: { className?: string }) {
+  const enabled = useSoundEnabled();
+  return (
+    <button
+      type="button"
+      data-sound="none"
+      aria-pressed={enabled}
+      aria-label="Sound effects"
+      title={enabled ? "Mute sounds" : "Turn sounds on"}
+      onClick={() => setSoundEnabled(!enabled)}
+      className={cn(
+        "inline-grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border border-border/60 bg-muted text-accent-foreground/80 transition-colors hover:text-accent-foreground sm:size-[1.875rem]",
+        className,
+      )}
+    >
+      {enabled ? (
+        <Volume2 className="size-3.5" aria-hidden="true" />
+      ) : (
+        <VolumeOff className="size-3.5" aria-hidden="true" />
+      )}
+    </button>
+  );
 }
