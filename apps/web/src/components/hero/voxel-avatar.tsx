@@ -290,6 +290,7 @@ function Avatar({ animate }: { animate: boolean }) {
       sp.dragging = false;
       drag.id = -1;
       el.style.cursor = "";
+      if (event.type === "pointercancel") return;
       if (drag.moved > DRAG_THRESHOLD || !animate) return;
       agitation.current += 1;
       jitter.current = Math.min(1, 0.4 + (agitation.current / BURST_AT) * 0.6);
