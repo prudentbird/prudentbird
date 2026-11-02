@@ -12,9 +12,10 @@ import {
 import { cn } from "~/lib/utils";
 
 const INTERACTIVE =
-  "a[href], button:not(:disabled), [role='button'], [role='menuitem']";
+  "a[href], button:not(:disabled), [role='button'], [role='menuitem'], [data-sound-hover]";
 
-type ClickSound = "tap" | "send" | "none";
+type HoverSound = "hover" | "coin";
+type ClickSound = "tap" | "send" | "coin" | "none";
 
 export function useSoundEnabled() {
   return useSyncExternalStore(subscribeSound, isSoundEnabled, () => true);
@@ -30,7 +31,10 @@ export function SoundEffects() {
       const target = (event.target as Element | null)?.closest?.(INTERACTIVE);
       if (!target || target === current) return;
       current = target;
-      sounds.hover(event.clientX);
+      const sound = (target.closest("[data-sound-hover]") as HTMLElement | null)
+        ?.dataset.soundHover as HoverSound | undefined;
+      if (sound === "coin") sounds.coin(event.clientX);
+      else sounds.hover(event.clientX);
     };
     const out = (event: PointerEvent) => {
       if (current && !current.contains(event.relatedTarget as Node | null))
@@ -50,7 +54,8 @@ export function SoundEffects() {
           sounds.drop(event.clientX, event.clientY);
         return;
       }
-      if (
+      if (sound === "coin") sounds.coin(x);
+      else if (
         sound === "send" ||
         target.getAttribute("href")?.startsWith("mailto:")
       )

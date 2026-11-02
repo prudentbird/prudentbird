@@ -31,6 +31,8 @@ export function GamesTooltip() {
       className="group relative inline-block underline decoration-dotted underline-offset-4 focus-visible:outline-2"
       tabIndex={0}
       aria-describedby="about-games"
+      data-sound="coin"
+      data-sound-hover="coin"
       onPointerEnter={place}
       onFocus={place}
     >

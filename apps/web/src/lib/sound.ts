@@ -375,6 +375,30 @@ export const sounds = {
     if (!b) return;
     tone(b, { freq: pitch(7), to: pitch(2), decay: 0.12, gain: 0.04 });
   },
+
+  coin(x?: number) {
+    const b = live();
+    if (!b || !gate("coin", 200)) return;
+    const pan = panAt(x);
+    tone(b, {
+      freq: 987.77,
+      type: "square",
+      attack: 0.001,
+      decay: 0.06,
+      gain: 0.022,
+      pan,
+    });
+    tone(b, {
+      at: 0.065,
+      freq: 1318.51,
+      type: "square",
+      attack: 0.001,
+      decay: 0.32,
+      gain: 0.022,
+      pan,
+      wet: 0.1,
+    });
+  },
 };
 
 export type SoundName = keyof typeof sounds;
