@@ -43,7 +43,13 @@ export function SoundEffects() {
         ?.dataset.sound as ClickSound | undefined;
       if (sound === "none") return;
       const target = el?.closest?.(INTERACTIVE);
-      if (!target) return;
+      if (!target) {
+        const selection = window.getSelection();
+        const selecting = selection && !selection.isCollapsed;
+        if (event.detail > 0 && !selecting && el?.tagName !== "CANVAS")
+          sounds.drop(event.clientX, event.clientY);
+        return;
+      }
       if (
         sound === "send" ||
         target.getAttribute("href")?.startsWith("mailto:")

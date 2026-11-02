@@ -285,6 +285,24 @@ export const sounds = {
     });
   },
 
+  drop(x?: number, y?: number) {
+    const b = live();
+    if (!b || !gate("drop", 60)) return;
+    const h = typeof window === "undefined" ? 1 : window.innerHeight;
+    const n = 4 + Math.round((1 - clamp((y ?? h / 2) / h, 0, 1)) * 7);
+    const f = pitch(n);
+    const pan = panAt(x);
+    tone(b, { freq: f, to: f * 1.5, decay: 0.09, gain: 0.035, pan, wet: 0.45 });
+    tone(b, {
+      freq: f * 2,
+      to: f * 3,
+      decay: 0.03,
+      gain: 0.012,
+      pan,
+      wet: 0.2,
+    });
+  },
+
   send(x?: number) {
     const b = live();
     if (!b || !gate("send", 300)) return;
