@@ -654,7 +654,11 @@ export function SongVisualizer() {
             const i = indexAt(e.clientX);
             if (listening) seekTo(i);
             else {
-              strike(i, e.clientX);
+              if (
+                e.detail === 0 ||
+                (e.nativeEvent as PointerEvent).pointerType !== "mouse"
+              )
+                strike(i, e.detail ? e.clientX : undefined);
               setHovered(i);
             }
           }}

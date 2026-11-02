@@ -48,7 +48,7 @@ export function ThemeSwitcher() {
         className="hidden sm:inline-flex items-center rounded-full bg-muted p-0.5 border gap-0.5 border-border/60"
       >
         <Button
-          onClick={(e) => setTheme("light", e.clientX)}
+          onClick={(e) => setTheme("light", e.detail ? e.clientX : undefined)}
           variant="ghost"
           size="icon"
           className={`rounded-full ${button} transition-colors ${
@@ -62,7 +62,7 @@ export function ThemeSwitcher() {
           <Sun className={icon} />
         </Button>
         <Button
-          onClick={(e) => setTheme("system", e.clientX)}
+          onClick={(e) => setTheme("system", e.detail ? e.clientX : undefined)}
           variant="ghost"
           size="icon"
           className={`rounded-full ${button} transition-colors ${
@@ -76,7 +76,7 @@ export function ThemeSwitcher() {
           <Monitor className={icon} />
         </Button>
         <Button
-          onClick={(e) => setTheme("dark", e.clientX)}
+          onClick={(e) => setTheme("dark", e.detail ? e.clientX : undefined)}
           variant="ghost"
           size="icon"
           className={`rounded-full ${button} transition-colors ${

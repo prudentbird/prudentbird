@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const GUTTER = 16;
 
@@ -12,6 +12,10 @@ export function GamesTooltip() {
     if (!el) return;
     el.style.setProperty("--shift", "0px");
     el.style.width = "";
+    el.style.top = "";
+    el.style.bottom = "";
+    el.style.marginTop = "";
+    el.style.marginBottom = "";
     const range = document.createRange();
     range.selectNodeContents(el);
     const lines = [...range.getClientRects()];
@@ -24,7 +28,22 @@ export function GamesTooltip() {
     const max = document.documentElement.clientWidth - GUTTER;
     const shift = Math.max(GUTTER - box.left, Math.min(0, max - box.right));
     el.style.setProperty("--shift", `${Math.round(shift)}px`);
+    if (box.bottom > window.innerHeight - GUTTER) {
+      el.style.top = "auto";
+      el.style.bottom = "100%";
+      el.style.marginTop = "0";
+      el.style.marginBottom = "8px";
+    }
   };
+
+  useEffect(() => {
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, []);
 
   return (
     <span

@@ -110,7 +110,7 @@ export function MobilePhotos() {
                   height: bounds.height,
                 },
               });
-              sounds.photo(rect.left + rect.width / 2);
+              sounds.photo(event.detail ? event.clientX : undefined);
               setSelected(i);
             }}
             className={`pointer-events-auto ${EDGE_PRINT} focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${FRAME}`}
