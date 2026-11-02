@@ -191,6 +191,7 @@ function Avatar({ animate }: { animate: boolean }) {
   const spin = useRef({ angle: 0, velocity: 0, dragging: false });
   const glint = useRef(2);
   const detent = useRef(0);
+  const lastPointer = useRef({ x: 0, y: 0 });
   const pointerX = useRef<number | undefined>(undefined);
   const [glyphColor] = useState(() => new Color());
   const pushRef = useRef(createPush(voxels.length));
@@ -321,6 +322,10 @@ function Avatar({ animate }: { animate: boolean }) {
     const g = group.current;
     const b = inner.current;
     if (!m || !g || !b) return;
+    const pointerMoved =
+      pointer.x !== lastPointer.current.x ||
+      pointer.y !== lastPointer.current.y;
+    lastPointer.current = { x: pointer.x, y: pointer.y };
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     time.current += dt;
     const elapsed = Math.max(0, Math.min(delta, 0.1));
@@ -458,7 +463,7 @@ function Avatar({ animate }: { animate: boolean }) {
       d.updateMatrix();
       m.setMatrixAt(i, d.matrix);
     });
-    if (touched && speed > CLACK_SPEED)
+    if (pointerMoved && touched && speed > CLACK_SPEED)
       sounds.clack((push.cursor.y + HIT_Y) / (HIT_Y * 2), pointerX.current);
     m.instanceMatrix.needsUpdate = true;
     if (recolor && m.instanceColor) m.instanceColor.needsUpdate = true;

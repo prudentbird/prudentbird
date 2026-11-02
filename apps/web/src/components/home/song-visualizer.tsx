@@ -212,6 +212,7 @@ export function SongVisualizer() {
     const id = setInterval(() => {
       const current = listenAlong.current?.playback();
       if (!current) return;
+      duckSound(!current.isPaused);
       setPlayback({ ...current, at: performance.now() });
       setNow(performance.now());
     }, 250);

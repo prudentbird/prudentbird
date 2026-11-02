@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const GUTTER = 16;
 
 export function GamesTooltip() {
+  const [dismissed, setDismissed] = useState(false);
   const tip = useRef<HTMLSpanElement>(null);
 
   const place = () => {
@@ -37,9 +38,14 @@ export function GamesTooltip() {
   };
 
   useEffect(() => {
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDismissed(true);
+    };
+    window.addEventListener("keydown", dismiss);
     window.addEventListener("resize", place);
     window.addEventListener("scroll", place, true);
     return () => {
+      window.removeEventListener("keydown", dismiss);
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
     };
@@ -52,14 +58,21 @@ export function GamesTooltip() {
       aria-describedby="about-games"
       data-sound="coin"
       data-sound-hover="coin"
-      onPointerEnter={place}
-      onFocus={place}
+      onPointerEnter={() => {
+        setDismissed(false);
+        place();
+      }}
+      onFocus={() => {
+        setDismissed(false);
+        place();
+      }}
     >
       games
       <span
         ref={tip}
         id="about-games"
         role="tooltip"
+        style={dismissed ? { visibility: "hidden", opacity: 0 } : undefined}
         className="invisible absolute left-0 top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] translate-x-(--shift) rounded-xl border border-border/60 bg-popover p-3 text-left text-sm font-normal leading-snug text-popover-foreground no-underline opacity-0 shadow-lg transition-[opacity,visibility] duration-150 before:absolute before:inset-x-0 before:-top-2.5 before:h-2.5 group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100 sm:text-base"
       >
         I&apos;m not much of a football fan; I prefer Sudoku, Alto&apos;s
