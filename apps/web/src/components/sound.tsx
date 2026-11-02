@@ -65,12 +65,16 @@ export function SoundEffects() {
     };
 
     window.addEventListener("pointerdown", unlock, true);
+    window.addEventListener("touchend", unlock, true);
+    window.addEventListener("click", unlock, true);
     window.addEventListener("keydown", unlock, true);
     document.addEventListener("pointerover", over);
     document.addEventListener("pointerout", out);
     document.addEventListener("click", click);
     return () => {
       window.removeEventListener("pointerdown", unlock, true);
+      window.removeEventListener("touchend", unlock, true);
+      window.removeEventListener("click", unlock, true);
       window.removeEventListener("keydown", unlock, true);
       document.removeEventListener("pointerover", over);
       document.removeEventListener("pointerout", out);
