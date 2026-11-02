@@ -25,6 +25,11 @@ export function SoundEffects() {
   useEffect(() => {
     const unlock = () => unlockSound();
     let current: Element | null = null;
+    let lastPointer = "mouse";
+    const down = (event: PointerEvent) => {
+      lastPointer = event.pointerType;
+      unlock();
+    };
 
     const over = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
@@ -51,7 +56,8 @@ export function SoundEffects() {
       if (!target) {
         const selection = window.getSelection();
         const selecting = selection && !selection.isCollapsed;
-        if (event.detail > 0 && !selecting && el?.tagName !== "CANVAS")
+        const mouse = lastPointer === "mouse" || lastPointer === "pen";
+        if (mouse && event.detail > 0 && !selecting && el?.tagName !== "CANVAS")
           sounds.drop(event.clientX, event.clientY);
         return;
       }
@@ -64,7 +70,7 @@ export function SoundEffects() {
       else sounds.tap(x);
     };
 
-    window.addEventListener("pointerdown", unlock, true);
+    window.addEventListener("pointerdown", down, true);
     window.addEventListener("touchend", unlock, true);
     window.addEventListener("click", unlock, true);
     window.addEventListener("keydown", unlock, true);
@@ -72,7 +78,7 @@ export function SoundEffects() {
     document.addEventListener("pointerout", out);
     document.addEventListener("click", click);
     return () => {
-      window.removeEventListener("pointerdown", unlock, true);
+      window.removeEventListener("pointerdown", down, true);
       window.removeEventListener("touchend", unlock, true);
       window.removeEventListener("click", unlock, true);
       window.removeEventListener("keydown", unlock, true);
