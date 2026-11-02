@@ -1,9 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { ThemeSwitcher } from "~/components/theme-switcher";
 import { SoundToggle } from "~/components/sound";
-import { SoundToggle } from "~/components/sound";
-import { SoundToggle } from "~/components/sound";
-import { SoundToggle } from "~/components/sound";
 import { NEW_TAB_HINT_ID, externalProps, links, profile } from "~/lib/content";
 import { VoxelAvatarHero } from "~/components/hero";
 import {
@@ -13,6 +10,7 @@ import {
 import { DESKTOP, MOBILE, OnMedia } from "~/components/on-media";
 import { Artifacts } from "~/components/work/artifacts";
 import { CopyButton } from "./copy-button";
+import { GamesTooltip } from "./games-tooltip";
 import { Photography } from "./photography";
 import { SectionHeader } from "./section-header";
 import { SongVisualizer } from "./song-visualizer";
@@ -94,24 +92,8 @@ export function Home() {
           <p className="mt-6 text-xl leading-relaxed text-muted-foreground sm:text-2xl">
             I&apos;m {profile.realName}, known online as Prudent Bird. I&apos;ve
             been coding since 2019, and professionally since 2023. I recently
-            got into photography, and I play{" "}
-            <span
-              className="group relative inline-block underline decoration-dotted underline-offset-4 focus-visible:outline-2"
-              tabIndex={0}
-              aria-describedby="about-games"
-            >
-              games
-              <span
-                id="about-games"
-                role="tooltip"
-                className="invisible absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-border/60 bg-popover p-3 text-left font-normal leading-snug text-popover-foreground opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100"
-              >
-                I&apos;m not much of a football fan; I prefer Sudoku,
-                Alto&apos;s Adventure, Alto&apos;s Odyssey, and Call of Duty:
-                Mobile.
-              </span>
-            </span>{" "}
-            to unwind after work. I often ask myself:{" "}
+            got into photography, and I play <GamesTooltip /> to unwind after
+            work. I often ask myself:{" "}
             <em>&ldquo;What makes life worth living?&rdquo;</em>
             {"  "}For me, it comes down to chasing your greatest passion,
             finding joy even when everything seems difficult, keeping
@@ -192,9 +174,6 @@ export function Home() {
                 </span>
               </p>
               <div className="flex shrink-0 items-center gap-3">
-                <SoundToggle />
-                <SoundToggle />
-                <SoundToggle />
                 <SoundToggle />
                 <ThemeSwitcher />
               </div>
