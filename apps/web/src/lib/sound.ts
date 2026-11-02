@@ -258,6 +258,8 @@ function mallet(
   });
 }
 
+const random = (min: number, max: number) => min + Math.random() * (max - min);
+
 export const sounds = {
   hover(x?: number) {
     const b = live();
@@ -458,6 +460,100 @@ export const sounds = {
     if (!live() || !gate("photo", 90)) return;
     sounds.dial(x, 0.001);
     sounds.dial(x, 0.06);
+  },
+
+  poke(level: number, x?: number) {
+    const b = live();
+    if (!b) return;
+    const pan = panAt(x);
+    const f = 360 + clamp(level, 0, 1) * 460;
+    tone(b, { freq: f, to: f * 1.7, decay: 0.13, gain: 0.08, pan, wet: 0.2 });
+    tone(b, {
+      freq: f * 2,
+      to: f * 3.2,
+      type: "triangle",
+      decay: 0.06,
+      gain: 0.015,
+      pan,
+    });
+  },
+
+  burst(x?: number) {
+    const b = live();
+    if (!b) return;
+    const pan = panAt(x);
+    tone(b, { freq: 120, to: 42, decay: 0.4, gain: 0.08, pan, wet: 0.25 });
+    tone(b, {
+      freq: 280,
+      to: 130,
+      type: "triangle",
+      decay: 0.12,
+      gain: 0.06,
+      pan,
+      wet: 0.2,
+    });
+    hiss(b, {
+      freq: 700,
+      to: 6000,
+      q: 0.6,
+      dur: 0.3,
+      gain: 0.06,
+      pan,
+      wet: 0.3,
+    });
+    for (let i = 0; i < 14; i++)
+      mallet(b, pitch(8 + Math.floor(Math.random() * 9)), {
+        at: 0.04 + random(0, 0.4) * (i / 14),
+        gain: 0.022,
+        decay: 0.3,
+        pan: clamp(pan + random(-0.6, 0.6), -1, 1),
+        wet: 0.4,
+      });
+  },
+
+  clack(height: number, x?: number) {
+    const b = live();
+    if (!b || !gate("clack", 75)) return;
+    const pan = panAt(x);
+    tone(b, {
+      freq: pitch(6 + Math.round(clamp(height, 0, 1) * 8)),
+      type: "triangle",
+      decay: 0.045,
+      gain: 0.045,
+      pan,
+      wet: 0.15,
+    });
+    hiss(b, { freq: 2200, q: 3, dur: 0.008, gain: 0.04, pan });
+  },
+
+  ratchet(speed: number, x?: number) {
+    const b = live();
+    if (!b || !gate("ratchet", 28)) return;
+    const pan = panAt(x);
+    hiss(b, { freq: 5200, q: 2, dur: 0.006, gain: 0.1, pan });
+    tone(b, {
+      freq: 1800 + clamp(speed, 0, 30) * 25,
+      type: "triangle",
+      decay: 0.014,
+      gain: 0.045,
+      pan,
+    });
+  },
+
+  glint(x?: number) {
+    const b = live();
+    if (!b || !gate("glint", 250)) return;
+    const pan = panAt(x);
+    [13, 15, 17].forEach((n, i) =>
+      tone(b, {
+        at: i * 0.045,
+        freq: pitch(n),
+        decay: 0.3,
+        gain: 0.018,
+        pan: pan + (i - 1) * 0.15,
+        wet: 0.6,
+      }),
+    );
   },
 
   coin(x?: number) {

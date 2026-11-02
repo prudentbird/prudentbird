@@ -25,6 +25,7 @@ import {
   TAG_ROWS,
   TAG_UNIT,
 } from "./avatar-pixels";
+import { sounds } from "~/lib/sound";
 import { cn } from "~/lib/utils";
 import { externalProps } from "~/lib/content";
 import { Stage, useStageEnv } from "./stage";
@@ -125,6 +126,8 @@ const DRAG_THRESHOLD = 4;
 const SPIN_SPRING = 14;
 const SPIN_DAMPING = 3.5;
 const FULL_TURN = Math.PI * 2;
+const DETENT = Math.PI / 8;
+const CLACK_SPEED = 2.5;
 
 function applyTrick(g: Group, trick: Trick | null, t: number) {
   g.position.set(0, 0, 0);
@@ -187,6 +190,8 @@ function Avatar({ animate }: { animate: boolean }) {
   const lift = useRef(0);
   const spin = useRef({ angle: 0, velocity: 0, dragging: false });
   const glint = useRef(2);
+  const detent = useRef(0);
+  const pointerX = useRef<number | undefined>(undefined);
   const [glyphColor] = useState(() => new Color());
   const pushRef = useRef(createPush(voxels.length));
 
@@ -238,6 +243,7 @@ function Avatar({ animate }: { animate: boolean }) {
         const now = performance.now();
         const dt = Math.max(0.001, (now - drag.t) / 1000);
         drag.moved += Math.abs(dx);
+        pointerX.current = event.clientX;
         sp.angle += dx * DRAG_RADIANS_PER_PX;
         sp.velocity = (dx * DRAG_RADIANS_PER_PX) / dt;
         drag.x = event.clientX;
@@ -245,7 +251,11 @@ function Avatar({ animate }: { animate: boolean }) {
         return;
       }
       hovering.current = true;
+      pointerX.current = event.clientX;
+      const wasOnTag = hoveringTag.current;
       hoveringTag.current = onTag(event);
+      if (hoveringTag.current && !wasOnTag && animate)
+        sounds.glint(event.clientX);
       el.style.cursor = hoveringTag.current ? "pointer" : "";
     };
     const leave = () => {
@@ -256,13 +266,16 @@ function Avatar({ animate }: { animate: boolean }) {
     };
     const down = (event: PointerEvent) => {
       if (onTag(event)) {
-        if (event.button === 0)
+        if (event.button === 0) {
+          sounds.tap(event.clientX);
           window.open(NFT_HREF, "_blank", "noopener,noreferrer");
+        }
         return;
       }
       if (event.button !== 0 || !grabbable(event)) return;
       drag.id = event.pointerId;
       drag.x = event.clientX;
+      pointerX.current = event.clientX;
       drag.t = performance.now();
       drag.moved = 0;
       sp.dragging = true;
@@ -283,6 +296,9 @@ function Avatar({ animate }: { animate: boolean }) {
       if (agitation.current >= BURST_AT) {
         agitation.current = 0;
         burst.current = true;
+        sounds.burst(event.clientX);
+      } else {
+        sounds.poke(agitation.current / BURST_AT, event.clientX);
       }
     };
     el.addEventListener("pointermove", move);
@@ -351,7 +367,13 @@ function Avatar({ animate }: { animate: boolean }) {
       if (Math.abs(sp.angle - home) < 1e-3 && Math.abs(sp.velocity) < 1e-2) {
         sp.angle = 0;
         sp.velocity = 0;
+        detent.current = 0;
       }
+    }
+    const notch = Math.round(sp.angle / DETENT);
+    if (notch !== detent.current) {
+      detent.current = notch;
+      if (animate) sounds.ratchet(Math.abs(sp.velocity), pointerX.current);
     }
     b.rotation.y = sp.angle;
     b.updateMatrixWorld();
@@ -381,6 +403,7 @@ function Avatar({ animate }: { animate: boolean }) {
     }
     let recolor = false;
 
+    let touched = false;
     const bursting = burst.current;
     burst.current = false;
     const d = dummy.current;
@@ -398,6 +421,7 @@ function Avatar({ animate }: { animate: boolean }) {
         push.away.copy(v.target).sub(push.cursor).setZ(0);
         const dist = push.away.length();
         if (dist < PUSH_RADIUS) {
+          touched = true;
           const k =
             (1 - dist / PUSH_RADIUS) ** 2 *
             (PUSH_BASE + speed * PUSH_PER_SPEED) *
@@ -433,6 +457,8 @@ function Avatar({ animate }: { animate: boolean }) {
       d.updateMatrix();
       m.setMatrixAt(i, d.matrix);
     });
+    if (touched && speed > CLACK_SPEED)
+      sounds.clack((push.cursor.y + HIT_Y) / (HIT_Y * 2), pointerX.current);
     m.instanceMatrix.needsUpdate = true;
     if (recolor && m.instanceColor) m.instanceColor.needsUpdate = true;
     const sway = animate ? Math.sin(now * 0.6) * 0.12 : 0;
