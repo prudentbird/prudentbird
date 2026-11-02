@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 const GUTTER = 16;
 
 export function GamesTooltip() {
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const tip = useRef<HTMLSpanElement>(null);
 
@@ -37,19 +39,31 @@ export function GamesTooltip() {
     }
   };
 
+  const visible = (hovered || focused) && !dismissed;
+
   useEffect(() => {
+    if (!visible) return;
+    let frame = 0;
+    const schedulePlace = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        place();
+      });
+    };
     const dismiss = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDismissed(true);
     };
     window.addEventListener("keydown", dismiss);
-    window.addEventListener("resize", place);
-    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", schedulePlace);
+    window.addEventListener("scroll", schedulePlace, true);
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener("keydown", dismiss);
-      window.removeEventListener("resize", place);
-      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", schedulePlace);
+      window.removeEventListener("scroll", schedulePlace, true);
     };
-  }, []);
+  }, [visible]);
 
   return (
     <span
@@ -58,11 +72,15 @@ export function GamesTooltip() {
       aria-describedby="about-games"
       data-sound="coin"
       data-sound-hover="coin"
+      onPointerLeave={() => setHovered(false)}
+      onBlur={() => setFocused(false)}
       onPointerEnter={() => {
+        setHovered(true);
         setDismissed(false);
         place();
       }}
       onFocus={() => {
+        setFocused(true);
         setDismissed(false);
         place();
       }}
