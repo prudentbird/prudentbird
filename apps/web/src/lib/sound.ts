@@ -320,6 +320,30 @@ export const sounds = {
     mallet(b, pitch(12), { at: 0.2, gain: 0.03, pan });
   },
 
+  copy(x?: number) {
+    const b = live();
+    if (!b) return;
+    const pan = panAt(x);
+    mallet(b, pitch(8), { gain: 0.05, pan, decay: 0.3 });
+    mallet(b, pitch(10), { at: 0.075, gain: 0.05, pan, decay: 0.6 });
+  },
+
+  fail(x?: number) {
+    const b = live();
+    if (!b) return;
+    const pan = panAt(x);
+    for (const at of [0, 0.1])
+      tone(b, {
+        at,
+        freq: 233,
+        to: 196,
+        type: "square",
+        decay: 0.08,
+        gain: 0.035,
+        pan,
+      });
+  },
+
   on() {
     const b = live();
     if (!b) return;
