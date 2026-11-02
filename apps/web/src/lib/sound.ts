@@ -344,6 +344,24 @@ export const sounds = {
       });
   },
 
+  theme(mode: string, x?: number) {
+    const b = live();
+    if (!b) return;
+    const pan = panAt(x);
+    const notes =
+      mode === "light" ? [7, 10, 12] : mode === "dark" ? [10, 7, 3] : [5, 9];
+    const soft = mode === "dark";
+    notes.forEach((n, i) =>
+      mallet(b, pitch(n), {
+        at: i * 0.065,
+        gain: soft ? 0.04 : 0.045,
+        decay: soft ? 0.7 : 0.4,
+        pan,
+        wet: soft ? 0.5 : 0.3,
+      }),
+    );
+  },
+
   on() {
     const b = live();
     if (!b) return;
