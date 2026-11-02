@@ -114,7 +114,6 @@ export function unlockSound() {
   if (typeof window === "undefined" || !readEnabled()) return;
   bus ??= createBus();
   if (bus && bus.ctx.state !== "running") {
-    // Autoplay may be blocked; interaction listeners will retry unlocking.
     void bus.ctx.resume().catch(() => {});
   }
 }
