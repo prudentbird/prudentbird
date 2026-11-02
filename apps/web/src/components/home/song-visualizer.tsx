@@ -13,6 +13,7 @@ import {
 } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TextSkeleton } from "~/components/ui/text-skeleton";
+import { sounds } from "~/lib/sound";
 import { cn } from "~/lib/utils";
 import { externalProps } from "~/lib/content";
 import {
@@ -415,6 +416,11 @@ export function SongVisualizer() {
     else void listenAlong.current?.start(track);
   };
 
+  const strike = (i: number, x?: number) => {
+    if (!showHistory || historyLoading || !today) return;
+    sounds.note((days[i]?.plays ?? 0) / dayMax, x);
+  };
+
   useEffect(() => {
     if (track) void listenAlong.current?.follow(track);
   }, [track]);
@@ -615,6 +621,7 @@ export function SongVisualizer() {
         <div
           ref={strip}
           tabIndex={0}
+          data-sound="none"
           role="group"
           aria-label={
             showHistory
@@ -624,10 +631,19 @@ export function SongVisualizer() {
           onPointerLeave={(e) => {
             if (e.pointerType === "mouse") setHovered(null);
           }}
-          onPointerMove={(e) => setHovered(indexAt(e.clientX))}
+          onPointerMove={(e) => {
+            const i = indexAt(e.clientX);
+            if (i !== hovered && e.pointerType !== "touch")
+              strike(i, e.clientX);
+            setHovered(i);
+          }}
           onClick={(e) => {
-            if (listening) seekTo(indexAt(e.clientX));
-            else setHovered(indexAt(e.clientX));
+            const i = indexAt(e.clientX);
+            if (listening) seekTo(i);
+            else {
+              strike(i, e.clientX);
+              setHovered(i);
+            }
           }}
           onKeyDown={(e) => {
             if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -641,6 +657,7 @@ export function SongVisualizer() {
                   Math.max(0, (hovered ?? count - 1) + step),
                 );
                 setHovered(next);
+                strike(next);
                 const el = viewport.current;
                 if (el) {
                   const left = next * (BAR + GAP);

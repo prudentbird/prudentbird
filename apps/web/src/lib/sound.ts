@@ -579,6 +579,29 @@ export const sounds = {
       wet: 0.1,
     });
   },
+
+  note(level: number, x?: number) {
+    const b = live();
+    if (!b || !gate("note", 22)) return;
+    const pan = panAt(x);
+    if (level <= 0) {
+      tone(b, {
+        freq: 220,
+        to: 180,
+        type: "triangle",
+        decay: 0.05,
+        gain: 0.05,
+        pan,
+        wet: 0.1,
+      });
+      return;
+    }
+    mallet(b, pitch(2 + Math.round(clamp(level, 0, 1) * 11)), {
+      gain: 0.05,
+      decay: 0.5,
+      pan,
+    });
+  },
 };
 
 export type SoundName = keyof typeof sounds;
