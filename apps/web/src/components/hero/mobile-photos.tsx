@@ -6,6 +6,7 @@ import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import { DeferredPhoto } from "./photo-stack";
 import { PHOTOS, type Photo } from "./photos";
+import { sounds } from "~/lib/sound";
 
 const PAPER = "rounded-[4px] bg-[#fbfaf7] p-4 pb-14 dark:bg-[#292724]";
 const SHADOW =
@@ -47,6 +48,7 @@ export function MobilePhotos() {
     const keyboard = (event: KeyboardEvent) => {
       if (event.key === "Escape" || event.key === "Tab") {
         event.preventDefault();
+        sounds.putBack();
         dismiss();
       }
     };
@@ -72,6 +74,7 @@ export function MobilePhotos() {
     <>
       <div
         ref={edge}
+        data-sound="none"
         className="pointer-events-none absolute inset-y-0 -right-5 w-20 sm:-right-8 lg:hidden"
         aria-label="Photos tucked along the edge"
       >
@@ -107,6 +110,7 @@ export function MobilePhotos() {
                   height: bounds.height,
                 },
               });
+              sounds.photo(rect.left + rect.width / 2);
               setSelected(i);
             }}
             className={`pointer-events-auto ${EDGE_PRINT} focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${FRAME}`}
@@ -129,8 +133,11 @@ export function MobilePhotos() {
                 aria-modal="true"
                 aria-label={`Photo ${selected + 1}. Tap the photo or anywhere else to put it back.`}
                 className="fixed inset-0 z-[100] grid place-items-center p-6 lg:hidden"
+                data-sound="none"
                 onPointerDown={(event) => {
-                  if (event.target === event.currentTarget) setSelected(null);
+                  if (event.target !== event.currentTarget) return;
+                  sounds.putBack(event.clientX);
+                  setSelected(null);
                 }}
               >
                 <m.div
@@ -172,7 +179,12 @@ export function MobilePhotos() {
                       ? { duration: 0 }
                       : { type: "spring", visualDuration: 0.42, bounce: 0.12 }
                   }
-                  onClick={() => setSelected(null)}
+                  onClick={(event) => {
+                    sounds.putBack(
+                      event.detail === 0 ? undefined : event.clientX,
+                    );
+                    setSelected(null);
+                  }}
                 >
                   <Print photo={PHOTOS[selected]!} />
                 </m.button>

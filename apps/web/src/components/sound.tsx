@@ -14,7 +14,7 @@ import { cn } from "~/lib/utils";
 const INTERACTIVE =
   "a[href], button:not(:disabled), [role='button'], [role='menuitem'], [data-sound-hover]";
 
-type HoverSound = "hover" | "coin";
+type HoverSound = "hover" | "coin" | "dial";
 type ClickSound = "tap" | "send" | "coin" | "none";
 
 export function useSoundEnabled() {
@@ -34,6 +34,7 @@ export function SoundEffects() {
       const sound = (target.closest("[data-sound-hover]") as HTMLElement | null)
         ?.dataset.soundHover as HoverSound | undefined;
       if (sound === "coin") sounds.coin(event.clientX);
+      else if (sound === "dial") sounds.dial(event.clientX);
       else sounds.hover(event.clientX);
     };
     const out = (event: PointerEvent) => {

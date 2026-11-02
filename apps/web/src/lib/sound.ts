@@ -376,6 +376,90 @@ export const sounds = {
     tone(b, { freq: pitch(7), to: pitch(2), decay: 0.12, gain: 0.04 });
   },
 
+  fan(open: boolean) {
+    const b = live();
+    if (!b || !gate("fan", 150)) return;
+    const clicks = open ? 5 : 3;
+    let at = 0.001;
+    for (let i = 0; i < clicks; i++) {
+      sounds.dial(undefined, at, 1 - i * 0.12);
+      at += open ? 0.07 - i * 0.008 : 0.05;
+    }
+  },
+
+  dial(x?: number, at = 0, level = 1) {
+    const b = live();
+    if (!b || (at === 0 && !gate("dial", 35))) return;
+    const pan = panAt(x);
+    hiss(b, { at, freq: 6000, q: 1.5, dur: 0.004, gain: 0.07 * level, pan });
+    tone(b, {
+      at,
+      freq: 3200,
+      to: 2400,
+      type: "triangle",
+      decay: 0.008,
+      gain: 0.022 * level,
+      pan,
+    });
+    hiss(b, {
+      at: at + 0.012,
+      freq: 4200,
+      q: 2,
+      dur: 0.003,
+      gain: 0.03 * level,
+      pan,
+    });
+  },
+
+  photo(x?: number) {
+    const b = live();
+    if (!b || !gate("photo", 90)) return;
+    const pan = panAt(x);
+    hiss(b, { freq: 5200, q: 1.2, dur: 0.008, gain: 0.13, pan, wet: 0.05 });
+    tone(b, {
+      freq: 2600,
+      to: 1700,
+      type: "triangle",
+      decay: 0.012,
+      gain: 0.04,
+      pan,
+    });
+    tone(b, { at: 0.01, freq: 170, to: 90, decay: 0.05, gain: 0.05, pan });
+    tone(b, {
+      at: 0.01,
+      freq: 360,
+      to: 240,
+      type: "triangle",
+      decay: 0.03,
+      gain: 0.035,
+      pan,
+    });
+    hiss(b, {
+      at: 0.06,
+      freq: 2400,
+      q: 2.4,
+      dur: 0.014,
+      gain: 0.08,
+      pan,
+      wet: 0.08,
+    });
+    tone(b, {
+      at: 0.06,
+      freq: 900,
+      to: 620,
+      type: "triangle",
+      decay: 0.025,
+      gain: 0.055,
+      pan,
+    });
+  },
+
+  putBack(x?: number) {
+    if (!live() || !gate("photo", 90)) return;
+    sounds.dial(x, 0.001);
+    sounds.dial(x, 0.06);
+  },
+
   coin(x?: number) {
     const b = live();
     if (!b || !gate("coin", 200)) return;
