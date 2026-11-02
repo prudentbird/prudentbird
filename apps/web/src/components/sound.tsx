@@ -24,6 +24,7 @@ export function useSoundEnabled() {
 export function SoundEffects() {
   useEffect(() => {
     const unlock = () => unlockSound();
+    unlock();
     let current: Element | null = null;
     let lastPointer = "mouse";
     const down = (event: PointerEvent) => {
