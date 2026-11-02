@@ -16,6 +16,7 @@ type Bus = {
 
 let bus: Bus | null = null;
 let enabled: boolean | null = null;
+let ducked = false;
 const listeners = new Set<() => void>();
 const last = new Map<string, number>();
 
@@ -88,6 +89,7 @@ function createBus(): Bus | null {
   master.gain.value = 1.4;
   master.connect(compressor);
   const duck = ctx.createGain();
+  duck.gain.value = ducked ? 0 : 1;
   duck.connect(master);
 
   const dry = ctx.createGain();
@@ -109,6 +111,15 @@ export function unlockSound() {
   if (typeof window === "undefined" || !readEnabled()) return;
   bus ??= createBus();
   if (bus && bus.ctx.state !== "running") void bus.ctx.resume();
+}
+
+export function duckSound(next: boolean) {
+  if (next === ducked) return;
+  ducked = next;
+  if (!bus) return;
+  const gain = bus.duck.gain;
+  gain.cancelScheduledValues(bus.ctx.currentTime);
+  gain.setTargetAtTime(next ? 0 : 1, bus.ctx.currentTime, next ? 0.12 : 0.02);
 }
 
 function live() {
@@ -601,6 +612,15 @@ export const sounds = {
       decay: 0.5,
       pan,
     });
+  },
+
+  listen(start: boolean, x?: number) {
+    const b = live();
+    if (!b) return;
+    const pan = panAt(x);
+    const [first, second] = start ? [5, 10] : [10, 5];
+    mallet(b, pitch(first), { gain: 0.045, decay: 0.3, pan });
+    mallet(b, pitch(second), { at: 0.085, gain: 0.045, decay: 0.5, pan });
   },
 };
 

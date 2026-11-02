@@ -13,7 +13,7 @@ import {
 } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TextSkeleton } from "~/components/ui/text-skeleton";
-import { sounds } from "~/lib/sound";
+import { duckSound, sounds } from "~/lib/sound";
 import { cn } from "~/lib/utils";
 import { externalProps } from "~/lib/content";
 import {
@@ -408,10 +408,21 @@ export function SongVisualizer() {
     };
   }, []);
 
-  const stop = () => listenAlong.current?.stop();
+  useEffect(() => {
+    duckSound(playingHere);
+    return () => duckSound(false);
+  }, [playingHere]);
 
-  const toggle = () => {
+  const stop = (x?: number) => {
+    duckSound(false);
+    sounds.listen(false, x);
+    listenAlong.current?.stop();
+  };
+
+  const toggle = (x?: number) => {
     if (!track) return;
+    if (playingHere) duckSound(false);
+    sounds.listen(!playingHere, x);
     if (player === "on") listenAlong.current?.togglePause();
     else void listenAlong.current?.start(track);
   };
@@ -571,7 +582,8 @@ export function SongVisualizer() {
               <>
                 <button
                   type="button"
-                  onClick={toggle}
+                  data-sound="none"
+                  onClick={(e) => toggle(e.detail ? e.clientX : undefined)}
                   disabled={!track || player === "loading"}
                   aria-pressed={playingHere}
                   data-loading={player === "loading"}
@@ -596,7 +608,8 @@ export function SongVisualizer() {
                 {active && (
                   <button
                     type="button"
-                    onClick={stop}
+                    data-sound="none"
+                    onClick={(e) => stop(e.detail ? e.clientX : undefined)}
                     aria-label="Stop listening"
                     title="Stop listening"
                     className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 border-l text-sm font-medium md:w-12 md:flex-none border-white/20 transition-colors hover:bg-white/10 focus-visible:bg-white/15 focus-visible:outline-none"
