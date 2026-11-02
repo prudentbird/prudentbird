@@ -86,7 +86,7 @@ export function Home() {
 
         <section
           aria-labelledby="about"
-          className={`${container} scroll-mt-20 pt-8 sm:pt-16 pb-8 sm:pb-16`}
+          className={`${container} cursor-default scroll-mt-20 pt-8 sm:pt-16 pb-8 sm:pb-16`}
         >
           <SectionHeader id="about" title="About" />
           <p className="mt-6 text-xl leading-relaxed text-muted-foreground sm:text-2xl">
