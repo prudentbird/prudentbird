@@ -70,6 +70,14 @@ export const metadata: Metadata = {
     siteName: siteName,
     title: siteName,
     description: siteDescription,
+    videos: [
+      {
+        url: "/og.mp4",
+        type: "video/mp4",
+        width: 1200,
+        height: 630,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
