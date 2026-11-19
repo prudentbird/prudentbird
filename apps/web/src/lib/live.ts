@@ -20,8 +20,6 @@ async function getJson<T>(url: string): Promise<T> {
   return response.json();
 }
 
-// Poll slowly mid-song, wake up just after it should end, then poll quickly
-// until Spotify reports the next song.
 export function nextPollMs(latest: SpotifySnapshot | undefined, now: number) {
   if (!latest?.track?.isPlaying) return IDLE_POLL_MS;
   const { track, receivedAt } = latest;
@@ -40,7 +38,6 @@ export function useNowPlaying({ listening = false } = {}) {
       keepPreviousData: true,
       revalidateOnFocus: true,
       refreshInterval: (latest) => nextPollMs(latest, Date.now()),
-      // Listeners usually have the tab in the background; keep following.
       refreshWhenHidden: listening,
       dedupingInterval: 1_000,
       errorRetryInterval: 15_000,

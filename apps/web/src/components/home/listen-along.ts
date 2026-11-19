@@ -108,7 +108,6 @@ export class ListenAlong {
       found = null;
     }
     if (stale()) return;
-    // The server can be a few seconds ahead of our last poll; trust its song.
     const moved = !!found && found.url !== track.url;
     const id = found?.id ?? null;
     if (!id) return this.fail();
