@@ -2,7 +2,8 @@
 
 import { cacheLife } from "next/cache";
 import { env } from "~/env";
-import { getSpotifyTrack } from "~/app/actions/spotify";
+import { getSpotifySnapshot } from "~/app/actions/spotify";
+import { estimateProgressMs } from "~/lib/listening/progress";
 import {
   choose,
   normalize,
@@ -17,24 +18,32 @@ import {
 export async function findYouTubeMatch(): Promise<{
   url: string;
   id: string | null;
+  progressMs: number;
 } | null> {
   if (!env.YOUTUBE_API_KEY) return null;
-  let track;
+  let snapshot;
   try {
-    track = await getSpotifyTrack();
+    snapshot = await getSpotifySnapshot();
   } catch {
     return null;
   }
+  const track = snapshot.track;
   if (!track) return null;
+  const progressMs = () =>
+    estimateProgressMs(
+      { ...track, receivedAt: snapshot.receivedAt },
+      Date.now(),
+    );
 
   const title = searchTitle(track.name);
   const artists = splitArtists(track.artist);
   const seconds = Math.round(track.duration / 1000);
-  if (!seconds || !normalize(title)) return { url: track.url, id: null };
+  if (!seconds || !normalize(title))
+    return { url: track.url, id: null, progressMs: 0 };
 
   try {
     const id = await match(track.url, title, artists, seconds);
-    return { url: track.url, id };
+    return { url: track.url, id, progressMs: progressMs() };
   } catch (error) {
     console.error(error);
     return null;
