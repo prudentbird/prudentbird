@@ -32,7 +32,7 @@ export function nextPollMs(latest: SpotifySnapshot | undefined, now: number) {
   return Math.min(PLAYING_POLL_MS, remaining + SONG_END_GRACE_MS);
 }
 
-export function useNowPlaying() {
+export function useNowPlaying({ listening = false } = {}) {
   const { data, isLoading } = useSWR(
     "/api/now-playing",
     getJson<SpotifySnapshot>,
@@ -40,6 +40,8 @@ export function useNowPlaying() {
       keepPreviousData: true,
       revalidateOnFocus: true,
       refreshInterval: (latest) => nextPollMs(latest, Date.now()),
+      // Listeners usually have the tab in the background; keep following.
+      refreshWhenHidden: listening,
       dedupingInterval: 1_000,
       errorRetryInterval: 15_000,
     },

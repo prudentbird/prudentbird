@@ -128,7 +128,12 @@ const mmss = (ms: number) => {
 };
 
 export function SongVisualizer() {
-  const { track, receivedAt, isLoading: resolving } = useNowPlaying();
+  const [player, setPlayer] = useState<ListenStatus>("off");
+  const {
+    track,
+    receivedAt,
+    isLoading: resolving,
+  } = useNowPlaying({ listening: player !== "off" });
   const { history, isLoading: historyLoading } = useListeningHistory();
   const myProgress = useTrackProgress(track, receivedAt);
   const reduce = useReducedMotion();
@@ -145,7 +150,6 @@ export function SongVisualizer() {
   const ytHost = useRef<HTMLDivElement>(null);
   const listenAlong = useRef<ListenAlong | null>(null);
   const latestTrack = useRef({ track, receivedAt });
-  const [player, setPlayer] = useState<ListenStatus>("off");
   const [playback, setPlayback] = useState<{
     position: number;
     duration: number;
