@@ -14,7 +14,11 @@ export type PlayerLike = {
 type TrackRef = { url: string };
 
 export type ListenAlongDeps = {
-  match: () => Promise<{ url: string; id: string | null } | null>;
+  match: () => Promise<{
+    url: string;
+    id: string | null;
+    progressMs?: number;
+  } | null>;
   loadApi: () => Promise<void>;
   startSeconds: () => number;
   createPlayer: (
@@ -104,8 +108,11 @@ export class ListenAlong {
       found = null;
     }
     if (stale()) return;
-    const id = found?.url === track.url ? found.id : null;
+    // The server can be a few seconds ahead of our last poll; trust its song.
+    const moved = !!found && found.url !== track.url;
+    const id = found?.id ?? null;
     if (!id) return this.fail();
+    this.targetUrl = found!.url;
 
     try {
       await this.deps.loadApi();
@@ -115,7 +122,9 @@ export class ListenAlong {
     }
     if (stale()) return;
 
-    const startAt = this.deps.startSeconds();
+    const startAt = moved
+      ? (found!.progressMs ?? 0) / 1000
+      : this.deps.startSeconds();
     if (this.player && this.ready) {
       this.player.loadVideoById({ videoId: id, startSeconds: startAt });
       this.setStatus("on");

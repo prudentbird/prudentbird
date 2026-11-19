@@ -61,7 +61,7 @@ class FakePlayer implements PlayerLike {
   }
 }
 
-type Match = { url: string; id: string | null } | null;
+type Match = { url: string; id: string | null; progressMs?: number } | null;
 
 let matches: Map<string, ReturnType<typeof deferred<Match>>>;
 let players: FakePlayer[];
@@ -343,6 +343,26 @@ describe("ListenAlong", () => {
     await run;
     players[0]!.events.onReady();
     assert.equal(la.status, "on");
+  });
+
+  it("plays the server's newer song when Spotify moved on during the lookup", async () => {
+    const la = make();
+    let run = request(la, "a");
+    answer("a", "vidA");
+    await run;
+    players[0]!.events.onReady();
+
+    run = request(la, "b", "follow")!;
+    matches
+      .get("b")!
+      .resolve({ url: "spotify:c", id: "vidC", progressMs: 3_000 });
+    await run;
+    assert.equal(la.status, "on");
+    assert.equal(players[0]!.destroyed, false);
+    assert.deepEqual(players[0]!.loaded, [
+      { videoId: "vidC", startSeconds: 3 },
+    ]);
+    assert.equal(request(la, "c", "follow"), undefined, "no reload for c");
   });
 
   it("reports playback only for a ready player", async () => {
