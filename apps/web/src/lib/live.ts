@@ -10,6 +10,7 @@ const PLAYING_POLL_MS = 15_000;
 const IDLE_POLL_MS = 30_000;
 const HISTORY_POLL_MS = 10 * 60_000;
 const SONG_END_GRACE_MS = 1_500;
+const SONG_CHANGE_POLL_MS = 2_500;
 
 type SpotifySnapshot = { track: SpotifyTrack | null; receivedAt: number };
 
@@ -19,34 +20,32 @@ async function getJson<T>(url: string): Promise<T> {
   return response.json();
 }
 
+// Poll slowly mid-song, wake up just after it should end, then poll quickly
+// until Spotify reports the next song.
+export function nextPollMs(latest: SpotifySnapshot | undefined, now: number) {
+  if (!latest?.track?.isPlaying) return IDLE_POLL_MS;
+  const { track, receivedAt } = latest;
+  if (!track.duration) return PLAYING_POLL_MS;
+  const remaining =
+    track.duration - estimateProgressMs({ ...track, receivedAt }, now);
+  if (remaining <= 0) return SONG_CHANGE_POLL_MS;
+  return Math.min(PLAYING_POLL_MS, remaining + SONG_END_GRACE_MS);
+}
+
 export function useNowPlaying() {
-  const { data, isLoading, mutate } = useSWR(
+  const { data, isLoading } = useSWR(
     "/api/now-playing",
     getJson<SpotifySnapshot>,
     {
       keepPreviousData: true,
       revalidateOnFocus: true,
-      refreshInterval: (latest) =>
-        latest?.track?.isPlaying ? PLAYING_POLL_MS : IDLE_POLL_MS,
+      refreshInterval: (latest) => nextPollMs(latest, Date.now()),
+      dedupingInterval: 1_000,
       errorRetryInterval: 15_000,
     },
   );
   const track = data?.track ?? null;
   const receivedAt = data?.receivedAt ?? 0;
-
-  useEffect(() => {
-    if (!track?.isPlaying || !track.duration) return;
-    const remaining =
-      track.duration - estimateProgressMs({ ...track, receivedAt }, Date.now());
-    const id = setTimeout(
-      () => {
-        if (!document.hidden) void mutate();
-      },
-      Math.max(1_000, remaining + SONG_END_GRACE_MS),
-    );
-    return () => clearTimeout(id);
-  }, [track, receivedAt, mutate]);
-
   return { track, receivedAt, isLoading };
 }
 
